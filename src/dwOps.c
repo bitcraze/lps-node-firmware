@@ -1,0 +1,134 @@
+#include "dwOps.h"
+
+#include <string.h>
+
+#include <stm32f0xx_hal.h>
+#include "spi.h"
+
+extern SPI_HandleTypeDef hspi1;
+
+// #define DEBUG_SPI
+
+#define DWM_IRQn EXTI0_1_IRQn
+#define DWM_IRQ_PIN GPIO_PIN_0
+
+
+static dwDevice_t *dev;
+
+// Initialize interrupts
+void dwOpsInit(dwDevice_t *device)
+{
+  dev = device;
+
+  NVIC_EnableIRQ(DWM_IRQn);
+}
+
+static int checkIrq()
+{
+  return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  switch (GPIO_Pin) {
+    case DWM_IRQ_PIN:
+      do{
+          dwHandleInterrupt(dev);
+      } while(checkIrq() != 0); //while IRS line active (ARM can only do edge sensitive interrupts)
+      HAL_NVIC_ClearPendingIRQ(DWM_IRQn);
+      break;
+    case GPIO_PIN_12:
+      //instance_notify_DW1000_inIDLE(1);
+      break;
+    default:
+      break;
+  }
+}
+
+// Aligned buffer of 128bytes
+// This is used as a "scratch" buffer to the SPI transfers
+// The problem is that the Cortex-m0 only supports 2Bytes-aligned memory access
+uint16_t alignedBuffer[64];
+
+static void spiWrite(dwDevice_t* dev, const void *header, size_t headerLength,
+                                      const void* data, size_t dataLength)
+{
+#ifdef DEBUG_SPI
+  int i;
+  printf("Write to SPI: [ ");
+  for (i=0; i<headerLength; i++)
+    printf("%02x ", (unsigned int)((uint8_t*)header)[i]);
+  printf("] [ ");
+
+  for (i=0; i<dataLength; i++)
+    printf("%02x ", (unsigned int)((uint8_t*)data)[i]);
+  printf("]\r\n");
+#endif
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
+
+  memcpy(alignedBuffer, header, headerLength);
+  HAL_SPI_Transmit(&hspi1, (uint8_t *)alignedBuffer, headerLength, HAL_MAX_DELAY);
+  memcpy(alignedBuffer, data, dataLength);
+  HAL_SPI_Transmit(&hspi1, (uint8_t *)alignedBuffer, dataLength, HAL_MAX_DELAY);
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
+}
+
+static void spiRead(dwDevice_t* dev, const void *header, size_t headerLength,
+                                     void* data, size_t dataLength)
+{
+  // volatile int dummy;
+
+#ifdef DEBUG_SPI
+  int i;
+  printf("Read from SPI: [ ");
+  for (i=0; i<headerLength; i++)
+    printf("%02x ", (unsigned int)((uint8_t*)header)[i]);
+  printf("] ");
+#endif
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
+
+  memcpy(alignedBuffer, header, headerLength);
+  HAL_SPI_Transmit(&hspi1, (uint8_t *)alignedBuffer, headerLength, HAL_MAX_DELAY);
+  // printf("%lu", hspi1.Instance->SR & SPI_FLAG_RXNE);
+  // while (hspi1.Instance->SR & SPI_FLAG_RXNE) {
+  //   printf("R");
+  //   dummy = hspi1.Instance->DR;
+  // }
+  // dummy;
+  // printf("%lu ", hspi1.Instance->SR & SPI_FLAG_RXNE);
+  HAL_SPI_Receive(&hspi1, (uint8_t *)alignedBuffer, dataLength, HAL_MAX_DELAY);
+  memcpy(data, alignedBuffer, dataLength);
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 1);
+
+#ifdef DEBUG_SPI
+  printf("{ ");
+  for (i=0; i<dataLength; i++)
+    printf("%02x ", (unsigned int)((uint8_t*)data)[i]);
+  printf("}\r\n");
+#endif
+}
+
+static void spiSetSpeed(dwDevice_t* dev, dwSpiSpeed_t speed)
+{
+  if(speed == dwSpiSpeedLow) {
+    MX_SPI1_Init();
+  } else {
+    MX_SPI1_Init_Fast();
+  }
+}
+
+static void delayms(dwDevice_t* dev, unsigned int delay)
+{
+  HAL_Delay(delay);
+}
+
+dwOps_t dwOps = {
+  .spiRead = spiRead,
+  .spiWrite = spiWrite,
+  .spiSetSpeed = spiSetSpeed,
+  .delayms = delayms,
+};
