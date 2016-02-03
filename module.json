@@ -6,7 +6,7 @@
   "artifacts": {
     "file": [
       {
-        "source": "*.bin",
+        "source": "bin/*.dfu",
         "insertTag": true,
         "destination": "currDir"
       }

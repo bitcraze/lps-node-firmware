@@ -42,7 +42,7 @@ OBJS+=libdw/src/libdw.o
 OBJS+=src/dwOps.o
 
 CFLAGS+=$(PROCESSOR) $(INCLUDES) -O0 -g3 -Wall -Wno-pointer-sign -std=gnu11
-LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -Tstm32f072.ld -lm -lc -u _printf_float
+LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -Ttools/make/stm32f072.ld -lm -lc -u _printf_float
 
 PREFIX=arm-none-eabi-
 
@@ -51,24 +51,24 @@ LD=$(PREFIX)gcc
 AS=$(PREFIX)as
 OBJCOPY=$(PREFIX)objcopy
 
-all: lps-node-firmware.elf lps-node-firmware.dfu
+all: bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
 
-lps-node-firmware.elf: $(OBJS)
+bin/lps-node-firmware.elf: $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
 	arm-none-eabi-size $@
 
 clean:
-	rm -f lps-node-firmware.elf lps-node-firmware.dfu $(OBJS)
+	rm -f bin/lps-node-firmware.elf bin/lps-node-firmware.dfu $(OBJS)
 
 flash:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
-	           -c "flash write_image erase lps-node-firmware.elf" -c "verify_image lps-node-firmware.elf" -c "reset run" -c shutdown
+	           -c "flash write_image erase bin/lps-node-firmware.elf" -c "verify_image bin/lps-node-firmware.elf" -c "reset run" -c shutdown
 
 openocd:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets
 
 dfu:
-	dfu-util -d 0483:df11 -a 0 -D lps-node-firmware.dfu -R
+	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -R
 
 # Generic rules
 %.bin: %.elf
