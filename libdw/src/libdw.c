@@ -23,6 +23,7 @@
 
 #include <libdw.h>
 #include <dw1000.h>
+#include <math.h>
 
 
 static const uint8_t BIAS_500_16_ZERO = 10;
@@ -660,6 +661,9 @@ void dwGetReceiveTimestamp(dwDevice_t* dev, dwTime_t* time) {
 void dwCorrectTimestamp(dwDevice_t* dev, dwTime_t* timestamp) {
 	// base line dBm, which is -61, 2 dBm steps, total 18 data points (down to -95 dBm)
 	float rxPowerBase = -(dwGetReceivePower(dev) + 61.0f) * 0.5f;
+	if (!isfinite(rxPowerBase)) {
+	  return;
+	}
 	int rxPowerBaseLow = (int)rxPowerBase;
 	int rxPowerBaseHigh = rxPowerBaseLow + 1;
 	if(rxPowerBaseLow < 0) {
@@ -1354,6 +1358,10 @@ void dwSpiRead(dwDevice_t *dev, uint8_t regid, uint32_t address,
   size_t headerLength=1;
 
   header[0] = regid & 0x3f;
+
+   /*asm (" MOVS r0, #1 \n"
+   " LDM r0,{r1-r2} \n"
+   " BX LR; \n");*/
 
   if (address != 0) {
     header[0] |= 0x40;
