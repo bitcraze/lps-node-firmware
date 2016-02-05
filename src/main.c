@@ -587,8 +587,13 @@ int main() {
        }
      }
 
-     // Handling of the LEDs
-     if (HAL_GetTick() < (rangingTick+50)) {
+    // Handling of the LEDs
+    if (HAL_GetTick() > (ledTick+250)) {
+      ledTick = HAL_GetTick();
+      ledState = !ledState;
+    }
+
+     if ((HAL_GetTick() < (rangingTick+50)) && ledState) {
        ledOn(ledRanging);
      } else {
        ledOff(ledRanging);
@@ -604,14 +609,10 @@ int main() {
          ledOn(ledMode);
          break;
        case modeSniffer:
-         if (HAL_GetTick() > (ledTick+250)) {
-           if (ledState) {
-             ledOn(ledMode);
-           } else {
-             ledOff(ledMode);
-           }
-           ledTick = HAL_GetTick();
-           ledState = !ledState;
+         if (ledState) {
+           ledOn(ledMode);
+         } else {
+           ledOff(ledMode);
          }
          break;
        default:
