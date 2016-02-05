@@ -98,6 +98,8 @@ dwTime_t answer_rx;
 dwTime_t final_tx;
 dwTime_t final_rx;
 
+uint32_t rangingTick;
+
 float pressure, temperature, asl;
 bool has_pressure = false;
 bool pressure_ok;
@@ -132,6 +134,7 @@ void txcallback(dwDevice_t *dev)
 
   switch (txPacket.payload[0]) {
     case POLL:
+      rangingTick = HAL_GetTick();
       debug("POLL\r\n");
       poll_tx = departure;
       break;
@@ -155,6 +158,9 @@ void txcallback(dwDevice_t *dev)
 void rxcallback(dwDevice_t *dev) {
   dwTime_t arival;
   int dataLength = dwGetDataLength(dev);
+
+  if (dataLength == 0) return;
+
   bzero(&rxPacket, MAC802154_HEADER_LENGTH);
 
   debug("RXCallback(%d): ", dataLength);
@@ -197,6 +203,7 @@ void rxcallback(dwDevice_t *dev) {
     // Anchor received messages
     case POLL:
       debug("POLL from %02x at %04x\r\n", rxPacket.sourceAddress[0], (unsigned int)arival.low32);
+      rangingTick = HAL_GetTick();
 
       poll_rx = arival;
 
@@ -458,6 +465,9 @@ int main() {
     dwStartReceive(dwm);
   }
 
+  bool ledState = false;
+  uint32_t ledTick = 0;
+
   // Main loop ...
   while(1) {
     // Measure pressure
@@ -537,9 +547,6 @@ int main() {
 
     if (mode == modeSniffer) {
       static uint32_t prevDropped = 0;
-      ledOn(ledMode);
-      ledOff(ledSync);
-      ledOff(ledRanging);
 
       if (dropped != prevDropped) {
         printf("Dropped!\r\n");
@@ -555,16 +562,7 @@ int main() {
         queue_tail = (queue_tail+1)%QUEUE_LEN;
         printf("\r\n");
       }
-
-      continue;
     }
-
-    ledOff(ledMode);
-
-    ledOn(ledSync);
-    HAL_Delay(200);
-    ledOff(ledSync);
-    HAL_Delay(200);
 
     if (mode == modeTag) {
        for (i=0; i<anchorListSize; i++) {
@@ -587,6 +585,40 @@ int main() {
 
          HAL_Delay(30);
        }
+     }
+
+     // Handling of the LEDs
+     if (HAL_GetTick() < (rangingTick+50)) {
+       ledOn(ledRanging);
+     } else {
+       ledOff(ledRanging);
+     }
+
+     ledOff(ledSync);
+
+     switch (mode) {
+       case modeTag:
+         ledOff(ledMode);
+         break;
+       case modeAnchor:
+         ledOn(ledMode);
+         break;
+       case modeSniffer:
+         if (HAL_GetTick() > (ledTick+250)) {
+           if (ledState) {
+             ledOn(ledMode);
+           } else {
+             ledOff(ledMode);
+           }
+           ledTick = HAL_GetTick();
+           ledState = !ledState;
+         }
+         break;
+       default:
+         ledOn(ledMode);
+         ledOn(ledSync);
+         ledOn(ledRanging);
+         break;
      }
   }
 
