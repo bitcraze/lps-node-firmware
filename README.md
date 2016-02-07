@@ -4,7 +4,20 @@ This project contains the source code for the Local positioning System node firm
 
 ## Dependencies
 
-You'll need to use either the Crazyflie VM, install some ARM toolchain or the Bitcraze docker builder image. 
+You'll need to use either the Crazyflie VM, install some ARM toolchain or the Bitcraze docker builder image.
+
+Frameworks for unit testing is pulled in as git submodules. To get them when cloning
+
+```bash
+git clone --recursive https://github.com/bitcraze/lps-node-firmware.git
+```
+        
+or if you already have a cloned repo and want the submodules
+ 
+```bash
+git submodule init        
+git submodule update        
+```
 
 ### OS X
 ```bash
@@ -32,7 +45,11 @@ sudo pacman -S community/arm-none-eabi-gcc community/arm-none-eabi-gdb community
 
 or 
 
-`docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build`
+`docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/compile`
+
+or 
+
+`tools/do compile`
 
 ## Folder description:
 
@@ -45,3 +62,12 @@ flash      : Flash throgh jtag
 openocd    : Launch OpenOCD
 dfu        : Flash throgh DFU 
 ```
+
+## Unit testing
+
+We use [Unity](https://github.com/ThrowTheSwitch/unity) and [cmock](https://github.com/ThrowTheSwitch/CMock) for unit testing.
+
+To run all tests 
+
+`./tools/do test`
+

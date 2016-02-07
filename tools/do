@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+# A wrapper for running the build scripts in a docker container with all the
+# tools needed.
+#
+# Example:
+# ./tools/do build
+#
+# ./tools/do test
+
+
+scriptDir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+rootDir=$scriptDir/..
+
+tool=$1
+
+cmd="docker run --rm -it --volume=${rootDir}:/module bitcraze/builder:4 ./tools/build/${tool}"
+echo "$cmd"
+$cmd
