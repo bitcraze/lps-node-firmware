@@ -1,0 +1,69 @@
+---
+compiler:
+  path: gcc
+  source_path:     &source_path 'src/'
+  unit_tests_path: &unit_tests_path 'test/'
+  mocks_path:      &mocks_path 'generated-test/mocks/'
+  build_path:      &build_path 'generated-test/build/'
+  options:
+    - '-c'
+    - '-Wall'
+    - '-Wextra'
+    - '-Wunused-parameter'
+    - '-Wno-address'
+    - '-Wno-invalid-token-paste'
+    - '-std=c99'
+    - '-pedantic'
+    - '-O0'
+  includes:
+    prefix: '-I'
+    items:
+      - *source_path
+      - *unit_tests_path
+      - *mocks_path
+      - 'vendor/unity/src/'
+      - 'vendor/c_exception/lib/'
+      - 'vendor/cmock/src/'
+      - 'test/'
+      - 'hal/stm32f0xx/Inc/'
+      - 'inc/'
+      - 'inc/f0/'
+  defines:
+    prefix: '-D'
+    items:
+      - CMOCK
+      - 'UNITY_SUPPORT_64'
+      - 'HSI48_VALUE="((uint32_t)48000000)"'
+      - 'STM32F072xB'
+  object_files:
+    prefix: '-o'
+    extension: '.o'
+    destination: *build_path
+
+linker:
+  path: gcc
+  options:
+    - -lm
+  includes:
+    prefix: '-I'
+  object_files:
+    path: *build_path
+    extension: '.o'
+  bin_files:
+    prefix: '-o'
+    extension: '.exe'
+    destination: *build_path
+
+unsupported:
+  - out_of_memory
+  - unity_64bit_support
+  - callingconv
+
+colour: true
+
+:cmock:
+  :plugins: []
+  :mock_path: *mocks_path
+  :mock_prefix: mock_
+  :includes_h_pre_orig_header:
+    - 'stm32f0xx_hal.h'
