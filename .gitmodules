@@ -4,3 +4,6 @@
 [submodule "vendor/cmock"]
 	path = vendor/cmock
 	url = https://github.com/throwtheswitch/cmock.git
+[submodule "vendor/libdw1000"]
+	path = vendor/libdw1000
+	url = https://github.com/bitcraze/libdw1000.git

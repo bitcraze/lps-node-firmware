@@ -15,7 +15,7 @@ else
 $(error Rev.$(REV) unknown)
 endif
 
-INCLUDES=-Iinc -Iinc/$(CPU) -I$(HAL_ROOT)/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc
+INCLUDES=-Iinc -Iinc/$(CPU) -I$(HAL_ROOT)/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc -Ivendor/libdw1000/inc
 
 # Platform specific files
 OBJS+=src/f0/startup_stm32f072xb.o src/f0/system_stm32f0xx.o src/f0/stm32f0xx_it.o src/f0/stm32f0xx_hal_msp.o
@@ -37,7 +37,7 @@ OBJS+=$(foreach mod, $(USB_CDC), Middlewares/ST/STM32_USB_Device_Library/Class/C
 
 #libdw
 INCLUDES+=-Ilibdw/inc
-OBJS+=libdw/src/libdw.o
+OBJS+=vendor/libdw1000/src/libdw.o
 
 OBJS+=src/dwOps.o
 
@@ -46,7 +46,7 @@ LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -Ttools/make/stm32f
 
 # Remove un-used functions and global variables from output file
 CFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS+=-Wl,-Map=$(PROG).map,--cref,--gc-sections
+LDFLAGS+=-Wl,-Map=bin/$(PROG).map,--cref,--gc-sections
 
 
 PREFIX=arm-none-eabi-
@@ -56,14 +56,14 @@ LD=$(PREFIX)gcc
 AS=$(PREFIX)as
 OBJCOPY=$(PREFIX)objcopy
 
-all: bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
+all: check_submodules bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
 
 bin/lps-node-firmware.elf: $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
 	arm-none-eabi-size $@
 
 clean:
-	rm -f bin/lps-node-firmware.elf bin/lps-node-firmware.dfu $(OBJS)
+	rm -f bin/lps-node-firmware.elf bin/lps-node-firmware.dfu bin/.map $(OBJS)
 
 flash:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
@@ -81,3 +81,6 @@ dfu:
 
 %.dfu: %.bin
 	$(PYTHON2) tools/make/dfu-convert.py -b 0x8000000:$^ $@
+
+check_submodules:
+	$(PYTHON2) tools/make/check-for-submodules.py

@@ -6,7 +6,7 @@ This project contains the source code for the Local positioning System node firm
 
 You'll need to use either the Crazyflie VM, install some ARM toolchain or the Bitcraze docker builder image.
 
-Frameworks for unit testing is pulled in as git submodules. To get them when cloning
+Frameworks for unit testing are pulled in as git submodules. To get them when cloning
 
 ```bash
 git clone --recursive https://github.com/bitcraze/lps-node-firmware.git

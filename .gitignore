@@ -1,7 +1,5 @@
-*.elf
-*.gch
-*.dfu
 *.o
 *~
 
+/bin/**
 /generated-test/**

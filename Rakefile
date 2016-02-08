@@ -23,7 +23,7 @@ task :summary do
 end
 
 desc "Build and test Unity"
-task :all => [:clean, :unit, :summary]
+task :all => [:check_submodules, :clean, :unit, :summary]
 task :default => [:clobber, :all]
 task :ci => [:default]
 task :cruise => [:default]
@@ -32,3 +32,7 @@ desc "Load configuration"
 task :config, :config_file do |t, args|
   configure_toolchain(args[:config_file])
 end
+
+desc "Check that git submodules are initialized"
+task :check_submodules
+sh 'python tools/make/check-for-submodules.py'

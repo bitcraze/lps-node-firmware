@@ -38,7 +38,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <libdw.h>
 #include "dwOps.h"
 
 #include "mac.h"
