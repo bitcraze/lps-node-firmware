@@ -46,7 +46,7 @@
 
 static CfgMode mode = modeAnchor;
 
-const uint32_t *cpuid = (uint32_t*)0x1FFFF7E8;
+const uint8_t *uid = (uint8_t*)0x1FFFF7AC;
 
 int initDwm1000();
 
@@ -350,6 +350,12 @@ int main() {
   ledOn(ledMode);
 
   printf("\r\n\r\n====================\r\n");
+
+  printf("SYSTEM\t: CPU-ID: ");
+  for (i=0; i<12; i++) {
+    printf("%02x", uid[i]);
+  }
+  printf("\r\n");
 
   // Initializing pressure sensor (if present ...)
   lps25hInit(&hi2c1);
