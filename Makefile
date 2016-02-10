@@ -15,7 +15,7 @@ else
 $(error Rev.$(REV) unknown)
 endif
 
-INCLUDES=-Iinc -Iinc/$(CPU) -I$(HAL_ROOT)/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc -Ivendor/libdw1000/inc
+INCLUDES=-Iinc -Iinc/$(CPU) -I$(HAL_ROOT)/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc
 
 # Platform specific files
 OBJS+=src/f0/startup_stm32f072xb.o src/f0/system_stm32f0xx.o src/f0/stm32f0xx_it.o src/f0/stm32f0xx_hal_msp.o
@@ -35,9 +35,9 @@ USB_CDC=cdc
 OBJS+=$(foreach mod, $(USB_CORES), Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_$(mod).o)
 OBJS+=$(foreach mod, $(USB_CDC), Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_$(mod).o)
 
-#libdw
-INCLUDES+=-Ilibdw/inc
-OBJS+=vendor/libdw1000/src/libdw.o
+#libdw1000
+INCLUDES+=-Ivendor/libdw1000/inc
+OBJS+=vendor/libdw1000/src/libdw1000.o vendor/libdw1000/src/libdw1000Spi.o
 
 OBJS+=src/dwOps.o
 
