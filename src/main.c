@@ -100,7 +100,6 @@ dwTime_t final_rx;
 uint32_t rangingTick;
 
 float pressure, temperature, asl;
-bool has_pressure = false;
 bool pressure_ok;
 
 const double C = 299792458.0;       // Speed of light
@@ -476,14 +475,12 @@ int main() {
   // Main loop ...
   while(1) {
     // Measure pressure
-    if (mode != modeSniffer && has_pressure) {
+    if (mode != modeSniffer) {
       if(lps25hGetData(&pressure, &temperature, &asl)) {
         pressure_ok = true;
-        ledOn(ledRanging);
       } else {
         printf("Fail reading pressure\r\n");
         printf("pressure not ok\r\n");
-        ledOff(ledRanging);
       }
     }
 
