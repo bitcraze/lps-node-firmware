@@ -27,16 +27,34 @@
 
 #include "led.h"
 
-#define LED_PORT GPIOC
+typedef struct {
+  uint32_t pin;
+  GPIO_TypeDef * port;
+} led_t;
+
+static led_t leds_revd[] = {
+    [ledRanging] = {.pin = GPIO_PIN_1, .port = GPIOF},
+    [ledSync] = {.pin = GPIO_PIN_1, .port = GPIOA},
+    [ledMode] = {.pin = GPIO_PIN_2, .port = GPIOA}
+};
+
+static led_t leds_revc[] = {
+    [ledRanging] = {.pin = GPIO_PIN_13, .port = GPIOC},
+    [ledSync] = {.pin = GPIO_PIN_14, .port = GPIOC},
+    [ledMode] = {.pin = GPIO_PIN_15, .port = GPIOC}
+};
+
 
 void ledInit(void) {
   /* Do nothing */
 }
 
-void ledOn(Led led) {
-  HAL_GPIO_WritePin(LED_PORT, led, GPIO_PIN_SET);
+void ledOn(led_e led) {
+  HAL_GPIO_WritePin(leds_revd[led].port, leds_revd[led].pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(leds_revc[led].port, leds_revc[led].pin, GPIO_PIN_SET);
 }
 
-void ledOff(Led led) {
-  HAL_GPIO_WritePin(LED_PORT, led, GPIO_PIN_RESET);
+void ledOff(led_e led) {
+  HAL_GPIO_WritePin(leds_revd[led].port, leds_revd[led].pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(leds_revc[led].port, leds_revc[led].pin, GPIO_PIN_RESET);
 }

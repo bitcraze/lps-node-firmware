@@ -10,16 +10,16 @@
 #endif
 
 typedef enum {
-  ledRanging = GPIO_PIN_13,
-  ledSync = GPIO_PIN_14,
-  ledMode = GPIO_PIN_15
-} Led;
+  ledRanging,
+  ledSync,
+  ledMode
+} led_e;
 
 void ledInit(void);
 
-void ledOn(Led led);
+void ledOn(led_e led);
 
-void ledOff(Led led);
+void ledOff(led_e led);
 
 #endif /* LED_H_ */
 
