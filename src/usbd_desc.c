@@ -36,6 +36,7 @@
 #include "usbd_core.h"
 #include "usbd_desc.h"
 #include "usbd_conf.h"
+#include "system.h"
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
@@ -231,14 +232,23 @@ uint8_t *  USBD_FS_ManufacturerStrDescriptor( USBD_SpeedTypeDef speed , uint16_t
 */
 uint8_t *  USBD_FS_SerialStrDescriptor( USBD_SpeedTypeDef speed , uint16_t *length)
 {
-  if(speed  == USBD_SPEED_HIGH)
-  {    
-    USBD_GetString (USBD_SERIALNUMBER_STRING_FS, USBD_StrDesc, length);
-  }
-  else
+  static const char bin2hex[] = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                 '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+  char serial_nr[25];
+  char *chip_id = (char*)MCU_ID_ADDRESS;
+  int i;
+
+  serial_nr[24] = 0;
+
+  for (i=0; i<12; i++)
   {
-    USBD_GetString (USBD_SERIALNUMBER_STRING_FS, USBD_StrDesc, length);    
+    serial_nr[0+(i*2)] = bin2hex[(chip_id[i]>>4)&0x0F];
+    serial_nr[1+(i*2)] = bin2hex[chip_id[i]&0x0F];
   }
+
+  USBD_GetString ((uint8_t *)serial_nr, USBD_StrDesc, length);
+
   return USBD_StrDesc;
 }
 

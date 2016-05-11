@@ -46,7 +46,7 @@
 
 static CfgMode mode = modeAnchor;
 
-const uint8_t *uid = (uint8_t*)0x1FFFF7AC;
+const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
 
 int initDwm1000();
 
