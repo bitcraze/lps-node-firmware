@@ -23,6 +23,9 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stm32f0xx_hal.h>
+#include <string.h>
+#include <stdio.h>
+
 #include "system.h"
 #include "spi.h"
 #include "i2c.h"
@@ -35,15 +38,13 @@
 
 #include "usb_device.h"
 
-#include <string.h>
-#include <stdio.h>
-
 #include "dwOps.h"
 
 #include "mac.h"
 
 #include "lps25h.h"
 #include "test_support.h"
+#include "production_test.h"
 
 static CfgMode mode = modeAnchor;
 
@@ -535,6 +536,10 @@ int main() {
         printf("EEPROM configuration changed, restart for it to take effect!\r\n");
       }
 
+      if (ch == '?') {
+        productionTestsRun();
+        while(true);
+      }
     }
 
     if (mode == modeSniffer) {

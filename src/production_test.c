@@ -16,11 +16,15 @@ bool productionTestsRun() {
 
   bool result = true;
 
+  printf("------------------------------\r\n");
+  testSupportPrintStart("Production tests start");
+  printf("\r\n");
+
   testSupportPrintStart("UART production test");
   testSupportReport(&result, runUartLoopbackTest());
 
   printf("------------------------------\r\n");
-  printf("Production test overall result\r\n");
+  printf("TEST\t: Production tests ");
   testSupportReport(&result, result);
 
   return result;
