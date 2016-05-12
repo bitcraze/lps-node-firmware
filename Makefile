@@ -24,7 +24,7 @@ OBJS+=src/f0/usbd_conf.o src/eeprom.o
 HALS+=i2c_ex
 
 OBJS+=src/main.o
-OBJS+=src/usb_device.o src/usbd_cdc_if.o src/usbd_desc.o src/lps25h.o src/led.o src/cfg.o
+OBJS+=src/usb_device.o src/usbd_cdc_if.o src/usbd_desc.o src/lps25h.o src/led.o src/cfg.o src/test_support.o src/production_test.o
 
 HALS+=gpio rcc cortex i2c pcd dma pcd_ex rcc_ex spi uart
 OBJS+=$(foreach mod, $(HALS), $(HAL_ROOT)/Src/stm32$(CPU)xx_hal_$(mod).o)

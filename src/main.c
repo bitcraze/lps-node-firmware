@@ -43,6 +43,7 @@
 #include "mac.h"
 
 #include "lps25h.h"
+#include "test_support.h"
 
 static CfgMode mode = modeAnchor;
 
@@ -367,26 +368,15 @@ int main() {
     selftestPasses = false;
   }
 
-  printf("TEST\t: Pressure sensor self-test ... ");
-  if (lps25hSelfTest()) {
-    printf("[OK]\r\n");
-  } else {
-    printf("[FAIL]\r\n");
-    selftestPasses = false;
-  }
+  testSupportPrintStart("Pressure sensor self-test");
+  testSupportReport(&selftestPasses, lps25hSelfTest());
 
   // Initializing i2c eeprom
   eepromInit(&hi2c1);
-  printf("TEST\t: EEPROM self-test ... ");
-  if (eepromTest()) {
-    printf("[OK]\r\n");
-  } else {
-    printf("[FAIL]\r\n");
-    selftestPasses = false;
-  }
+  testSupportPrintStart("EEPROM self-test");
+  testSupportReport(&selftestPasses, eepromTest());
 
   // Initialising radio
-
   printf("TEST\t: Initialize DWM1000 ... ");
   dwInit(dwm, &dwOps);       // Init libdw
   dwOpsInit(dwm);
