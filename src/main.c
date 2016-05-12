@@ -122,6 +122,13 @@ static int queue_head = 0;
 static int queue_tail = 0;
 static volatile uint32_t dropped = 0;
 
+static void restConfig();
+static void changeAddress(uint8_t addr);
+static void handleInput(char ch);
+static void changeMode(CfgMode newMode);
+static void printMode();
+static void help();
+
 // #define printf(...)
 #define debug(...)
 
@@ -360,7 +367,7 @@ int main() {
 
   // Initializing pressure sensor (if present ...)
   lps25hInit(&hi2c1);
-  printf("TEST\t: Initializing pressure sensor ... ");
+  testSupportPrintStart("Initializing pressure sensor");
   if (lps25hTestConnection()) {
     printf("[OK]\r\n");
     lps25hSetEnabled(true);
@@ -378,7 +385,7 @@ int main() {
   testSupportReport(&selftestPasses, eepromTest());
 
   // Initialising radio
-  printf("TEST\t: Initialize DWM1000 ... ");
+  testSupportPrintStart("Initialize DWM1000");
   dwInit(dwm, &dwOps);       // Init libdw
   dwOpsInit(dwm);
   result = dwConfigure(dwm); // Configure the dw1000 chip
@@ -477,69 +484,7 @@ int main() {
 
     // Accepts serial commands
     if (HAL_UART_Receive(&huart1, (uint8_t*)&ch, 1, 0) == HAL_OK) {
-      bool configChanged = false;
-      if (ch >= '0' && ch <= '9') {
-        printf("Updating address from 0x%02X to 0x%02X\r\n", address[0], ch - '0');
-        cfgWriteU8(cfgAddress, ch - '0');
-        if (cfgReadU8(cfgAddress, &address[0])) {
-          printf("Device address: 0x%X\r\n", address[0]);
-        } else {
-          printf("Device address: Not found!\r\n");
-        }
-        configChanged = true;
-      }
-      if (ch == 'A' || ch == 'T' || ch == 'S' || ch == 'a' || ch == 't' || ch == 's') {
-        // Print current mode
-        if (cfgReadU8(cfgMode, &mode)) {
-          printf("Previous device mode: ");
-          switch (mode) {
-            case modeAnchor: printf("Anchor\r\n"); break;
-            case modeTag: printf("Tag\r\n"); break;
-            case modeSniffer: printf("Sniffer\r\n"); break;
-            default: printf("UNKNOWN\r\n"); break;
-          }
-        } else {
-          printf("Previous device mode: Not found!\r\n");
-        }
-
-        // Write new changes
-        switch (ch) {
-          case 'A': case 'a': cfgWriteU8(cfgMode, modeAnchor); break;
-          case 'T': case 't': cfgWriteU8(cfgMode, modeTag); break;
-          case 'S': case 's': cfgWriteU8(cfgMode, modeSniffer); break;
-        }
-
-        // Print out to verify
-        if (cfgReadU8(cfgMode, &mode)) {
-          printf("New device mode: ");
-          switch (mode) {
-            case modeAnchor: printf("Anchor\r\n"); break;
-            case modeTag: printf("Tag\r\n"); break;
-            case modeSniffer: printf("Sniffer\r\n"); break;
-            default: printf("UNKNOWN\r\n"); break;
-          }
-        } else {
-          printf("New device mode: Not found!\r\n");
-        }
-        configChanged = true;
-      }
-
-      if (ch == 'D' || ch == 'd') {
-        configChanged = true;
-        printf("Resetting EEPROM configuration...");
-        if (cfgReset())
-          printf("OK\r\n");
-        else
-          printf("ERROR\r\n");
-      }
-      if (configChanged) {
-        printf("EEPROM configuration changed, restart for it to take effect!\r\n");
-      }
-
-      if (ch == '?') {
-        productionTestsRun();
-        while(true);
-      }
+      handleInput(ch);
     }
 
     if (mode == modeSniffer) {
@@ -628,4 +573,99 @@ int _write (int fd, const void *buf, size_t count)
 {
   HAL_UART_Transmit(&huart1, (uint8_t *)buf, count, HAL_MAX_DELAY);
   return count;
+}
+
+static void handleInput(char ch) {
+  bool configChanged = true;
+
+  switch (ch) {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      changeAddress(ch - '0');
+      break;
+    case 'A': case 'a': changeMode(modeAnchor); break;
+    case 'T': case 't': changeMode(modeTag); break;
+    case 'S': case 's': changeMode(modeSniffer); break;
+    case 'D': case 'd': restConfig(); break;
+    case 'H': case 'h':
+      help();
+      configChanged = false;
+      break;
+    case '?':
+      productionTestsRun();
+      while(true)
+      break;
+    default:
+      configChanged = false;
+      break;
+  }
+
+  if (configChanged) {
+    printf("EEPROM configuration changed, restart for it to take effect!\r\n");
+  }
+}
+
+static void restConfig() {
+  printf("Resetting EEPROM configuration...");
+  if (cfgReset()) {
+    printf("OK\r\n");
+  } else {
+    printf("ERROR\r\n");
+  }
+}
+
+static void changeAddress(uint8_t addr) {
+  printf("Updating address from 0x%02X to 0x%02X\r\n", address[0], addr);
+  cfgWriteU8(cfgAddress, addr);
+  if (cfgReadU8(cfgAddress, &address[0])) {
+    printf("Device address: 0x%X\r\n", address[0]);
+  } else {
+    printf("Device address: Not found!\r\n");
+  }
+}
+
+static void changeMode(CfgMode newMode) {
+    printf("Previous device mode: ");
+    printMode();
+
+    cfgWriteU8(cfgMode, newMode);
+
+    printf("New device mode: ");
+    printMode();
+}
+
+static void printMode() {
+  CfgMode mode;
+
+  if (cfgReadU8(cfgMode, &mode)) {
+    switch (mode) {
+      case modeAnchor: printf("Anchor"); break;
+      case modeTag: printf("Tag"); break;
+      case modeSniffer: printf("Sniffer"); break;
+      default: printf("UNKNOWN"); break;
+    }
+  } else {
+    printf("Not found!");
+  }
+
+  printf("\r\n");
+}
+
+static void help() {
+  printf("Help\r\n");
+  printf("-------------------\r\n");
+  printf("0-9 - set address\r\n");
+  printf("a, A - anchor mode\r\n");
+  printf("t, T - tag mode\r\n");
+  printf("s, S - sniffer mode\r\n");
+  printf("d, D - reset configuration\r\n");
+  printf("h, H - This help\r\n");
 }
