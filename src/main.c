@@ -37,6 +37,7 @@
 #include "eeprom.h"
 
 #include "usb_device.h"
+#include "usbcomm.h"
 
 #include "dwOps.h"
 
@@ -399,7 +400,10 @@ int main() {
 
   if (!selftestPasses) {
     printf("TEST\t: One or more self-tests failed, blocking startup!\r\n");
-    while(1);
+    usbcommSetSystemStarted(true);
+    while(1) {
+      usbcommTick();
+    }
   }
 
   cfgInit();
@@ -456,6 +460,9 @@ int main() {
   dwCommitConfiguration(dwm);
 
   printf("SYSTEM\t: Node started ...\r\n");
+  printf("SYSTEM\t: Press 'h' for help.\r\n");
+
+  usbcommSetSystemStarted(true);
 
   // Initialize the packet in the TX buffer
   MAC80215_PACKET_INIT(txPacket, MAC802154_TYPE_DATA);
@@ -472,6 +479,8 @@ int main() {
 
   // Main loop ...
   while(1) {
+    usbcommTick();
+
     // Measure pressure
     if (mode != modeSniffer) {
       if(lps25hGetData(&pressure, &temperature, &asl)) {
@@ -483,7 +492,11 @@ int main() {
     }
 
     // Accepts serial commands
+#ifdef USE_FTDI_UART
     if (HAL_UART_Receive(&huart1, (uint8_t*)&ch, 1, 0) == HAL_OK) {
+#else
+    if(usbcommRead(&ch, 1)) {
+#endif
       handleInput(ch);
     }
 
@@ -571,7 +584,11 @@ int main() {
 /* Function required to use "printf" to print on serial console */
 int _write (int fd, const void *buf, size_t count)
 {
+#ifdef USE_FTDI_UART
   HAL_UART_Transmit(&huart1, (uint8_t *)buf, count, HAL_MAX_DELAY);
+#else
+  usbcommWrite(buf, count);
+#endif
   return count;
 }
 
@@ -591,11 +608,11 @@ static void handleInput(char ch) {
     case '9':
       changeAddress(ch - '0');
       break;
-    case 'A': case 'a': changeMode(modeAnchor); break;
-    case 'T': case 't': changeMode(modeTag); break;
-    case 'S': case 's': changeMode(modeSniffer); break;
-    case 'D': case 'd': restConfig(); break;
-    case 'H': case 'h':
+    case 'a': changeMode(modeAnchor); break;
+    case 't': changeMode(modeTag); break;
+    case 's': changeMode(modeSniffer); break;
+    case 'd': restConfig(); break;
+    case 'h':
       help();
       configChanged = false;
       break;
@@ -663,9 +680,9 @@ static void help() {
   printf("Help\r\n");
   printf("-------------------\r\n");
   printf("0-9 - set address\r\n");
-  printf("a, A - anchor mode\r\n");
-  printf("t, T - tag mode\r\n");
-  printf("s, S - sniffer mode\r\n");
-  printf("d, D - reset configuration\r\n");
-  printf("h, H - This help\r\n");
+  printf("a   - anchor mode\r\n");
+  printf("t   - tag mode\r\n");
+  printf("s   - sniffer mode\r\n");
+  printf("d   - reset configuration\r\n");
+  printf("h   - This help\r\n");
 }

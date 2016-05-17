@@ -271,7 +271,7 @@ bool lps25hEvaluateSelfTest(float min, float max, float value, char* string)
 {
   if (value < min || value > max)
   {
-    DEBUG_PRINT("PRESS\t: Self test %s [FAIL]. low: %d, high: %d, measured: %d\r\n",
+    DEBUG_PRINT("\r\nPRESS\t: Self test %s [FAIL]. low: %d, high: %d, measured: %d\r\n",
                 string, (int)min, (int)max, (int)value);
     return false;
   }
