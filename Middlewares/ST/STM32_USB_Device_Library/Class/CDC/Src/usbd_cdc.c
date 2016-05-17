@@ -190,6 +190,16 @@ __ALIGN_BEGIN uint8_t USBD_CDC_CfgHSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
 
   /*---------------------------------------------------------------------------*/
 
+  /* Interface association descriptor */
+  0x08,  /* blenght: interface association descriptor */
+  11,    /* desciptor type */
+  0x00,  /* bInterfaceNumber: Number of Interface */
+  0x02,  /* bNumInterfaces: Number of Interface */
+  0x02,  /* bFunctionClass: Communication Interface Class */
+  0x02,  /* bFunctionSubClass: Abstract Control Model */
+  0x00,  /* bFunctionProtocol: None */
+  0x00,  /* iFunction: 0 */
+
   /*Interface Descriptor */
   0x09,   /* bLength: Interface Descriptor size */
   USB_DESC_TYPE_INTERFACE,  /* bDescriptorType: Interface */
@@ -199,7 +209,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_CfgHSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
   0x01,   /* bNumEndpoints: One endpoints used */
   0x02,   /* bInterfaceClass: Communication Interface Class */
   0x02,   /* bInterfaceSubClass: Abstract Control Model */
-  0x01,   /* bInterfaceProtocol: Common AT commands */
+  0x00,   /* bInterfaceProtocol: None */
   0x00,   /* iInterface: */
 
   /*Header Functional Descriptor*/
@@ -286,6 +296,16 @@ __ALIGN_BEGIN uint8_t USBD_CDC_CfgFSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
 
   /*---------------------------------------------------------------------------*/
 
+  /* Interface association descriptor */
+  0x08,  /* blenght: interface association descriptor */
+  11,    /* desciptor type */
+  0x00,  /* bInterfaceNumber: Number of Interface */
+  0x02,  /* bNumInterfaces: Number of Interface */
+  0x02,  /* bFunctionClass: Communication Interface Class */
+  0x02,  /* bFunctionSubClass: Abstract Control Model */
+  0x00,  /* bFunctionProtocol: None */
+  0x00,  /* iFunction: 0 */
+
   /*Interface Descriptor */
   0x09,   /* bLength: Interface Descriptor size */
   USB_DESC_TYPE_INTERFACE,  /* bDescriptorType: Interface */
@@ -295,7 +315,7 @@ __ALIGN_BEGIN uint8_t USBD_CDC_CfgFSDesc[USB_CDC_CONFIG_DESC_SIZ] __ALIGN_END =
   0x01,   /* bNumEndpoints: One endpoints used */
   0x02,   /* bInterfaceClass: Communication Interface Class */
   0x02,   /* bInterfaceSubClass: Abstract Control Model */
-  0x01,   /* bInterfaceProtocol: Common AT commands */
+  0x00,   /* bInterfaceProtocol: None */
   0x00,   /* iInterface: */
 
   /*Header Functional Descriptor*/
