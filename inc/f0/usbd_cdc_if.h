@@ -47,19 +47,18 @@ extern USBD_CDC_ItfTypeDef  USBD_Interface_fops_FS;
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-/** @defgroup USBD_CDC_IF_Exported_FunctionsPrototype
-  * @{
-  */ 
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
-/**
-  * @}
-  */
+// User functions
+void CDC_Tick();
+int CDC_Write(char* buffer, int len);
+int CDC_WriteBlocking(char *buffer, int len);
+int CDC_Read(char *buffer, int len);
 
 #ifdef __cplusplus
 }
 #endif
-  
+
 #endif /* __USBD_CDC_IF_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
