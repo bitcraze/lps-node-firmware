@@ -21,7 +21,9 @@ int usbcommRead(char* buffer, size_t len)
 void usbcommWrite(char *data, int len)
 {
   if (isInit) {
-    CDC_WriteBlocking(data, len);
+    if (USBD_IsSerialConnected()) {
+      CDC_WriteBlocking(data, len);
+    }
   } else {
     for(int i=0; initPtr<INITBUFFER_LEN && i<len; i++,initPtr++) {
       initBuffer[initPtr] = data[i];
