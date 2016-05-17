@@ -618,7 +618,7 @@ static void handleInput(char ch) {
       break;
     case '?':
       productionTestsRun();
-      while(true)
+      while(true);
       break;
     default:
       configChanged = false;
