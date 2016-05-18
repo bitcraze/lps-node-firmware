@@ -13,9 +13,9 @@ static bool runUartLoopbackTest(UART_HandleTypeDef* from, UART_HandleTypeDef* to
 bool productionTestsRun() {
   bool result = true;
 
-  printf("------------------------------\r\n");
+  printf("==============================\r\n");
   testSupportPrintStart("Production tests start");
-  printf("\r\n");
+  printf("\r\n------------------------------\r\n");
 
   testSupportPrintStart("UART production test");
   testSupportReport(&result, runUartLoopbackTests());
@@ -23,6 +23,7 @@ bool productionTestsRun() {
   printf("------------------------------\r\n");
   printf("TEST\t: Production tests ");
   testSupportReport(&result, result);
+  printf("==============================\r\n");
 
   return result;
 }
