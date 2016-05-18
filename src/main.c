@@ -616,9 +616,10 @@ static void handleInput(char ch) {
       help();
       configChanged = false;
       break;
-    case '?':
+    case '#':
       productionTestsRun();
-      while(true);
+      printf("System halted, reset to continue\r\n");
+      while(true){}
       break;
     default:
       configChanged = false;
