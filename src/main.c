@@ -131,7 +131,7 @@ static void printMode();
 static void help();
 
 // #define printf(...)
-#define debug(...)
+#define debug(...) // printf(__VA_ARGS__)
 
 void txcallback(dwDevice_t *dev)
 {
@@ -202,7 +202,7 @@ void rxcallback(dwDevice_t *dev) {
     return;
   }
 
-  dwGetReceiveTimestamp(dev, &arival);
+
 
   memcpy(txPacket.destAddress, rxPacket.sourceAddress, 8);
   memcpy(txPacket.sourceAddress, rxPacket.destAddress, 8);
@@ -213,8 +213,6 @@ void rxcallback(dwDevice_t *dev) {
       debug("POLL from %02x at %04x\r\n", rxPacket.sourceAddress[0], (unsigned int)arival.low32);
       rangingTick = HAL_GetTick();
 
-      poll_rx = arival;
-
       txPacket.payload[TYPE] = ANSWER;
       txPacket.payload[SEQ] = rxPacket.payload[SEQ];
 
@@ -224,6 +222,9 @@ void rxcallback(dwDevice_t *dev) {
 
       dwWaitForResponse(dev, true);
       dwStartTransmit(dev);
+
+      dwGetReceiveTimestamp(dev, &arival);
+      poll_rx = arival;
       break;
     case FINAL:
     {
@@ -231,6 +232,7 @@ void rxcallback(dwDevice_t *dev) {
 
       debug("FINAL\r\n");
 
+      dwGetReceiveTimestamp(dev, &arival);
       final_rx = arival;
 
       txPacket.payload[TYPE] = REPORT;
@@ -249,6 +251,7 @@ void rxcallback(dwDevice_t *dev) {
 
       dwWaitForResponse(dev, true);
       dwStartTransmit(dev);
+
       break;
     }
     // Tag received messages
@@ -260,8 +263,6 @@ void rxcallback(dwDevice_t *dev) {
         return;
       }
 
-      answer_rx = arival;
-
       txPacket.payload[0] = FINAL;
       txPacket.payload[SEQ] = rxPacket.payload[SEQ];
 
@@ -270,6 +271,9 @@ void rxcallback(dwDevice_t *dev) {
 
       dwWaitForResponse(dev, true);
       dwStartTransmit(dev);
+
+      dwGetReceiveTimestamp(dev, &arival);
+      answer_rx = arival;
       break;
     case REPORT:
     {
@@ -312,6 +316,7 @@ void rxcallback(dwDevice_t *dev) {
 
       printf("distance %d: %5dmm\r\n", rxPacket.sourceAddress[0], (unsigned int)(distance*1000));
 
+      dwGetReceiveTimestamp(dev, &arival);
       printf("Total in-air time (ctn): 0x%08x\r\n", (unsigned int)(arival.low32-poll_tx.low32));
 
       break;

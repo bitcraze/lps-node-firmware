@@ -42,7 +42,7 @@ OBJS+=vendor/libdw1000/src/libdw1000.o vendor/libdw1000/src/libdw1000Spi.o
 
 OBJS+=src/dwOps.o
 
-CFLAGS+=$(PROCESSOR) $(INCLUDES) -O0 -g3 -Wall -Wno-pointer-sign -std=gnu11
+CFLAGS+=$(PROCESSOR) $(INCLUDES) -O3 -g3 -Wall -Wno-pointer-sign -std=gnu11
 LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -Ttools/make/stm32f072.ld -lm -lc -u _printf_float
 
 # Remove un-used functions and global variables from output file
