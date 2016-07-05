@@ -280,7 +280,7 @@ void rxcallback(dwDevice_t *dev) {
       reportPayload_t *report = (reportPayload_t *)(rxPacket.payload+2);
       double tround1, treply1, treply2, tround2, tprop_ctn, tprop, distance;
 
-      printf("REPORT\r\n");
+      debug("REPORT\r\n");
 
       if (rxPacket.payload[SEQ] != curr_seq) {
         printf("Wrong sequence number!\r\n");
