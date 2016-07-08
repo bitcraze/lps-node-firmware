@@ -37,9 +37,7 @@
 
 #include "gpio.h"
 
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
+static void resetI2cBus(void);
 
 I2C_HandleTypeDef hi2c1;
 
@@ -58,7 +56,7 @@ void MX_I2C1_Init(void)
   hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLED;
   HAL_I2C_Init(&hi2c1);
 
-    /**Configure Analogue filter 
+    /**Configure Analogue filter
     */
   HAL_I2CEx_AnalogFilter_Config(&hi2c1, I2C_ANALOGFILTER_ENABLED);
 
@@ -66,17 +64,16 @@ void MX_I2C1_Init(void)
 
 void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 {
-
   GPIO_InitTypeDef GPIO_InitStruct;
+
+  resetI2cBus();
+
   if(hi2c->Instance==I2C1)
   {
-  /* USER CODE BEGIN I2C1_MspInit 0 */
 
-  /* USER CODE END I2C1_MspInit 0 */
-  
-    /**I2C1 GPIO Configuration    
+    /**I2C1 GPIO Configuration
     PB6     ------> I2C1_SCL
-    PB7     ------> I2C1_SDA 
+    PB7     ------> I2C1_SDA
     */
     GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
@@ -87,9 +84,6 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 
     /* Peripheral clock enable */
     __I2C1_CLK_ENABLE();
-  /* USER CODE BEGIN I2C1_MspInit 1 */
-
-  /* USER CODE END I2C1_MspInit 1 */
   }
 }
 
@@ -98,34 +92,53 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 
   if(hi2c->Instance==I2C1)
   {
-  /* USER CODE BEGIN I2C1_MspDeInit 0 */
-
-  /* USER CODE END I2C1_MspDeInit 0 */
     /* Peripheral clock disable */
     __I2C1_CLK_DISABLE();
-  
-    /**I2C1 GPIO Configuration    
+
+    /**I2C1 GPIO Configuration
     PB6     ------> I2C1_SCL
-    PB7     ------> I2C1_SDA 
+    PB7     ------> I2C1_SDA
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6|GPIO_PIN_7);
 
   }
-  /* USER CODE BEGIN I2C1_MspDeInit 1 */
+}
 
-  /* USER CODE END I2C1_MspDeInit 1 */
-} 
+void resetI2cBus(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct;
 
-/* USER CODE BEGIN 1 */
-
-/* USER CODE END 1 */
-
-/**
-  * @}
+  /**I2C1 GPIO Configuration
+  PB6     ------> I2C1_SCL
+  PB7     ------> I2C1_SDA
   */
+  GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-/**
-  * @}
-  */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 1);
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+  // Clock SCL until the data line is released
+  while (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) == 0) {
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+    HAL_Delay(10);
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+    HAL_Delay(10);
+  }
+
+  // Generate a start and stop condition
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 0);
+  HAL_Delay(10);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 0);
+  HAL_Delay(20);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, 1);
+  HAL_Delay(10);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7, 1);
+  HAL_Delay(10);
+
+  // Deinit the gpios and now the bus should be reset
+  HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6 | GPIO_PIN_7);
+}
