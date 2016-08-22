@@ -26,6 +26,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 #include "system.h"
 #include "spi.h"
 #include "i2c.h"
@@ -340,16 +343,11 @@ bool contains(int* list, int length, int value)
 dwDevice_t dwm_device;
 dwDevice_t *dwm = &dwm_device;
 
-int main() {
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+static void main_task(void *pvParameters) {
   int result;
   int i;
   char ch;
   bool selftestPasses = true;
-
-  /* Configure the system clock */
-  SystemClock_Config();
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -582,8 +580,6 @@ int main() {
          break;
      }
   }
-
-  return 0;
 }
 
 /* Function required to use "printf" to print on serial console */
@@ -691,4 +687,51 @@ static void help() {
   printf("s   - sniffer mode\r\n");
   printf("d   - reset configuration\r\n");
   printf("h   - This help\r\n");
+}
+
+static StaticTask_t xMainTask;
+static StackType_t ucMainStack[configMINIMAL_STACK_SIZE];
+
+int main() {
+  // Reset of all peripherals, Initializes the Flash interface and the Systick.
+  HAL_Init();
+
+  // Configure the system clock
+  SystemClock_Config();
+
+  // Setup main task
+  xTaskCreateStatic( main_task, "main", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 1, ucMainStack, &xMainTask );
+
+  // Start the FreeRTOS scheduler
+  vTaskStartScheduler();
+
+  // Should never reach there
+  while(1);
+
+  return 0;
+}
+
+// Freertos required callbacks
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
+{
+  static StaticTask_t xIdleTaskTCB;
+  static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+  *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+  *ppxIdleTaskStackBuffer = uxIdleTaskStack;
+  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+}
+
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize )
+{
+  static StaticTask_t xTimerTaskTCB;
+  static StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
+  *ppxTimerTaskTCBBuffer = &xTimerTaskTCB;
+  *ppxTimerTaskStackBuffer = uxTimerTaskStack;
+  *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+}
+
+void vAssertCalled( unsigned long ulLine, const char * const pcFileName )
+{
+  printf("Assert failed at %s:%lu", pcFileName, ulLine);
+  while(1);
 }

@@ -33,7 +33,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
 
-#include "queue.h"
+#include "squeue.h"
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{

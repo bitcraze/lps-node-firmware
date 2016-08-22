@@ -49,7 +49,7 @@ extern PCD_HandleTypeDef hpcd_USB_FS;
 /**
 * @brief This function handles System tick timer.
 */
-void SysTick_Handler(void)
+void vApplicationTickHook(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
 
