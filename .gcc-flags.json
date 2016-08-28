@@ -1,0 +1,8 @@
+{
+  "execPath": "arm-none-eabi-gcc",
+  "gccDefaultCFlags": "-mthumb -mcpu=cortex-m0 -DHSI48_VALUE=\"((uint32_t)48000000)\" -DSTM32F072xB -O3 -g3 -Wall -Wno-pointer-sign -std=gnu11 -ffunction-sections -fdata-sections -c",
+  "gccDefaultCppFlags": "-Wall -std=c++11",
+  "gccErrorLimit": 15,
+  "gccIncludePaths": "./inc,./inc/f0,./hal/stm32f0xx/Inc,./Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc,./Middlewares/ST/STM32_USB_Device_Library/Core/Inc,./lib/freertos/inc,./vendor/libdw1000/inc",
+  "gccSuppressWarnings": false
+}
