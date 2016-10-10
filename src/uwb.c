@@ -112,6 +112,7 @@ static volatile uint8_t curr_seq = 0;
 #define QUEUE_LEN 16
 static packet_t snifferPacketQueue[QUEUE_LEN];
 static int snifferPacketLength[QUEUE_LEN];
+static dwTime_t snifferPacketTime[QUEUE_LEN];
 static int queue_head = 0;
 static int queue_tail = 0;
 static volatile uint32_t dropped = 0;
@@ -151,7 +152,7 @@ void txcallback(dwDevice_t *dev)
 #define SEQ 1
 
 void rxcallback(dwDevice_t *dev) {
-  dwTime_t arival;
+  dwTime_t arival = { .full=0 };
   int dataLength = dwGetDataLength(dev);
 
   if (dataLength == 0) return;
@@ -170,8 +171,10 @@ void rxcallback(dwDevice_t *dev) {
     }
 
     // Queue the received packet, the main loop will print it on the console
+    dwGetReceiveTimestamp(dev, &arival);
     dwGetData(dev, (uint8_t*)&snifferPacketQueue[queue_head], dataLength);
     snifferPacketLength[queue_head] = dataLength;
+    snifferPacketTime[queue_head].full = arival.full;
     queue_head = (queue_head+1)%QUEUE_LEN;
     dwNewReceive(dev);
     dwSetDefaults(dev);
@@ -365,10 +368,12 @@ static void uwbTask(void* parameters)
       }
 
       if (queue_tail != queue_head) {
-        printf("From %02x to %02x data ", snifferPacketQueue[queue_tail].sourceAddress[0],
-                                          snifferPacketQueue[queue_tail].destAddress[0]);
+        printf("From %02x to %02x @%02x%08x: ", snifferPacketQueue[queue_tail].sourceAddress[0],
+                                          snifferPacketQueue[queue_tail].destAddress[0],
+                                          (unsigned int) snifferPacketTime[queue_tail].high8,
+                                          (unsigned int) snifferPacketTime[queue_tail].low32);
         for (int i=0; i<(snifferPacketLength[queue_tail] - MAC802154_HEADER_LENGTH); i++) {
-          printf("0x%02x ", snifferPacketQueue[queue_tail].payload[i]);
+          printf("%02x", snifferPacketQueue[queue_tail].payload[i]);
         }
         queue_tail = (queue_tail+1)%QUEUE_LEN;
         printf("\r\n");

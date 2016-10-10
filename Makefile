@@ -3,6 +3,7 @@ OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
 REV								?= B
 PYTHON2           ?= python2
 # CFLAGS						+= -fdiagnostics-color=auto
+# CFLAGS += -DUSE_FTDI_UART
 
 ifeq ($(strip $(REV)),A)
 $(error Rev.A not supported anymore)
