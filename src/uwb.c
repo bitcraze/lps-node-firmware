@@ -314,6 +314,13 @@ void rxcallback(dwDevice_t *dev) {
   }
 }
 
+void rxfailedcallback(dwDevice_t *dev) {
+  // In case of RX failed, RX again ...
+  dwNewReceive(dev);
+  dwStartReceive(dev);
+}
+
+
 bool contains(int* list, int length, int value)
 {
   int i;
@@ -467,6 +474,7 @@ void uwbInit()
 
   dwAttachSentHandler(dwm, txcallback);
   dwAttachReceivedHandler(dwm, rxcallback);
+  dwAttachReceiveFailedHandler(dwm, rxfailedcallback);
 
   dwNewConfiguration(dwm);
   dwSetDefaults(dwm);
