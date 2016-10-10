@@ -482,10 +482,10 @@ bool uwbTest()
 void uwbStart()
 {
   static StaticTask_t uwbStaticTask;
-  static StackType_t uwbStaticStack[configMINIMAL_STACK_SIZE];
+  static StackType_t uwbStaticStack[2*configMINIMAL_STACK_SIZE];
 
   if (isInit) {
-    xTaskCreateStatic(uwbTask, "uwb", configMINIMAL_STACK_SIZE, NULL,
+    xTaskCreateStatic(uwbTask, "uwb", 2*configMINIMAL_STACK_SIZE, NULL,
                       configMAX_PRIORITIES - 1, uwbStaticStack, &uwbStaticTask);
   }
 }
