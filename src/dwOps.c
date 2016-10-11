@@ -121,6 +121,13 @@ static void spiSetSpeed(dwDevice_t* dev, dwSpiSpeed_t speed)
   }
 }
 
+static void reset(dwDevice_t* dev)
+{
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, 0);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, 1);
+}
+
 static void delayms(dwDevice_t* dev, unsigned int delay)
 {
   HAL_Delay(delay);
@@ -131,4 +138,5 @@ dwOps_t dwOps = {
   .spiWrite = spiWrite,
   .spiSetSpeed = spiSetSpeed,
   .delayms = delayms,
+  .reset = reset,
 };
