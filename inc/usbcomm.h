@@ -9,6 +9,8 @@ void usbcommWrite(char const *data, int len);
 
 void usbcommSetSystemStarted(bool init);
 
-void usbcommTick();
+void usbcommPrintWelcomeMessage();
+
+void usbcommStartTransfers();
 
 #endif // __USB_COMM_H__

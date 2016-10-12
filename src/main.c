@@ -116,9 +116,6 @@ static void main_task(void *pvParameters) {
   if (!selftestPasses) {
     printf("TEST\t: One or more self-tests failed, blocking startup!\r\n");
     usbcommSetSystemStarted(true);
-    while(1) {
-      usbcommTick();
-    }
   }
 
   // Printing UWB configuration
@@ -153,8 +150,8 @@ static void main_task(void *pvParameters) {
 
   // Main loop ...
   while(1) {
-    usbcommTick();
-
+    usbcommPrintWelcomeMessage();
+    usbcommStartTransfers();
     // // Measure pressure
     // if (uwbConfig.mode != modeSniffer) {
     //   if(lps25hGetData(&pressure, &temperature, &asl)) {
@@ -179,11 +176,20 @@ static void main_task(void *pvParameters) {
 /* Function required to use "printf" to print on serial console */
 int _write (int fd, const void *buf, size_t count)
 {
-#ifdef USE_FTDI_UART
-  HAL_UART_Transmit(&huart1, (uint8_t *)buf, count, HAL_MAX_DELAY);
-#else
-  usbcommWrite(buf, count);
-#endif
+  // stdout
+  if (fd == 1) {
+    #ifdef USE_FTDI_UART
+      HAL_UART_Transmit(&huart1, (uint8_t *)buf, count, HAL_MAX_DELAY);
+    #else
+      usbcommWrite(buf, count);
+    #endif
+  }
+
+  // stderr
+  if (fd == 2) {
+    HAL_UART_Transmit(&huart1, (uint8_t *)buf, count, HAL_MAX_DELAY);
+  }
+
   return count;
 }
 
