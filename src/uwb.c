@@ -37,6 +37,8 @@
 
 // Static algorithm
 extern uwbAlgorithm_t uwbTwrAnchorAlgorithm;
+// extern uwbAlgorithm_t uwbTwrTagAlgorithm;
+extern uwbAlgorithm_t uwbSnifferAlgorithm;
 static uwbAlgorithm_t *algorithm = &uwbTwrAnchorAlgorithm;
 
 // Low level radio handling context (to be separated)
@@ -56,20 +58,20 @@ static uint32_t timeout;
 
 static void txcallback(dwDevice_t *dev)
 {
-  timeout = algorithm->onEvent(eventPacketSent);
+  timeout = algorithm->onEvent(dev, eventPacketSent);
 }
 
 static void rxcallback(dwDevice_t *dev)
 {
-  timeout = algorithm->onEvent(eventPacketReceived);
+  timeout = algorithm->onEvent(dev, eventPacketReceived);
 }
 
 static void rxTimeoutCallback(dwDevice_t * dev) {
-  timeout = algorithm->onEvent(eventReceiveTimeout);
+  timeout = algorithm->onEvent(dev, eventReceiveTimeout);
 }
 
 static void rxfailedcallback(dwDevice_t *dev) {
-  timeout = algorithm->onEvent(eventReceiveFailed);
+  timeout = algorithm->onEvent(dev, eventReceiveFailed);
 }
 
 
@@ -96,6 +98,18 @@ void uwbInit()
   cfgFieldSize(cfgAnchorlist, &config.anchorListSize);
   if (config.anchorListSize <= MAX_ANCHORS) {
     cfgReadU8list(cfgAnchorlist, config.anchors, config.anchorListSize);
+  }
+
+  switch(config.mode) {
+    case modeAnchor:
+      algorithm = &uwbTwrAnchorAlgorithm;
+      break;
+    case modeTag:
+      printf("Error: Tag not implented yet. Default to anchor.");
+      break;
+    case modeSniffer:
+      algorithm = &uwbSnifferAlgorithm;
+      break;
   }
 
   dwAttachSentHandler(dwm, txcallback);
@@ -136,7 +150,7 @@ static void uwbTask(void* parameters)
           dwHandleInterrupt(dwm);
       } while(checkIrq() != 0); //while IRS line active (ARM can only do edge sensitive interrupts)
     } else {
-      timeout = algorithm->onEvent(eventTimeout);
+      timeout = algorithm->onEvent(dwm, eventTimeout);
     }
   }
 }

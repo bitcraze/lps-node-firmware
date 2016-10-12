@@ -52,7 +52,7 @@ typedef enum uwbEvent_e {
 // Callback for one uwb algorithm
 typedef struct uwbAlgorithm_s {
   void (*init)(uwbConfig_t * config, dwDevice_t *dev);
-  uint32_t (*onEvent)(uwbEvent_t event);
+  uint32_t (*onEvent)(dwDevice_t *dev, uwbEvent_t event);
 } uwbAlgorithm_t;
 
 #include <FreeRTOS.h>

@@ -204,22 +204,20 @@ static void rxcallback(dwDevice_t *dev) {
   }
 }
 
-static dwDevice_t *dwm;
-
-static uint32_t twrAnchorOnEvent(uwbEvent_t event)
+static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
 {
   switch(event) {
     case eventPacketReceived:
-      rxcallback(dwm);
+      rxcallback(dev);
       break;
     case eventPacketSent:
-      txcallback(dwm);
+      txcallback(dev);
       break;
     case eventTimeout:
     case eventReceiveFailed:
-      dwNewReceive(dwm);
-      dwSetDefaults(dwm);
-      dwStartReceive(dwm);
+      dwNewReceive(dev);
+      dwSetDefaults(dev);
+      dwStartReceive(dev);
       break;
     default:
       configASSERT(false);
@@ -239,12 +237,7 @@ static void twrAnchorInit(uwbConfig_t * newconfig, dwDevice_t *dev)
   MAC80215_PACKET_INIT(txPacket, MAC802154_TYPE_DATA);
   txPacket.pan = 0xbccf;
 
-  // // Radio is in IDLE mode, TWR anchor listens
-  // dwNewReceive(dev);
-  // dwSetDefaults(dev);
-  // dwStartReceive(dev);
-
-  dwm = dev;
+  // onEvent is going to be called with eventTimeout which will start receiving
 }
 
 uwbAlgorithm_t uwbTwrAnchorAlgorithm = {
