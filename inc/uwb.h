@@ -30,15 +30,34 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "cfg.h"
+#include <libdw1000.h>
 
 #define MAX_ANCHORS 6
 
-struct uwbConfig_s {
+typedef struct uwbConfig_s {
   CfgMode mode;
   uint8_t address[8];
   uint8_t anchorListSize;
   uint8_t anchors[MAX_ANCHORS];
-};
+} uwbConfig_t;
+
+typedef enum uwbEvent_e {
+  eventTimeout,
+  eventPacketReceived,
+  eventPacketSent,
+  eventReceiveTimeout,
+  eventReceiveFailed,
+} uwbEvent_t;
+
+// Callback for one uwb algorithm
+typedef struct uwbAlgorithm_s {
+  void (*init)(uwbConfig_t * config, dwDevice_t *dev);
+  uint32_t (*onEvent)(uwbEvent_t event);
+} uwbAlgorithm_t;
+
+#include <FreeRTOS.h>
+
+#define MAX_TIMEOUT portMAX_DELAY
 
 void uwbInit();
 bool uwbTest();

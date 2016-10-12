@@ -9,8 +9,12 @@
 #include <stm32f0xx_hal_gpio.h>
 #endif
 
+#include <stdbool.h>
+
+#define N_LEDS 3
+
 typedef enum {
-  ledRanging,
+  ledRanging=0,
   ledSync,
   ledMode
 } led_e;
@@ -21,5 +25,8 @@ void ledOn(led_e led);
 
 void ledOff(led_e led);
 
-#endif /* LED_H_ */
+void ledBlink(led_e led, bool oneshot);
 
+void ledTick();
+
+#endif /* LED_H_ */

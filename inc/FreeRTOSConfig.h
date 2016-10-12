@@ -103,7 +103,7 @@ configTOTAL_HEAP_SIZE is not defined. */
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 #define configCPU_CLOCK_HZ                      ( 32000000 )
 #define configTICK_RATE_HZ                      ( 1000 )
-#define configMINIMAL_STACK_SIZE                ( ( unsigned short ) 150 )
+#define configMINIMAL_STACK_SIZE                ( ( unsigned short ) 200 )
 #define configMAX_TASK_NAME_LEN                 ( 12 )
 #define configUSE_TRACE_FACILITY                0
 #define configUSE_16_BIT_TICKS                  0

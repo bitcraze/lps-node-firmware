@@ -152,6 +152,8 @@ static void main_task(void *pvParameters) {
   while(1) {
     usbcommPrintWelcomeMessage();
     usbcommStartTransfers();
+
+    ledTick();
     // // Measure pressure
     // if (uwbConfig.mode != modeSniffer) {
     //   if(lps25hGetData(&pressure, &temperature, &asl)) {
