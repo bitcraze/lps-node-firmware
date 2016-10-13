@@ -290,8 +290,8 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   return result;
 }
 
-static void flushTx() {
-  if (!hUsbDevice_0) return;
+static int flushTx() {
+  if (!hUsbDevice_0) return 0;
 
   USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) hUsbDevice_0->pClassData;
   int i = 0;
@@ -304,7 +304,7 @@ static void flushTx() {
   }
 
   CDC_Transmit_FS(UserTxBufferFS, i);
-
+  return i;
 }
 
 // Called from ISR context
@@ -327,13 +327,11 @@ void CDC_StartTransfers()
   // Block until the next SOF (max 1 ms)
   xSemaphoreTake(startTransfers, portMAX_DELAY);
 
-  // Will send multiples of 64 bytes
-  while (uxQueueSpacesAvailable(txq) < (TX_Q_SIZE - APP_TX_DATA_SIZE)) {
-    flushTx();
-  }
-  // Will send between 0 and 64 bytes. If the last transfer was 64 bytes we
-  // should send 0
-  flushTx();
+  // Continue sending while we can fill packets, the last time this is called
+  // it will send less than a filled packet so the host will understand the
+  // transaction has ended.
+  while (flushTx() == APP_TX_DATA_SIZE)
+    ;
 }
 
 int CDC_Write(char* buffer, int len)
