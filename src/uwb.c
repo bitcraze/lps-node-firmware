@@ -37,7 +37,7 @@
 
 // Static algorithm
 extern uwbAlgorithm_t uwbTwrAnchorAlgorithm;
-// extern uwbAlgorithm_t uwbTwrTagAlgorithm;
+extern uwbAlgorithm_t uwbTwrTagAlgorithm;
 extern uwbAlgorithm_t uwbSnifferAlgorithm;
 static uwbAlgorithm_t *algorithm = &uwbTwrAnchorAlgorithm;
 
@@ -105,7 +105,7 @@ void uwbInit()
       algorithm = &uwbTwrAnchorAlgorithm;
       break;
     case modeTag:
-      printf("Error: Tag not implented yet. Default to anchor.");
+      algorithm = &uwbTwrTagAlgorithm;
       break;
     case modeSniffer:
       algorithm = &uwbSnifferAlgorithm;
