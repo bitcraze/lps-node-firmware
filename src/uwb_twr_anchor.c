@@ -105,6 +105,7 @@ static void txcallback(dwDevice_t *dev)
 {
   dwTime_t departure;
   dwGetTransmitTimestamp(dev, &departure);
+  departure.full += (ANTENNA_DELAY/2);
 
   debug("TXCallback: ");
 
@@ -165,6 +166,7 @@ static void rxcallback(dwDevice_t *dev) {
       dwStartTransmit(dev);
 
       dwGetReceiveTimestamp(dev, &arival);
+      arival.full -= (ANTENNA_DELAY/2);
       poll_rx = arival;
       break;
     case FINAL:
@@ -175,6 +177,7 @@ static void rxcallback(dwDevice_t *dev) {
         debug("FINAL\r\n");
 
         dwGetReceiveTimestamp(dev, &arival);
+        arival.full -= (ANTENNA_DELAY/2);
         final_rx = arival;
 
         txPacket.payload[TYPE] = REPORT;
