@@ -117,7 +117,7 @@ void HardFault_Handler(void)
           ".syntax divided\n") ;
 }
 
-void printHardFault(unsigned int* hardfault_args)
+void __attribute__((optimize("O0"))) printHardFault(unsigned int* hardfault_args)
 {
   volatile unsigned int stacked_r0 ;
   volatile unsigned int stacked_r1 ;

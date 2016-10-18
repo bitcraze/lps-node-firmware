@@ -56,7 +56,7 @@
     http://www.FreeRTOS.org/labs - Where new FreeRTOS products go to incubate.
     Come and try FreeRTOS+TCP, our new open source TCP/IP stack for FreeRTOS.
 
-    http://www.OpenRTOS.com - Real Time Engineers ltd. license FreeRTOS to High
+    http://www.OpenRTOSconfig.com - Real Time Engineers ltd. license FreeRTOS to High
     Integrity Systems ltd. to sell under the OpenRTOS brand.  Low cost OpenRTOS
     licenses offer ticketed support, indemnification and commercial middleware.
 
@@ -103,9 +103,9 @@ configTOTAL_HEAP_SIZE is not defined. */
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 #define configCPU_CLOCK_HZ                      ( 32000000 )
 #define configTICK_RATE_HZ                      ( 1000 )
-#define configMINIMAL_STACK_SIZE                ( ( unsigned short ) 100 )
+#define configMINIMAL_STACK_SIZE                ( ( unsigned short ) 200 )
 #define configMAX_TASK_NAME_LEN                 ( 12 )
-#define configUSE_TRACE_FACILITY                1
+#define configUSE_TRACE_FACILITY                0
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1
 #define configUSE_MUTEXES                       1
@@ -120,10 +120,10 @@ configTOTAL_HEAP_SIZE is not defined. */
 #define configUSE_TASK_NOTIFICATIONS            1
 
 /* Software timer related configuration options. */
-#define configUSE_TIMERS                        1
-#define configTIMER_TASK_PRIORITY               ( configMAX_PRIORITIES - 1 )
+#define configUSE_TIMERS                        0
+#define configTIMER_TASK_PRIORITY               ( 1 )
 #define configTIMER_QUEUE_LENGTH                20
-#define configTIMER_TASK_STACK_DEPTH            ( configMINIMAL_STACK_SIZE * 2 )
+#define configTIMER_TASK_STACK_DEPTH            ( configMINIMAL_STACK_SIZE )
 
 #define configMAX_PRIORITIES                    ( 7 )
 
@@ -153,12 +153,12 @@ functions anyway. */
 #define INCLUDE_vTaskDelay                      1
 #define INCLUDE_uxTaskGetStackHighWaterMark     1
 #define INCLUDE_xTaskGetSchedulerState          1
-#define INCLUDE_xTimerGetTimerDaemonTaskHandle  1
+#define INCLUDE_xTimerGetTimerDaemonTaskHandle  0
 #define INCLUDE_xTaskGetIdleTaskHandle          1
 #define INCLUDE_xTaskGetHandle                  1
 #define INCLUDE_eTaskGetState                   1
 #define INCLUDE_xSemaphoreGetMutexHolder        1
-#define INCLUDE_xTimerPendFunctionCall          1
+#define INCLUDE_xTimerPendFunctionCall          0
 #define INCLUDE_xTaskAbortDelay                 1
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS

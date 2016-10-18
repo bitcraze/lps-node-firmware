@@ -22,7 +22,7 @@ void usbcommWrite(char *data, int len)
 {
   if (isInit) {
     if (USBD_IsSerialConnected()) {
-      CDC_WriteBlocking(data, len);
+      CDC_Write(data, len);
     }
   } else {
     for(int i=0; initPtr<INITBUFFER_LEN && i<len; i++,initPtr++) {
@@ -36,15 +36,18 @@ void usbcommSetSystemStarted(bool init)
   isInit = init;
 }
 
-void usbcommTick()
+void usbcommStartTransfers() {
+    CDC_StartTransfers();
+}
+
+void usbcommPrintWelcomeMessage()
 {
   static bool wasConnected;
-  CDC_Tick();
 
   if (isInit) {
     if (wasConnected != USBD_IsSerialConnected()) {
       if (USBD_IsSerialConnected()) {
-        CDC_WriteBlocking(initBuffer, initPtr);
+        CDC_Write(initBuffer, initPtr);
       }
     }
     wasConnected = USBD_IsSerialConnected();

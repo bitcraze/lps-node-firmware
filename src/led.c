@@ -32,29 +32,70 @@ typedef struct {
   GPIO_TypeDef * port;
 } led_t;
 
-static led_t leds_revd[] = {
+static const led_t leds_revd[] = {
     [ledRanging] = {.pin = GPIO_PIN_1, .port = GPIOF},
     [ledSync] = {.pin = GPIO_PIN_1, .port = GPIOA},
     [ledMode] = {.pin = GPIO_PIN_2, .port = GPIOA}
 };
 
-static led_t leds_revc[] = {
+static const led_t leds_revc[] = {
     [ledRanging] = {.pin = GPIO_PIN_13, .port = GPIOC},
     [ledSync] = {.pin = GPIO_PIN_14, .port = GPIOC},
     [ledMode] = {.pin = GPIO_PIN_15, .port = GPIOC}
 };
 
+static bool isBlinking[N_LEDS];
+static uint32_t disableTime[N_LEDS];
 
 void ledInit(void) {
   /* Do nothing */
 }
 
+static inline void setLed(led_e led, bool value)
+{
+  HAL_GPIO_WritePin(leds_revd[led].port, leds_revd[led].pin, value?GPIO_PIN_SET:GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(leds_revc[led].port, leds_revc[led].pin, value?GPIO_PIN_SET:GPIO_PIN_RESET);
+}
+
 void ledOn(led_e led) {
-  HAL_GPIO_WritePin(leds_revd[led].port, leds_revd[led].pin, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(leds_revc[led].port, leds_revc[led].pin, GPIO_PIN_SET);
+  isBlinking[led] = false;
+  setLed(led, true);
 }
 
 void ledOff(led_e led) {
-  HAL_GPIO_WritePin(leds_revd[led].port, leds_revd[led].pin, GPIO_PIN_RESET);
-  HAL_GPIO_WritePin(leds_revc[led].port, leds_revc[led].pin, GPIO_PIN_RESET);
+  isBlinking[led] = false;
+  setLed(led, false);
+}
+
+void ledBlink(led_e led, bool oneshot)
+{
+  isBlinking[led] = true;
+  if (oneshot) {
+    disableTime[led] = HAL_GetTick() + 50;
+    setLed(led, true);
+  }
+}
+
+void ledTick()
+{
+  static uint32_t last_tick;
+  static bool blinkStatus;
+
+  for (int led=0; led<N_LEDS; led++) {
+    if (isBlinking[led] && disableTime[led] && disableTime[led]<HAL_GetTick()) {
+      setLed(led, false);
+      disableTime[led] = 0;
+      isBlinking[led] = false;
+    }
+  }
+
+  if (HAL_GetTick()>(last_tick+250)) {
+    blinkStatus = !blinkStatus;
+    last_tick = HAL_GetTick();
+    for (int led=0; led<N_LEDS; led++) {
+      if (isBlinking[led] && !disableTime[led]) {
+        setLed(led, blinkStatus);
+      }
+    }
+  }
 }

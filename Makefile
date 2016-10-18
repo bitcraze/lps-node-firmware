@@ -3,6 +3,7 @@ OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
 REV								?= B
 PYTHON2           ?= python2
 # CFLAGS						+= -fdiagnostics-color=auto
+# CFLAGS += -DUSE_FTDI_UART
 
 ifeq ($(strip $(REV)),A)
 $(error Rev.A not supported anymore)
@@ -31,6 +32,7 @@ HALS+=i2c_ex
 OBJS+=src/main.o
 OBJS+=src/usb_device.o src/usbd_cdc_if.o src/usbd_desc.o src/lps25h.o src/led.o
 OBJS+=src/cfg.o src/usbcomm.o src/test_support.o src/production_test.o
+OBJS+=src/uwb.o src/uwb_twr_anchor.o src/uwb_sniffer.o src/uwb_twr_tag.o
 
 HALS+=gpio rcc cortex i2c pcd dma pcd_ex rcc_ex spi uart
 OBJS+=$(foreach mod, $(HALS), $(HAL_ROOT)/Src/stm32$(CPU)xx_hal_$(mod).o)

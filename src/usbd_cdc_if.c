@@ -33,7 +33,10 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
 
-#include "squeue.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "queue.h"
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
   * @{
@@ -62,7 +65,7 @@
 #define APP_RX_DATA_SIZE  64
 #define APP_TX_DATA_SIZE  64
 
-#define QUEUES_LEN 256
+
   /* USER CODE END 1 */
 /**
   * @}
@@ -94,22 +97,22 @@ USBD_HandleTypeDef  *hUsbDevice_0;
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
-// Queues for communicating with the rest of the program
-static char rxQueueBuffer[QUEUES_LEN];
-static queue_t rxQueue = {
-  .buffer = rxQueueBuffer,
-  .length = QUEUES_LEN,
-};
-static char txQueueBuffer[QUEUES_LEN];
-static queue_t txQueue = {
-  .buffer = txQueueBuffer,
-  .length = QUEUES_LEN,
-};
+#define RX_Q_SIZE 10
+#define TX_Q_SIZE 512
+#define Q_ITEM_SIZE (sizeof(uint8_t))
 
-static bool rxStalled = false;
-static uint32_t stalledLength = 0;
-static uint8_t* stalledBuffer;
+static QueueHandle_t rxq;
+static StaticQueue_t rxqBuffer;
+static uint8_t rxqStorage[ RX_Q_SIZE * Q_ITEM_SIZE ];
 
+static QueueHandle_t txq;
+static StaticQueue_t txqBuffer;
+static uint8_t txqStorage[ TX_Q_SIZE * Q_ITEM_SIZE ];
+
+static bool usbInit = false;
+
+static SemaphoreHandle_t startTransfers = NULL;
+static StaticSemaphore_t startTransfersBuffer;
 /**
   * @}
   */
@@ -130,8 +133,6 @@ USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
   CDC_Receive_FS
 };
 
-#include "led.h"
-
 /* Private functions ---------------------------------------------------------*/
 /**
   * @brief  CDC_Init_FS
@@ -145,6 +146,14 @@ static int8_t CDC_Init_FS(void)
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(hUsbDevice_0, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(hUsbDevice_0, UserRxBufferFS);
+
+  txq = xQueueCreateStatic(TX_Q_SIZE, Q_ITEM_SIZE, txqStorage, &txqBuffer);
+  rxq = xQueueCreateStatic(RX_Q_SIZE, Q_ITEM_SIZE, rxqStorage, &rxqBuffer);
+
+  startTransfers = xSemaphoreCreateBinaryStatic(&startTransfersBuffer);
+
+  usbInit = true;
+
   return (USBD_OK);
 }
 
@@ -252,17 +261,10 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length)
   */
 static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
 {
-  if (*Len < queueGetFreeSpace(&rxQueue)) {
-    rxStalled = false;
-    for (int i=0; i<*Len; i++) {
-      queuePush(&rxQueue, Buf[i]);
-    }
-    USBD_CDC_ReceivePacket(hUsbDevice_0);
-  } else {
-    rxStalled = true;
-    stalledLength = *Len;
-    stalledBuffer = Buf;
+  for (int i=0; i<*Len; i++) {
+    xQueueSend(rxq, &Buf[i], 0);
   }
+  USBD_CDC_ReceivePacket(hUsbDevice_0);
 
   return (USBD_OK);
 }
@@ -288,58 +290,72 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   return result;
 }
 
-static void flushTx() {
-  if (!hUsbDevice_0) return;
+static int flushTx() {
+  if (!hUsbDevice_0) return 0;
 
   USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) hUsbDevice_0->pClassData;
-  int i;
+  int i = 0;
 
-  if (!queueIsEmpty(&txQueue) && (hcdc->TxState == 0)) {
-    for (i=0; (i<APP_TX_DATA_SIZE) && !queueIsEmpty(&txQueue); i++) {
-      UserTxBufferFS[i] = queuePull(&txQueue);
-    }
-    CDC_Transmit_FS(UserTxBufferFS, i);
+  // Busy wait until we can send
+  while (hcdc->TxState == 1)
+    ;
+  while (i<APP_TX_DATA_SIZE && xQueueReceive(txq, &UserTxBufferFS[i], 0) == pdTRUE) {
+    i++;
   }
+
+  CDC_Transmit_FS(UserTxBufferFS, i);
+  return i;
 }
 
-// Should be called at regular interval
-void CDC_Tick()
-{
-  flushTx();
+// Called from ISR context
+void CDC_SOF() {
+  BaseType_t xHigherPriorityTaskWoken;
 
-  if (rxStalled) {
-    CDC_Receive_FS(stalledBuffer, &stalledLength);
-  }
+  if (!usbInit)
+    return;
+  xSemaphoreGiveFromISR( startTransfers, &xHigherPriorityTaskWoken );
+}
+
+void CDC_StartTransfers()
+{
+  if (!usbInit)
+    return;
+
+  if (uxQueueSpacesAvailable(txq) == TX_Q_SIZE)
+    return;
+
+  // Block until the next SOF (max 1 ms)
+  xSemaphoreTake(startTransfers, portMAX_DELAY);
+
+  // Continue sending while we can fill packets, the last time this is called
+  // it will send less than a filled packet so the host will understand the
+  // transaction has ended.
+  while (flushTx() == APP_TX_DATA_SIZE)
+    ;
 }
 
 int CDC_Write(char* buffer, int len)
 {
   int i;
 
-  for (i=0; (i<len) && !queueIsFull(&txQueue); i++) {
-    queuePush(&txQueue, buffer[i]);
+  if (!usbInit)
+    return 0;
+
+  for (i=0; (i<len); i++) {
+    xQueueSend(txq, &buffer[i], 0);
   }
 
-  flushTx();
   return i;
 }
 
-int CDC_WriteBlocking(char *buffer, int len)
-{
-  int sent = 0;
-
-  while (sent != len) {
-    sent += CDC_Write(&buffer[sent], len-sent);
-  }
-
-  return sent;
-}
-
 int CDC_Read(char *buffer, int len) {
-  int i;
+  int i = 0;
 
-  for (i=0; i<len && !queueIsEmpty(&rxQueue); i++) {
-    buffer[i] = queuePull(&rxQueue);
+  if (!usbInit)
+    return 0;
+
+  while (i<len && (xQueueReceive(rxq, &buffer[i], 0) == pdTRUE)) {
+    i++;
   }
 
   return i;

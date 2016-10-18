@@ -34,8 +34,6 @@ extern SPI_HandleTypeDef hspi1;
 // #define DEBUG_SPI
 
 #define DWM_IRQn EXTI0_1_IRQn
-#define DWM_IRQ_PIN GPIO_PIN_0
-
 
 static dwDevice_t *dev;
 
@@ -45,28 +43,6 @@ void dwOpsInit(dwDevice_t *device)
   dev = device;
 
   NVIC_EnableIRQ(DWM_IRQn);
-}
-
-static int checkIrq()
-{
-  return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
-}
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  switch (GPIO_Pin) {
-    case DWM_IRQ_PIN:
-      do{
-          dwHandleInterrupt(dev);
-      } while(checkIrq() != 0); //while IRS line active (ARM can only do edge sensitive interrupts)
-      HAL_NVIC_ClearPendingIRQ(DWM_IRQn);
-      break;
-    case GPIO_PIN_12:
-      //instance_notify_DW1000_inIDLE(1);
-      break;
-    default:
-      break;
-  }
 }
 
 // Aligned buffer of 128bytes
@@ -145,6 +121,13 @@ static void spiSetSpeed(dwDevice_t* dev, dwSpiSpeed_t speed)
   }
 }
 
+static void reset(dwDevice_t* dev)
+{
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, 0);
+  HAL_Delay(2);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, 1);
+}
+
 static void delayms(dwDevice_t* dev, unsigned int delay)
 {
   HAL_Delay(delay);
@@ -155,4 +138,5 @@ dwOps_t dwOps = {
   .spiWrite = spiWrite,
   .spiSetSpeed = spiSetSpeed,
   .delayms = delayms,
+  .reset = reset,
 };

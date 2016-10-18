@@ -37,6 +37,7 @@
 #include "usbd_def.h"
 #include "usbd_core.h"
 #include "usbd_cdc.h"
+#include "usbd_cdc_if.h"
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -157,6 +158,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 {
   USBD_LL_SOF(hpcd->pData);
+  CDC_SOF();
 }
 
 /**
