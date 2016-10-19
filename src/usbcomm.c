@@ -36,10 +36,6 @@ void usbcommSetSystemStarted(bool init)
   isInit = init;
 }
 
-void usbcommStartTransfers() {
-    CDC_StartTransfers();
-}
-
 void usbcommPrintWelcomeMessage()
 {
   static bool wasConnected;

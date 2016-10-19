@@ -124,13 +124,17 @@ static int8_t CDC_Init_FS     (void);
 static int8_t CDC_DeInit_FS   (void);
 static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
 static int8_t CDC_Receive_FS  (uint8_t* pbuf, uint32_t *Len);
+static void CDC_TransmitDone_FS(void);
+static void CDC_SOF_FS(void);
 
 USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 {
   CDC_Init_FS,
   CDC_DeInit_FS,
   CDC_Control_FS,
-  CDC_Receive_FS
+  CDC_Receive_FS,
+  CDC_TransmitDone_FS,
+  CDC_SOF_FS
 };
 
 /* Private functions ---------------------------------------------------------*/
@@ -290,48 +294,46 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   return result;
 }
 
-static int flushTx() {
-  if (!hUsbDevice_0) return 0;
+static bool lastPacketWasFull = false;
 
-  USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) hUsbDevice_0->pClassData;
+static void SetupTransfer(bool newpackage) {
+  BaseType_t pxHigherPriorityTaskWoken = pdFALSE;
   int i = 0;
 
-  // Busy wait until we can send
-  while (hcdc->TxState == 1)
-    ;
-  while (i<APP_TX_DATA_SIZE && xQueueReceive(txq, &UserTxBufferFS[i], 0) == pdTRUE) {
-    i++;
-  }
-
-  CDC_Transmit_FS(UserTxBufferFS, i);
-  return i;
-}
-
-// Called from ISR context
-void CDC_SOF() {
-  BaseType_t xHigherPriorityTaskWoken;
-
-  if (!usbInit)
-    return;
-  xSemaphoreGiveFromISR( startTransfers, &xHigherPriorityTaskWoken );
-}
-
-void CDC_StartTransfers()
-{
-  if (!usbInit)
-    return;
+  if (!hUsbDevice_0) return;
 
   if (uxQueueSpacesAvailable(txq) == TX_Q_SIZE)
     return;
 
-  // Block until the next SOF (max 1 ms)
-  xSemaphoreTake(startTransfers, portMAX_DELAY);
+  USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) hUsbDevice_0->pClassData;
 
-  // Continue sending while we can fill packets, the last time this is called
-  // it will send less than a filled packet so the host will understand the
-  // transaction has ended.
-  while (flushTx() == APP_TX_DATA_SIZE)
-    ;
+  if (hcdc->TxState == 1)
+    return;
+
+  if (newpackage == true || lastPacketWasFull == true) {
+    while (i<APP_TX_DATA_SIZE && xQueueReceiveFromISR(txq, &UserTxBufferFS[i], &pxHigherPriorityTaskWoken) == pdTRUE) {
+      i++;
+    }
+
+    CDC_Transmit_FS(UserTxBufferFS, i);
+    if (i == APP_TX_DATA_SIZE) {
+      lastPacketWasFull = true;
+    } else {
+      lastPacketWasFull = false;
+    }
+  }
+}
+
+static void CDC_TransmitDone_FS(void) {
+  if (!usbInit)
+    return;
+  SetupTransfer(false);
+}
+
+static void CDC_SOF_FS(void) {
+  if (!usbInit)
+    return;
+  SetupTransfer(true);
 }
 
 int CDC_Write(char* buffer, int len)

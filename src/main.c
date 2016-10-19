@@ -151,7 +151,6 @@ static void main_task(void *pvParameters) {
   // Main loop ...
   while(1) {
     usbcommPrintWelcomeMessage();
-    usbcommStartTransfers();
 
     ledTick();
     // // Measure pressure

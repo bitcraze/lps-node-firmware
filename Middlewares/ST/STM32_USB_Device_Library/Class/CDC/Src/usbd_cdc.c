@@ -119,6 +119,8 @@ static uint8_t  USBD_CDC_DataIn (USBD_HandleTypeDef *pdev,
 static uint8_t  USBD_CDC_DataOut (USBD_HandleTypeDef *pdev,
                                  uint8_t epnum);
 
+static uint8_t  USDB_CDC_SOF     (USBD_HandleTypeDef *pdev);
+
 static uint8_t  USBD_CDC_EP0_RxReady (USBD_HandleTypeDef *pdev);
 
 static uint8_t  *USBD_CDC_GetFSCfgDesc (uint16_t *length);
@@ -165,7 +167,7 @@ USBD_ClassTypeDef  USBD_CDC =
   USBD_CDC_EP0_RxReady,
   USBD_CDC_DataIn,
   USBD_CDC_DataOut,
-  NULL,
+  USDB_CDC_SOF,
   NULL,
   NULL,
   USBD_CDC_GetHSCfgDesc,
@@ -676,6 +678,8 @@ static uint8_t  USBD_CDC_DataIn (USBD_HandleTypeDef *pdev, uint8_t epnum)
 
     hcdc->TxState = 0;
 
+    ((USBD_CDC_ItfTypeDef *)pdev->pUserData)->TransmitDone();
+
     return USBD_OK;
   }
   else
@@ -711,7 +715,6 @@ static uint8_t  USBD_CDC_DataOut (USBD_HandleTypeDef *pdev, uint8_t epnum)
     return USBD_FAIL;
   }
 }
-
 
 
 /**
@@ -916,6 +919,24 @@ uint8_t  USBD_CDC_ReceivePacket(USBD_HandleTypeDef *pdev)
     return USBD_FAIL;
   }
 }
+
+uint8_t  USDB_CDC_SOF(USBD_HandleTypeDef *pdev)
+{
+  //USBD_CDC_HandleTypeDef   *hcdc = (USBD_CDC_HandleTypeDef*) pdev->pClassData;
+
+  if(pdev->pClassData != NULL)
+  {
+    ((USBD_CDC_ItfTypeDef *)pdev->pUserData)->SOF();
+
+    return USBD_OK;
+  }
+  else
+  {
+    return USBD_FAIL;
+  }
+}
+
+
 /**
   * @}
   */
