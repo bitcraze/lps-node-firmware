@@ -196,35 +196,63 @@ int _write (int fd, const void *buf, size_t count)
 
 static void handleInput(char ch) {
   bool configChanged = true;
+  static enum menu_e {mainMenu, modeMenu} currentMenu = mainMenu;
 
-  switch (ch) {
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      changeAddress(ch - '0');
+  switch (currentMenu) {
+    case mainMenu:
+      switch (ch) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          changeAddress(ch - '0');
+          break;
+        case 'a': changeMode(modeAnchor); break;
+        case 't': changeMode(modeTag); break;
+        case 's': changeMode(modeSniffer); break;
+        case 'm': currentMenu = modeMenu; configChanged = false; break;
+        case 'd': restConfig(); break;
+        case 'h':
+          help();
+          configChanged = false;
+          break;
+        case '#':
+          productionTestsRun();
+          printf("System halted, reset to continue\r\n");
+          while(true){}
+          break;
+        default:
+          configChanged = false;
+          break;
+      }
       break;
-    case 'a': changeMode(modeAnchor); break;
-    case 't': changeMode(modeTag); break;
-    case 's': changeMode(modeSniffer); break;
-    case 'd': restConfig(); break;
-    case 'h':
-      help();
-      configChanged = false;
-      break;
-    case '#':
-      productionTestsRun();
-      printf("System halted, reset to continue\r\n");
-      while(true){}
-      break;
-    default:
-      configChanged = false;
+    case modeMenu:
+      switch(ch) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          changeMode(ch - '0');
+          currentMenu = mainMenu;
+          break;
+        default:
+          printf("Incorrect mode '%c'\r\n", ch);
+          currentMenu = mainMenu;
+          configChanged = false;
+          break;
+      }
       break;
   }
 
