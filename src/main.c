@@ -293,10 +293,18 @@ static void changeMode(unsigned int newMode) {
 static void printModeList()
 {
   unsigned int count = uwbAlgorithmCount();
+  int current_mode = -1;
+  uint8_t mode;
+
+  if (cfgReadU8(cfgMode, &mode)) {
+    current_mode = mode;
+  }
+
   printf("-------------------\r\n");
   printf("Available UWB modes:\r\n");
   for (int i=0; i<count; i++) {
-    printf(" %d - %s\r\n", i, uwbAlgorithmName(i));
+    printf(" %d - %s%s\r\n", i, uwbAlgorithmName(i),
+                             (i == current_mode)?" (Current mode)":"");
   }
 }
 
@@ -319,6 +327,7 @@ static void help() {
   printf("a   - anchor mode\r\n");
   printf("t   - tag mode\r\n");
   printf("s   - sniffer mode\r\n");
+  printf("m   - List and change mode\r\n");
   printf("d   - reset configuration\r\n");
   printf("h   - This help\r\n");
 }
