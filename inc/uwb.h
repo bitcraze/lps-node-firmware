@@ -35,11 +35,15 @@
 #define MAX_ANCHORS 6
 
 typedef struct uwbConfig_s {
-  CfgMode mode;
+  uint8_t mode;
   uint8_t address[8];
   uint8_t anchorListSize;
   uint8_t anchors[MAX_ANCHORS];
 } uwbConfig_t;
+
+#define MODE_ANCHOR 0
+#define MODE_TAG 1
+#define MODE_SNIFFER 2
 
 typedef enum uwbEvent_e {
   eventTimeout,
@@ -64,5 +68,7 @@ bool uwbTest();
 void uwbStart();
 char * uwbStrError();
 struct uwbConfig_s * uwbGetConfig();
+int uwbAlgorithmCount();
+char * uwbAlgorithmName(unsigned int id);
 
 #endif //__UWB_H__

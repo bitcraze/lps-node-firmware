@@ -53,7 +53,8 @@ const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
 static void restConfig();
 static void changeAddress(uint8_t addr);
 static void handleInput(char ch);
-static void changeMode(CfgMode newMode);
+static void changeMode(unsigned int newMode);
+static void printModeList();
 static void printMode();
 static void help();
 
@@ -121,13 +122,7 @@ static void main_task(void *pvParameters) {
   // Printing UWB configuration
   struct uwbConfig_s * uwbConfig = uwbGetConfig();
   printf("CONFIG\t: Address is 0x%X\r\n", uwbConfig->address[0]);
-  printf("CONFIG\t: Mode is ");
-  switch (uwbConfig->mode) {
-    case modeAnchor: printf("Anchor\r\n"); break;
-    case modeTag: printf("Tag\r\n"); break;
-    case modeSniffer: printf("Sniffer\r\n"); break;
-    default: printf("UNKNOWN\r\n"); break;
-  }
+  printf("CONFIG\t: Mode is %s\r\n", uwbAlgorithmName(uwbConfig->mode));
   printf("CONFIG\t: Tag mode anchor list (%i): ", uwbConfig->anchorListSize);
   for (i = 0; i < uwbConfig->anchorListSize; i++) {
     printf("0x%02X ", uwbConfig->anchors[i]);
@@ -213,10 +208,15 @@ static void handleInput(char ch) {
         case '9':
           changeAddress(ch - '0');
           break;
-        case 'a': changeMode(modeAnchor); break;
-        case 't': changeMode(modeTag); break;
-        case 's': changeMode(modeSniffer); break;
-        case 'm': currentMenu = modeMenu; configChanged = false; break;
+        case 'a': changeMode(MODE_ANCHOR); break;
+        case 't': changeMode(MODE_TAG); break;
+        case 's': changeMode(MODE_SNIFFER); break;
+        case 'm':
+          printModeList();
+          printf("Type 0-9 to choose new mode...\r\n");
+          currentMenu = modeMenu;
+          configChanged = false;
+          break;
         case 'd': restConfig(); break;
         case 'h':
           help();
@@ -280,7 +280,7 @@ static void changeAddress(uint8_t addr) {
   }
 }
 
-static void changeMode(CfgMode newMode) {
+static void changeMode(unsigned int newMode) {
     printf("Previous device mode: ");
     printMode();
 
@@ -290,16 +290,21 @@ static void changeMode(CfgMode newMode) {
     printMode();
 }
 
+static void printModeList()
+{
+  unsigned int count = uwbAlgorithmCount();
+  printf("-------------------\r\n");
+  printf("Available UWB modes:\r\n");
+  for (int i=0; i<count; i++) {
+    printf(" %d - %s\r\n", i, uwbAlgorithmName(i));
+  }
+}
+
 static void printMode() {
-  CfgMode mode;
+  uint8_t mode;
 
   if (cfgReadU8(cfgMode, &mode)) {
-    switch (mode) {
-      case modeAnchor: printf("Anchor"); break;
-      case modeTag: printf("Tag"); break;
-      case modeSniffer: printf("Sniffer"); break;
-      default: printf("UNKNOWN"); break;
-    }
+    printf(uwbAlgorithmName(mode));
   } else {
     printf("Not found!");
   }
