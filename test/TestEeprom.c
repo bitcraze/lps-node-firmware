@@ -43,6 +43,7 @@ void test_eepromReadShouldReturnFalseOnFailure() {
   TEST_ASSERT_FALSE(actual);
 }
 
+
 void test_eepromWriteShouldReturnTrueOnSuccess() {
   // Fixture
   HAL_StatusTypeDef returnValue = HAL_OK;
@@ -66,4 +67,10 @@ void test_eepromWriteShouldReturnFalseOnFailure() {
 
   // Assert
   TEST_ASSERT_FALSE(actual);
+}
+
+
+// Manual mock. The mocking framework failes to parse the task.h file
+void vTaskDelay(const uint32_t xTicksToDelay) {
+  // TODO krri add verification
 }
