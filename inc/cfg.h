@@ -7,7 +7,8 @@
 typedef enum {
   cfgAddress = 0,
   cfgMode,
-  cfgAnchorlist
+  cfgAnchorlist,
+  cfgAnchorPos,
 } ConfigField;
 
 void cfgInit();
@@ -23,5 +24,11 @@ bool cfgWriteU8(ConfigField field, uint8_t data);
 bool cfgReadU8list(ConfigField field, uint8_t list[], uint8_t lenth);
 
 bool cfgWriteU8list(ConfigField field, uint8_t list[], uint8_t lenth);
+
+bool cfgReadFP32listLength(ConfigField field, uint8_t * size);
+
+bool cfgReadFP32list(ConfigField field, float list[], uint8_t length);
+
+bool cfgWriteFP32list(ConfigField field, float list[], uint8_t length);
 
 #endif

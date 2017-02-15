@@ -128,6 +128,13 @@ static void main_task(void *pvParameters) {
     printf("0x%02X ", uwbConfig->anchors[i]);
   }
   printf("\r\n");
+  printf("CONFIG\t: Anchor position enabled: %s\r\n",
+         uwbConfig->positionEnabled?"true":"false");
+  if (uwbConfig->positionEnabled) {
+    printf("CONFIG\t: Anchor position: %f %f %f\r\n", uwbConfig->position[0],
+                                                      uwbConfig->position[1],
+                                                      uwbConfig->position[2]);
+  }
 
   HAL_Delay(500);
 

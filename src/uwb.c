@@ -118,6 +118,8 @@ void uwbInit()
     algorithm = &dummyAlgorithm;
   }
 
+  config.positionEnabled = cfgReadFP32list(cfgAnchorPos, config.position, 3);
+
   dwAttachSentHandler(dwm, txcallback);
   dwAttachReceivedHandler(dwm, rxcallback);
   dwAttachReceiveTimeoutHandler(dwm, rxTimeoutCallback);

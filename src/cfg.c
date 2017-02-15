@@ -36,7 +36,7 @@ typedef struct {
 } TlvArea;
 
 // Temporary fix, just buffer the first 100 bytes
-#define NUMBER_OF_BYTES_READ 25
+#define NUMBER_OF_BYTES_READ 100
 #define MAGIC ((uint8_t) 0xBC)
 
 #define SIZE_HEADER 5
@@ -53,7 +53,7 @@ typedef struct {
   uint16_t tlvSize;
 } __attribute__((packed)) CfgHeader;
 
-static CfgHeader * cfgHeader;
+static CfgHeader * cfgHeader = (CfgHeader*) buffer;
 
 static int tlvFindType(TlvArea *tlv, ConfigField type) {
   uint16_t pos = 0;
@@ -119,7 +119,7 @@ static bool check_magic(void) {
 }
 
 static bool check_content(void) {
-  if (check_magic()) {
+  if (check_magic() && cfgHeader->tlvSize < (NUMBER_OF_BYTES_READ - SIZE_HEADER -SIZE_TAIL)) {
     return check_crc();
   }
   printf("CONFIG\t: EEPROM magic not found!\r\n");
@@ -242,6 +242,48 @@ bool cfgWriteU8list(ConfigField field, uint8_t list[], uint8_t length) {
       tlv.data[cfgHeader->tlvSize+1] = length;
       memcpy(&tlv.data[cfgHeader->tlvSize+2], list, length);
       cfgHeader->tlvSize += 2 + length;
+    }
+
+    write_crc();
+    eepromWrite(0, buffer, NUMBER_OF_BYTES_READ);
+    HAL_Delay(10);
+    readData();
+    return true;
+}
+
+bool cfgReadFP32listLength(ConfigField field, uint8_t * size) {
+  bool success = cfgFieldSize(field, size);
+  *size /= 4;
+  return success;
+}
+
+bool cfgReadFP32list(ConfigField field, float list[], uint8_t length) {
+  int pos = tlvFindType(&tlv, field);
+
+  if (pos > -1) {
+    memcpy(list, &tlv.data[pos+2], length*sizeof(float));
+  }
+
+  return (pos > -1);
+}
+
+bool cfgWriteFP32list(ConfigField field, float list[], uint8_t length) {
+    int pos = tlvFindType(&tlv, field);
+
+    if (pos > -1) {
+      uint8_t lengthInMemory=0;
+      cfgReadFP32listLength(field, &lengthInMemory);
+      if (lengthInMemory != length) {
+        printf("Error: cannot write config list with different length\r\n");
+        return false;
+      }
+      memcpy(&tlv.data[pos+2], list, length*sizeof(float));
+    } else {
+      // Add new field at the end of the tlv
+      tlv.data[cfgHeader->tlvSize] = field;
+      tlv.data[cfgHeader->tlvSize+1] = length*sizeof(float);
+      memcpy(&tlv.data[cfgHeader->tlvSize+2], list, length*sizeof(float));
+      cfgHeader->tlvSize += 2 + (length*sizeof(float));
     }
 
     write_crc();
