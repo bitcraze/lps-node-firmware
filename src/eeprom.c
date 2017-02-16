@@ -68,7 +68,7 @@ bool eepromWrite(int address, void* data, size_t length)
 
   for (int i=0; i<length; i++) {
     if ((address+i+1)%32 == 0) {
-      status = HAL_I2C_Mem_Write(hi2c, devAddr, start_address, I2C_MEMADD_SIZE_16BIT, ((uint8_t*)data)+start_i, i - start_i, 100);
+      status = HAL_I2C_Mem_Write(hi2c, devAddr, start_address, I2C_MEMADD_SIZE_16BIT, ((uint8_t*)data)+start_i, (i+1) - start_i, 100);
       start_address = address + i + 1;
       start_i = i+1;
       vTaskDelay(10);

@@ -24,7 +24,7 @@ compiler:
       - 'vendor/unity/src/'
       - 'vendor/c_exception/lib/'
       - 'vendor/cmock/src/'
-      - 'lib/FreeRTOS/inc/'
+      - 'lib/freertos/inc/'
       - 'test/'
       - 'hal/stm32f0xx/Inc/'
       - 'inc/'
@@ -63,7 +63,11 @@ unsupported:
 colour: true
 
 :cmock:
-  :plugins: []
+  :plugins:
+    - :ignore_arg
+    - :ignore
+    - :array
+    - :callback
   :mock_path: *mocks_path
   :mock_prefix: mock_
   :includes_h_pre_orig_header:
