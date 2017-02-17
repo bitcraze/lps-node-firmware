@@ -7,7 +7,7 @@
  *
  * LPS node firmware.
  *
- * Copyright 2016, Bitcraze AB
+ * Copyright 2017, Bitcraze AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,38 +22,13 @@
  * You should have received a copy of the GNU General Public License
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* cfg.h: node configuration handling */
-#ifndef __CFG_H__
-#define __CFG_H__
+#ifndef __LPP_H__
+#define __LPP_H__
 
-#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
-typedef enum {
-  cfgAddress = 0,
-  cfgMode,
-  cfgAnchorlist,
-  cfgAnchorPos,
-} ConfigField;
 
-void cfgInit();
+void lppHandleShortPacket(char *data, size_t length);
 
-bool cfgReset(void);
-
-bool cfgFieldSize(ConfigField field, uint8_t * size);
-
-bool cfgReadU8(ConfigField field, uint8_t * value);
-
-bool cfgWriteU8(ConfigField field, uint8_t data);
-
-bool cfgReadU8list(ConfigField field, uint8_t list[], uint8_t lenth);
-
-bool cfgWriteU8list(ConfigField field, uint8_t list[], uint8_t lenth);
-
-bool cfgReadFP32listLength(ConfigField field, uint8_t * size);
-
-bool cfgReadFP32list(ConfigField field, float list[], uint8_t length);
-
-bool cfgWriteFP32list(ConfigField field, float list[], uint8_t length);
-
-#endif
+#endif //__LPP_H__

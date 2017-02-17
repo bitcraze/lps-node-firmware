@@ -32,6 +32,8 @@
 #include "cfg.h"
 #include "led.h"
 
+#include "lpp.h"
+
 #include "libdw1000.h"
 
 #include "dwOps.h"
@@ -47,6 +49,9 @@ static struct uwbConfig_s config;
 #define ANSWER 0x02
 #define FINAL 0x03
 #define REPORT 0x04 // Report contains all measurement from the anchor
+
+// LPP packets
+#define SHORT_LPP 0xF0
 
 typedef struct {
   uint8_t pollRx[5];
@@ -198,6 +203,18 @@ static void rxcallback(dwDevice_t *dev) {
         dwSetDefaults(dev);
         dwStartReceive(dev);
       }
+
+      break;
+    }
+    case SHORT_LPP:
+    {
+      if(curr_tag == rxPacket.sourceAddress[0] && dataLength-MAC802154_HEADER_LENGTH > 1) {
+        lppHandleShortPacket(&rxPacket.payload[1], dataLength-MAC802154_HEADER_LENGTH-1);
+      }
+
+      dwNewReceive(dev);
+      dwSetDefaults(dev);
+      dwStartReceive(dev);
 
       break;
     }
