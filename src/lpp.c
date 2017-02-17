@@ -31,12 +31,6 @@
 
 #define debug(...) // printf(__VA_ARGS__)
 
-#define LPP_SHORT_ANCHOR_POSITION 0x01
-
-struct lppShortAnchorPosition_s {
-  float position[3];
-} __attribute__((packed));
-
 void lppHandleShortPacket(char *data, size_t length)
 {
   if (length < 1) return;

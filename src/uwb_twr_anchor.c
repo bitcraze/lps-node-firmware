@@ -124,6 +124,9 @@ static void txcallback(dwDevice_t *dev)
 
 #define TYPE 0
 #define SEQ 1
+#define LPP_HEADER 2
+#define LPP_TYPE 3
+#define LPP_PAYLOAD 4
 
 static void rxcallback(dwDevice_t *dev) {
   dwTime_t arival = { .full=0 };
@@ -157,12 +160,24 @@ static void rxcallback(dwDevice_t *dev) {
 
       curr_tag = rxPacket.sourceAddress[0];
 
+      int payloadLength = 2;
       txPacket.payload[TYPE] = ANSWER;
       txPacket.payload[SEQ] = rxPacket.payload[SEQ];
 
+      uwbConfig_t *uwbConfig = uwbGetConfig();
+      if (uwbConfig->positionEnabled) {
+        txPacket.payload[LPP_HEADER] = SHORT_LPP;
+        txPacket.payload[LPP_TYPE] = LPP_SHORT_ANCHOR_POSITION;
+
+        struct lppShortAnchorPosition_s *pos = (struct lppShortAnchorPosition_s*) &txPacket.payload[LPP_PAYLOAD];
+        memcpy(pos->position, uwbConfig->position, 3*sizeof(float));
+
+        payloadLength += 2 + sizeof(struct lppShortAnchorPosition_s);
+      }
+
       dwNewTransmit(dev);
       dwSetDefaults(dev);
-      dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH+2);
+      dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH+payloadLength);
 
       dwWaitForResponse(dev, true);
       dwStartTransmit(dev);

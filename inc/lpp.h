@@ -28,7 +28,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-
 void lppHandleShortPacket(char *data, size_t length);
+
+#define LPP_SHORT_ANCHOR_POSITION 0x01
+
+struct lppShortAnchorPosition_s {
+  float position[3];
+} __attribute__((packed));
 
 #endif //__LPP_H__
