@@ -30,7 +30,7 @@ OBJS+=src/f0/usbd_conf.o src/eeprom.o
 HALS+=i2c_ex
 
 OBJS+=src/main.o
-OBJS+=src/usb_device.o src/usbd_cdc_if.o src/usbd_desc.o src/lps25h.o src/led.o
+OBJS+=src/usb_device.o src/usbd_cdc_if.o src/usbd_desc.o src/lps25h.o src/led.o src/button.o
 OBJS+=src/cfg.o src/usbcomm.o src/test_support.o src/production_test.o
 OBJS+=src/uwb.o src/uwb_twr_anchor.o src/uwb_sniffer.o src/uwb_twr_tag.o
 OBJS+=src/uwb_tdoa_anchor.o src/lpp.o

@@ -35,6 +35,7 @@
 #include "usart.h"
 #include "gpio.h"
 #include "led.h"
+#include "button.h"
 
 #include "cfg.h"
 #include "eeprom.h"
@@ -52,7 +53,8 @@ const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
 
 static void restConfig();
 static void changeAddress(uint8_t addr);
-static void handleInput(char ch);
+static void handleSerialInput(char ch);
+static void handleButton(void);
 static void changeMode(unsigned int newMode);
 static void printModeList();
 static void printMode();
@@ -74,6 +76,7 @@ static void main_task(void *pvParameters) {
   ledOn(ledRanging);
   ledOn(ledSync);
   ledOn(ledMode);
+  buttonInit(buttonIdle);
 
   printf("\r\n\r\n====================\r\n");
 
@@ -155,6 +158,7 @@ static void main_task(void *pvParameters) {
     usbcommPrintWelcomeMessage();
 
     ledTick();
+    handleButton();
     // // Measure pressure
     // if (uwbConfig.mode != modeSniffer) {
     //   if(lps25hGetData(&pressure, &temperature, &asl)) {
@@ -171,7 +175,7 @@ static void main_task(void *pvParameters) {
 #else
     if(usbcommRead(&ch, 1)) {
 #endif
-      handleInput(ch);
+      handleSerialInput(ch);
     }
   }
 }
@@ -196,7 +200,7 @@ int _write (int fd, const void *buf, size_t count)
   return count;
 }
 
-static void handleInput(char ch) {
+static void handleSerialInput(char ch) {
   bool configChanged = true;
   static enum menu_e {mainMenu, modeMenu} currentMenu = mainMenu;
 
@@ -266,6 +270,20 @@ static void handleInput(char ch) {
   if (configChanged) {
     printf("EEPROM configuration changed, restart for it to take effect!\r\n");
   }
+}
+
+static void handleButton(void) {
+  ButtonEvent be = buttonGetState();
+
+  if (be == buttonShortPress) {
+    ledBlink(ledRanging, true);
+    // TODO: Implement and remove ledblink
+  }  else if (be == buttonLongPress) {
+    ledBlink(ledSync, true);
+    // TODO: Implement and remove ledblink
+  }
+
+  buttonProcess();
 }
 
 static void restConfig() {
