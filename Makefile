@@ -5,6 +5,8 @@ PYTHON2           ?= python2
 # CFLAGS						+= -fdiagnostics-color=auto
 # CFLAGS += -DUSE_FTDI_UART
 
+BOOTLOAD 					?= 0
+
 ifeq ($(strip $(REV)),A)
 $(error Rev.A not supported anymore)
 else ifeq ($(strip $(REV)),B)
@@ -51,7 +53,15 @@ OBJS+=vendor/libdw1000/src/libdw1000.o vendor/libdw1000/src/libdw1000Spi.o
 OBJS+=src/dwOps.o
 
 CFLAGS+=$(PROCESSOR) $(INCLUDES) -O3 -g3 -Wall -Wno-pointer-sign -std=gnu11
-LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -Ttools/make/stm32f072.ld -lm -lc -u _printf_float
+LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -lm -lc -u _printf_float
+
+ifeq ($(strip $(BOOTLOAD)),0)
+LDFLAGS+=-Ttools/make/stm32f072.ld
+LOAD_ADDRESS = 0x8000000
+else
+LDFLAGS+=-Ttools/make/stm32f072_bootload.ld
+LOAD_ADDRESS = 0x8005000
+endif
 
 # Remove un-used functions and global variables from output file
 CFLAGS += -ffunction-sections -fdata-sections
@@ -70,6 +80,7 @@ all: check_submodules bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
 bin/lps-node-firmware.elf: $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
 	arm-none-eabi-size $@
+	@echo BOOTLOADER Support: $(BOOTLOAD)
 
 clean:
 	rm -f bin/lps-node-firmware.elf bin/lps-node-firmware.dfu bin/.map $(OBJS)
@@ -92,7 +103,7 @@ dfu:
 	$(OBJCOPY) $^ -O binary $@
 
 %.dfu: %.bin
-	$(PYTHON2) tools/make/dfu-convert.py -b 0x8000000:$^ $@
+	$(PYTHON2) tools/make/dfu-convert.py -b $(LOAD_ADDRESS):$^ $@
 
 check_submodules:
 	$(PYTHON2) tools/make/check-for-submodules.py
