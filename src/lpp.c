@@ -24,10 +24,14 @@
  */
 #include <stdio.h>
 
+#include "stm32f0xx_hal.h"
+
 #include "lpp.h"
 
 #include "cfg.h"
 #include "uwb.h"
+
+#include "bootmode.h"
 
 #define debug(...) // printf(__VA_ARGS__)
 
@@ -64,6 +68,22 @@ void lppHandleShortPacket(char *data, size_t length)
       printf("Setting new anchor position to %f, %f, %f\r\n", newpos->position[0],
                                                               newpos->position[1],
                                                               newpos->position[2]);
+      break;
+    }
+    case LPP_SHORT_REBOOT:
+    {
+      struct lppShortReboot_s* rebootInfo = (struct lppShortReboot_s*)&data[1];
+
+      // Set boot flags
+      if (rebootInfo->bootMode == LPP_SHORT_REBOOT_TO_BOOTLOADER) {
+        bootmodeSetBootloaderModeFlag();
+      } else if (rebootInfo->bootMode == LPP_SHORT_REBOOT_TO_FIRMWARE) {
+        bootmodeClearBootloaderModeFlag();
+      }
+
+      // Then resets!
+      NVIC_SystemReset();
+
       break;
     }
   }

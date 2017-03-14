@@ -92,7 +92,7 @@ static void main_task(void *pvParameters) {
   if (lps25hTestConnection()) {
     printf("[OK]\r\n");
     lps25hSetEnabled(true);
-  } else {
+  } else { 
     printf("[FAIL] (%u)\r\n", (unsigned int)hi2c1.ErrorCode);
     selftestPasses = false;
   }

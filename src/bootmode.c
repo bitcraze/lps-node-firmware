@@ -5,7 +5,7 @@
  * +------+    / /_/ / / /_/ /__/ /  / /_/ / / /_/  __/
  *  ||  ||    /_____/_/\__/\___/_/   \__,_/ /___/\___/
  *
- * LPS node firmware.
+ * LPS node bootloader.
  *
  * Copyright 2017, Bitcraze AB
  *
@@ -22,28 +22,31 @@
  * You should have received a copy of the GNU General Public License
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef __LPP_H__
-#define __LPP_H__
 
-#include <stddef.h>
-#include <stdint.h>
-
-void lppHandleShortPacket(char *data, size_t length);
-
-#define LPP_SHORT_ANCHOR_POSITION 0x01
-#define LPP_SHORT_REBOOT 0x02
+#include "stm32f0xx_hal.h"
+#include "bootmode.h"
 
 
+#define MAGIC_BOOT_MODE_MARKER 0xBCbc0d07
 
-struct lppShortAnchorPosition_s {
-  float position[3];
-} __attribute__((packed));
+static void writeBuRegister(uint32_t data);
 
-#define LPP_SHORT_REBOOT_TO_BOOTLOADER 0x00
-#define LPP_SHORT_REBOOT_TO_FIRMWARE 0x01
+void bootmodeSetBootloaderModeFlag() {
+  writeBuRegister(MAGIC_BOOT_MODE_MARKER);
+}
 
-struct lppShortReboot_s {
-  uint8_t bootMode;
-} __attribute__((packed));
+void bootmodeClearBootloaderModeFlag() {
+  writeBuRegister(0);
+}
 
-#endif //__LPP_H__
+
+static void writeBuRegister(uint32_t data) {
+  __HAL_RCC_PWR_CLK_ENABLE();
+  HAL_PWR_EnableBkUpAccess();
+
+  // Disable write protection
+  RTC->WPR = 0xCA;
+  RTC->WPR = 0x53;
+
+  RTC->BKP0R = data;
+}

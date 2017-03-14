@@ -28,7 +28,7 @@ INCLUDES+=-Ilib/freertos/inc
 # Platform specific files
 OBJS+=src/f0/startup_stm32f072xb.o src/f0/system_stm32f0xx.o src/f0/stm32f0xx_it.o src/f0/stm32f0xx_hal_msp.o
 OBJS+=src/f0/gpio.o src/f0/i2c.o src/f0/spi.o src/f0/system.o src/f0/usart.o
-OBJS+=src/f0/usbd_conf.o src/eeprom.o
+OBJS+=src/f0/usbd_conf.o src/eeprom.o src/bootmode.o
 HALS+=i2c_ex
 
 OBJS+=src/main.o
@@ -37,7 +37,7 @@ OBJS+=src/cfg.o src/usbcomm.o src/test_support.o src/production_test.o
 OBJS+=src/uwb.o src/uwb_twr_anchor.o src/uwb_sniffer.o src/uwb_twr_tag.o
 OBJS+=src/uwb_tdoa_anchor.o src/lpp.o
 
-HALS+=gpio rcc cortex i2c pcd dma pcd_ex rcc_ex spi uart
+HALS+=gpio rcc cortex i2c pcd dma pcd_ex rcc_ex spi uart pwr
 OBJS+=$(foreach mod, $(HALS), $(HAL_ROOT)/Src/stm32$(CPU)xx_hal_$(mod).o)
 OBJS+=$(HAL_ROOT)/Src/stm32$(CPU)xx_hal.o
 
