@@ -2758,7 +2758,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 #endif /* configUSE_APPLICATION_TASK_TAG */
 /*-----------------------------------------------------------*/
 
-void vTaskSwitchContext( void )
+__attribute__((used)) void vTaskSwitchContext( void )
 {
 	if( uxSchedulerSuspended != ( UBaseType_t ) pdFALSE )
 	{
@@ -4804,4 +4804,3 @@ const TickType_t xConstTickCount = xTickCount;
 #ifdef FREERTOS_MODULE_TEST
 	#include "tasks_test_access_functions.h"
 #endif
-

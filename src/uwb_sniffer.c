@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "cfg.h"
 #include "led.h"
@@ -45,21 +46,32 @@ static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
 
   if (event == eventPacketReceived) {
     int dataLength = dwGetDataLength(dev);
-    dwGetReceiveTimestamp(dev, &arrival);
+    dwGetRawReceiveTimestamp(dev, &arrival);
     dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
     dwNewReceive(dev);
     dwSetDefaults(dev);
     dwStartReceive(dev);
 
-    printf("From %02x to %02x @%02x%08x: ", rxPacket.sourceAddress[0],
-                                          rxPacket.destAddress[0],
-                                          (unsigned int) arrival.high8,
-                                          (unsigned int) arrival.low32);
-    for (int i=0; i<(dataLength - MAC802154_HEADER_LENGTH); i++) {
-      printf("%02x", rxPacket.payload[i]);
+    if (cfgIsBinaryMode()) {
+      write(STDOUT_FILENO, "\xbc", 1);
+      write(STDOUT_FILENO, &arrival.full, 5);
+      write(STDOUT_FILENO, &rxPacket.sourceAddress[0], 1);
+      write(STDOUT_FILENO, &rxPacket.destAddress[0], 1);
+      dataLength -= MAC802154_HEADER_LENGTH;
+      write(STDOUT_FILENO, &dataLength, 2);
+      write(STDOUT_FILENO, rxPacket.payload, dataLength);
+      write(STDOUT_FILENO, &dataLength, 2);  // Length repeated for sync detection
+    } else {
+      printf("From %02x to %02x @%02x%08x: ", rxPacket.sourceAddress[0],
+                                            rxPacket.destAddress[0],
+                                            (unsigned int) arrival.high8,
+                                            (unsigned int) arrival.low32);
+      for (int i=0; i<(dataLength - MAC802154_HEADER_LENGTH); i++) {
+        printf("%02x", rxPacket.payload[i]);
+      }
+      printf("\r\n");
     }
-    printf("\r\n");
 
   } else {
     dwNewReceive(dev);
