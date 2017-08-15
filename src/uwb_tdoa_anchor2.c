@@ -22,28 +22,25 @@
  * You should have received a copy of the GNU General Public License
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* uwb_tdoa2.c: Uwb TDOA anchor, version with only 1 packet type */
+/* uwb_tdoa2.c: Uwb TDOA anchor, version with anchor-computed distances */
 
 /*
  * This anchor algorithm is using TDMA to divide frames in 8 timeslots. Each
  * anchor is sending a packet in one timeslot, anchor n sends its packet in
- * timeslot n. The slot time is of 1ms.
+ * timeslot n. The slot time is of 2ms.
  *
  * Each packet contains (assuming the packet is sent by anchor n):
- *   - The time the packet was sent in A0 clock. Not used by the anchors.
  *   - A list of 8 timestamps that contains
+ *     - The ID of the packet the timestamp reffers to
  *     - At index n: The TX timestamp of the current packet in anchor n time
  *     - At index != n: The RX timestamp of all other packets from previous
  *                      frame in anchor n clock.
+ *   - A list of 7 distances, the distance from this anchor to the other
+ *     anchors in the system expressed in this anchor clock
  *
- * While this is enough data to range and synchronize to everyone, current
- * implementation only synchronizes to anchor 0. An outside observer listenning
- * to the communication could recompute all ranges and synchronizations.
- *
- * A tag can either use the pre-syncrhonized timestamp in A0 clock or
- * recompute synchronization. As a bonus, in a system with 6 anchors, two tag
- * could take slots 6 and 7 which would generate enough data to achieve two way
- * ranging.
+ * This should be good enough for an observer to calculate the time of departure
+ * of any packets in this anchor clock, and so to calculate the difference time
+ * of arrivale of the packets at the tag.
  */
 
 #include <stdint.h>
@@ -102,10 +99,14 @@ static struct ctx_s {
   int slot;
   int nextSlot;
 
+  // Current packet id
+  uint8_t pid;
+
   // TDMA start of frame in local clock
   dwTime_t tdmaFrameStart;
 
-  // list of timestamps for last frame.
+  // list of timestamps and ids for last frame.
+  uint8_t packetIds[NSLOTS];
   dwTime_t timestamps[NSLOTS];
 
   // Variable to achieve clock synchronization with Anchor 0
@@ -116,11 +117,11 @@ static struct ctx_s {
 } ctx;
 
 // Packet formats
-#define PACKET_TYPE_RANGE 0x21
+#define PACKET_TYPE_TDOA2 0x22
 
 typedef struct rangePacket_s {
   uint8_t type;
-  uint8_t txMaster[5];                // TX time at master
+  uint8_t pid[NSLOTS];  // Packet id of the timestamps
   uint8_t timestamps[NSLOTS][5];  // Relevant time for anchors
 } __attribute__((packed)) rangePacket_t;
 
@@ -175,17 +176,17 @@ static void handleRxPacket(dwDevice_t *dev)
   rxPacket.payload[0] = 0;
   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-  if (dataLength == 0 || rxPacket.payload[0] != PACKET_TYPE_RANGE || rxPacket.sourceAddress[0] != ctx.slot) {
+  if (dataLength == 0 || rxPacket.payload[0] != PACKET_TYPE_TDOA2 || rxPacket.sourceAddress[0] != ctx.slot) {
     handleFailedRx(dev);
     return;
   }
+  rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
 
+  ctx.packetIds[ctx.slot] = rangePacket->pid[ctx.slot];
   ctx.timestamps[ctx.slot] = rxTime;
 
   // Resync TDMA and save useful anchor 0 information
   if (ctx.slot == 0) {
-    rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
-
     // Resync local frame start to packet from anchor 0
     dwTime_t pkTxTime = { .full = 0 };
     memcpy(&pkTxTime, rangePacket->timestamps[ctx.slot], 5);
@@ -225,7 +226,7 @@ static void setTxData(dwDevice_t *dev)
     memcpy(txPacket.destAddress, base_address, 8);
     txPacket.destAddress[0] = 0xff;
 
-    txPacket.payload[0] = PACKET_TYPE_RANGE;
+    txPacket.payload[0] = PACKET_TYPE_TDOA2;
 
     firstEntry = false;
   }
@@ -233,6 +234,7 @@ static void setTxData(dwDevice_t *dev)
   rangePacket_t *rangePacket = (rangePacket_t *)txPacket.payload;
 
   for (int i=0; i<NSLOTS; i++) {
+    rangePacket->pid[i] = ctx.packetIds[i];
     memcpy(rangePacket->timestamps[i], ctx.timestamps[i].raw, 5);
   }
 
@@ -242,6 +244,7 @@ static void setTxData(dwDevice_t *dev)
 // Setup the radio to send a packet in the next timeslot
 static void setupTx(dwDevice_t *dev)
 {
+  ctx.packetIds[ctx.anchorId] = ctx.pid++;
   ctx.timestamps[ctx.anchorId] = transmitTimeForSlot(ctx.nextSlot);
   dwNewTransmit(dev);
   dwSetDefaults(dev);
@@ -299,7 +302,7 @@ static void slotStep(dwDevice_t *dev, uwbEvent_t event)
 }
 
 // Initialize/reset the agorithm
-static void tdoaInit(uwbConfig_t * config, dwDevice_t *dev)
+static void tdoa2Init(uwbConfig_t * config, dwDevice_t *dev)
 {
   ctx.anchorId = config->address[0];
   ctx.state = syncTdmaState;
@@ -309,7 +312,7 @@ static void tdoaInit(uwbConfig_t * config, dwDevice_t *dev)
 }
 
 // Called for each DW radio event
-static uint32_t tdoaUwbEvent(dwDevice_t *dev, uwbEvent_t event)
+static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 {
   if (ctx.state == synchronizedState) {
     slotStep(dev, event);
@@ -331,7 +334,7 @@ static uint32_t tdoaUwbEvent(dwDevice_t *dev, uwbEvent_t event)
             int dataLength = dwGetDataLength(dev);
             dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-            if (rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_RANGE) {
+            if (rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) {
               rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
 
               // Resync local frame start to packet from anchor 0
@@ -374,7 +377,7 @@ static uint32_t tdoaUwbEvent(dwDevice_t *dev, uwbEvent_t event)
   return MAX_TIMEOUT;
 }
 
-uwbAlgorithm_t uwbTdoaAlgorithm = {
-  .init = tdoaInit,
-  .onEvent = tdoaUwbEvent,
+uwbAlgorithm_t uwbTdoa2Algorithm = {
+  .init = tdoa2Init,
+  .onEvent = tdoa2UwbEvent,
 };
