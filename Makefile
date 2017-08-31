@@ -96,7 +96,7 @@ openocd:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets
 
 dfu:
-	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -R
+	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -s :leave
 
 # Generic rules
 %.bin: %.elf
