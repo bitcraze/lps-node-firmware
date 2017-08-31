@@ -30,15 +30,20 @@
  * timeslot n. The slot time is of 2ms.
  *
  * Each packet contains (assuming the packet is sent by anchor n):
+ *   - A list of 8 IDs that contains the sequence number of the packets
+ *     - At index n: The sequence number of this packet
+ *     - At index != n: The sequence number of the last packet received by
+ *       anchor 'index'
  *   - A list of 8 timestamps that contains
- *     - The ID of the packet the timestamp reffers to
  *     - At index n: The TX timestamp of the current packet in anchor n time
  *     - At index != n: The RX timestamp of all other packets from previous
- *                      frame in anchor n clock.
+ *                      frame in anchor n clock. If the previous packet was
+ *                      invalid the timestamp is 0
  *   - A list of 7 distances, the distance from this anchor to the other
- *     anchors in the system expressed in this anchor clock
+ *     anchors in the system expressed in this anchor clock. The distance to
+ *     the current anchor is reserved.
  *
- * This should be good enough for an observer to calculate the time of departure
+ * This is enough info for an observer to calculate the time of departure
  * of any packets in this anchor clock, and so to calculate the difference time
  * of arrivale of the packets at the tag.
  */
@@ -74,6 +79,8 @@
 // Timeout for receiving a packet in a timeslot
 #define RECEIVE_TIMEOUT 250
 
+#define TS_TX_SIZE 4
+
 // Useful constants
 static const uint8_t base_address[] = {0,0,0,0,0,0,0xcf,0xbc};
 
@@ -99,7 +106,7 @@ static struct ctx_s {
   int slot;
   int nextSlot;
 
-  // Current packet id
+  // Current packet id and tx timestamps
   uint8_t pid;
 
   // TDMA start of frame in local clock
@@ -107,13 +114,10 @@ static struct ctx_s {
 
   // list of timestamps and ids for last frame.
   uint8_t packetIds[NSLOTS];
-  dwTime_t timestamps[NSLOTS];
+  uint32_t rxTimestamps[NSLOTS];
+  uint32_t txTimestamps[NSLOTS];
 
-  // Variable to achieve clock synchronization with Anchor 0
-  double skew;    // Clock skew/drift with anchor 0
-  uint32_t range;  // Range to anchor 0 in timer tick
-  dwTime_t T0tx0[2];
-  dwTime_t TNtxn[2];
+  uint16_t distances[NSLOTS];
 } ctx;
 
 // Packet formats
@@ -122,7 +126,8 @@ static struct ctx_s {
 typedef struct rangePacket_s {
   uint8_t type;
   uint8_t pid[NSLOTS];  // Packet id of the timestamps
-  uint8_t timestamps[NSLOTS][5];  // Relevant time for anchors
+  uint8_t timestamps[NSLOTS][TS_TX_SIZE];  // Relevant time for anchors
+  uint16_t distances[NSLOTS];
 } __attribute__((packed)) rangePacket_t;
 
 /* Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 */
@@ -155,12 +160,29 @@ static dwTime_t transmitTimeForSlot(int slot)
 static void handleFailedRx(dwDevice_t *dev)
 {
 
-  ctx.timestamps[ctx.slot].full = 0;
+  ctx.rxTimestamps[ctx.slot] = 0;
+  ctx.distances[ctx.slot] = 0;
 
   // Failed TDMA sync, keeps track of the number of fail so that the TDMA
   // watchdog can take decision as of TDMA resynchronisation
   if (ctx.slot == 0) {
     ctx.state = syncTdmaState;
+  }
+}
+
+static void calculateDistance(int slot, int newId, uint32_t remoteTx, uint32_t remoteRx, uint32_t ts)
+{
+  // Check that the 2 last packets are consecutive packets
+  if (ctx.packetIds[slot] == ((newId-1)%0x0ff)) {
+    double tround1 = remoteRx - ctx.txTimestamps[ctx.slot];
+    double treply1 = ctx.txTimestamps[ctx.anchorId] - ctx.rxTimestamps[ctx.slot];
+    double tround2 = ts - ctx.txTimestamps[ctx.anchorId];
+    double treply2 = remoteTx - remoteRx;
+
+    uint32_t distance = ((tround2 * tround1)-(treply1 * treply2)) / (2*(treply1 + tround2));
+    ctx.distances[slot] = distance & 0xfffful;
+  } else {
+    ctx.distances[slot] = 0;
   }
 }
 
@@ -182,8 +204,17 @@ static void handleRxPacket(dwDevice_t *dev)
   }
   rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
 
+  uint32_t remoteTx;
+  memcpy(&remoteTx, rangePacket->timestamps[ctx.slot], 4);
+  uint32_t remoteRx;
+  memcpy(&remoteRx, rangePacket->timestamps[ctx.anchorId], 4);
+
+  calculateDistance(ctx.slot, rangePacket->pid[ctx.slot],
+                    remoteTx, remoteRx, rxTime.low32);
+
   ctx.packetIds[ctx.slot] = rangePacket->pid[ctx.slot];
-  ctx.timestamps[ctx.slot] = rxTime;
+  ctx.rxTimestamps[ctx.slot] = rxTime.low32;
+  memcpy(&ctx.txTimestamps[ctx.slot], &rangePacket->timestamps[ctx.slot], 4);
 
   // Resync TDMA and save useful anchor 0 information
   if (ctx.slot == 0) {
@@ -235,8 +266,10 @@ static void setTxData(dwDevice_t *dev)
 
   for (int i=0; i<NSLOTS; i++) {
     rangePacket->pid[i] = ctx.packetIds[i];
-    memcpy(rangePacket->timestamps[i], ctx.timestamps[i].raw, 5);
+    memcpy(rangePacket->timestamps[i], &ctx.rxTimestamps[i], TS_TX_SIZE);
   }
+  memcpy(rangePacket->timestamps[ctx.anchorId], &ctx.txTimestamps[ctx.anchorId], TS_TX_SIZE);
+  memcpy(rangePacket->distances, ctx.distances, sizeof(ctx.distances));
 
   dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + sizeof(rangePacket_t));
 }
@@ -245,11 +278,12 @@ static void setTxData(dwDevice_t *dev)
 static void setupTx(dwDevice_t *dev)
 {
   ctx.packetIds[ctx.anchorId] = ctx.pid++;
-  ctx.timestamps[ctx.anchorId] = transmitTimeForSlot(ctx.nextSlot);
+  dwTime_t txTime = transmitTimeForSlot(ctx.nextSlot);
+  ctx.txTimestamps[ctx.anchorId] = txTime.low32;
   dwNewTransmit(dev);
   dwSetDefaults(dev);
   setTxData(dev);
-  dwSetTxRxTime(dev, ctx.timestamps[ctx.anchorId]);
+  dwSetTxRxTime(dev, txTime);
   dwStartTransmit(dev);
 }
 
@@ -308,7 +342,8 @@ static void tdoa2Init(uwbConfig_t * config, dwDevice_t *dev)
   ctx.state = syncTdmaState;
   ctx.slot = NSLOTS-1;
   ctx.nextSlot = 0;
-  memset(ctx.timestamps, 0, sizeof(ctx.timestamps));
+  memset(ctx.txTimestamps, 0, sizeof(ctx.txTimestamps));
+  memset(ctx.rxTimestamps, 0, sizeof(ctx.rxTimestamps));
 }
 
 // Called for each DW radio event
