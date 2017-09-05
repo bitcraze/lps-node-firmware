@@ -98,6 +98,10 @@ openocd:
 dfu:
 	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -s :leave
 
+reset_and_dfu:
+	tools/make/reset-to-dfu.py
+	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -s :leave
+
 # Generic rules
 %.bin: %.elf
 	$(OBJCOPY) $^ -O binary $@
