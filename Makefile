@@ -74,12 +74,13 @@ CC=$(PREFIX)gcc
 LD=$(PREFIX)gcc
 AS=$(PREFIX)as
 OBJCOPY=$(PREFIX)objcopy
+SIZE=$(PREFIX)size
 
 all: check_submodules bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
 
 bin/lps-node-firmware.elf: $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
-	arm-none-eabi-size $@
+	$(SIZE) $@
 	@echo BOOTLOADER Support: $(BOOTLOAD)
 
 clean:
