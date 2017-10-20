@@ -1,11 +1,11 @@
 OPENOCD           ?= openocd
 OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
-REV								?= B
+REV               ?= B
 PYTHON2           ?= python2
-# CFLAGS						+= -fdiagnostics-color=auto
+# CFLAGS          += -fdiagnostics-color=auto
 # CFLAGS += -DUSE_FTDI_UART
 
-BOOTLOAD 					?= 0
+BOOTLOAD          ?= 0
 
 ifeq ($(strip $(REV)),A)
 $(error Rev.A not supported anymore)
