@@ -1,11 +1,11 @@
 OPENOCD           ?= openocd
 OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
-REV								?= B
+REV               ?= B
 PYTHON2           ?= python2
-# CFLAGS						+= -fdiagnostics-color=auto
+# CFLAGS          += -fdiagnostics-color=auto
 # CFLAGS += -DUSE_FTDI_UART
 
-BOOTLOAD 					?= 0
+BOOTLOAD          ?= 0
 
 ifeq ($(strip $(REV)),A)
 $(error Rev.A not supported anymore)
@@ -74,12 +74,13 @@ CC=$(PREFIX)gcc
 LD=$(PREFIX)gcc
 AS=$(PREFIX)as
 OBJCOPY=$(PREFIX)objcopy
+SIZE=$(PREFIX)size
 
 all: check_submodules bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
 
 bin/lps-node-firmware.elf: $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
-	arm-none-eabi-size $@
+	$(SIZE) $@
 	@echo BOOTLOADER Support: $(BOOTLOAD)
 
 clean:
