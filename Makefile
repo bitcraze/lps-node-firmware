@@ -1,11 +1,11 @@
 OPENOCD           ?= openocd
 OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
-REV								?= B
+REV               ?= B
 PYTHON2           ?= python2
-# CFLAGS						+= -fdiagnostics-color=auto
+# CFLAGS          += -fdiagnostics-color=auto
 # CFLAGS += -DUSE_FTDI_UART
 
-BOOTLOAD 					?= 0
+BOOTLOAD          ?= 0
 
 ifeq ($(strip $(REV)),A)
 $(error Rev.A not supported anymore)
@@ -74,12 +74,13 @@ CC=$(PREFIX)gcc
 LD=$(PREFIX)gcc
 AS=$(PREFIX)as
 OBJCOPY=$(PREFIX)objcopy
+SIZE=$(PREFIX)size
 
 all: check_submodules bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
 
 bin/lps-node-firmware.elf: $(OBJS)
 	$(LD) -o $@ $^ $(LDFLAGS)
-	arm-none-eabi-size $@
+	$(SIZE) $@
 	@echo BOOTLOADER Support: $(BOOTLOAD)
 
 clean:
@@ -96,7 +97,11 @@ openocd:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init -c targets
 
 dfu:
-	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -R
+	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -s :leave
+
+reset_and_dfu:
+	tools/make/reset-to-dfu.py
+	dfu-util -d 0483:df11 -a 0 -D bin/lps-node-firmware.dfu -s :leave
 
 # Generic rules
 %.bin: %.elf

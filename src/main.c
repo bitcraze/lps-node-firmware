@@ -59,6 +59,7 @@ static void changeMode(unsigned int newMode);
 static void printModeList();
 static void printMode();
 static void help();
+static void bootload(void);
 
 static void main_task(void *pvParameters) {
   int i;
@@ -242,6 +243,8 @@ static void handleSerialInput(char ch) {
           printf("System halted, reset to continue\r\n");
           while(true){}
           break;
+        case 'u':
+          bootload();
         default:
           configChanged = false;
           break;
@@ -358,6 +361,7 @@ static void help() {
   printf("s   - sniffer mode\r\n");
   printf("m   - List and change mode\r\n");
   printf("d   - reset configuration\r\n");
+  printf("u   - enter BSL (DFU mode)\r\n");
   printf("h   - This help\r\n");
   printf("---- For machine only\r\n");
   printf("b   - Switch to binary mode (sniffer only)\r\n");
@@ -383,6 +387,26 @@ int main() {
   while(1);
 
   return 0;
+}
+
+// Enter bootloader from software: Taken from micropython machine_bootloader function
+static void bootload(void) {
+    printf("Entering DFU Mode\r\n");
+    HAL_Delay(500);
+
+    HAL_RCC_DeInit();
+    HAL_DeInit();
+
+    __HAL_REMAPMEMORY_SYSTEMFLASH();
+
+    // arm-none-eabi-gcc 4.9.0 does not correctly inline this
+    //     //     // MSP function, so we write it out explicitly here.
+    //__set_MSP(*((uint32_t*) 0x00000000));
+    __ASM volatile ("movs r3, #0\nldr r3, [r3, #0]\nMSR msp, r3\n" : : : "r3", "sp");
+
+    ((void (*)(void)) *((uint32_t*) 0x00000004))();
+
+    while (1);
 }
 
 // Freertos required callbacks

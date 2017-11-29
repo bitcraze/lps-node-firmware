@@ -8,19 +8,24 @@ import sys
 import struct
 import serial
 import binascii
+import yaml
 
-if len(sys.argv) != 2:
-    print("usage: {} <sniffer serial port>".format(sys.argv[0]))
+if len(sys.argv) < 2:
+    print("usage: {} <sniffer serial port> [format]".format(sys.argv[0]))
+    print("  Possible format: human (default), csv, yaml")
     sys.exit(1)
 
-ser = serial.Serial('/dev/ttyACM0')
+ser = serial.Serial(sys.argv[1], 9600)
+
+outputFormat = 'human'
+if len(sys.argv) > 2:
+    outputFormat = sys.argv[2].strip()
 
 # Switch to binary mode
 ser.write(b'b')
 
 while True:
     c = ser.read(1)
-
     if c == b'\xbc':
         ts = ser.read(5)
         ts += b'\0\0\0'
@@ -32,8 +37,22 @@ while True:
         data = ser.read(length)
         l2 = struct.unpack('<H', ser.read(2))[0]
         if length == l2:
-            print("@{:010x} from {} to {}: {}".format(ts, addrFrom, addrTo,
-                                                      binascii.hexlify(data)
-                                                      .decode('utf8')))
+            if outputFormat == 'human':
+                print("@{:010x} from {} to {}: {}".format(ts, addrFrom, addrTo,
+                      binascii.hexlify(data)
+                      .decode('utf8')))
+            elif outputFormat == 'csv':
+                print("0x{:010x}, {}, {}, {}".format(ts, addrFrom, addrTo,
+                      binascii.hexlify(data)
+                      .decode('utf8')))
+            elif outputFormat == 'yaml':
+                print("---")
+                print(yaml.dump({'ts': ts, 'from': addrFrom,
+                                 'to': addrTo, 'data': data},
+                                Dumper=yaml.CDumper))
+            else:
+                sys.stderr.write("Error: Uknown output format: {}\n".format(
+                                 outputFormat))
+
         else:
             print("Out of sync!")
