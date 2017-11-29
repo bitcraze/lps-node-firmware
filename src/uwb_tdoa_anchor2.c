@@ -173,7 +173,7 @@ static void handleFailedRx(dwDevice_t *dev)
 static void calculateDistance(int slot, int newId, uint32_t remoteTx, uint32_t remoteRx, uint32_t ts)
 {
   // Check that the 2 last packets are consecutive packets
-  if (ctx.packetIds[slot] == ((newId-1)%0x0ff)) {
+  if (ctx.packetIds[slot] == ((newId-1) & 0x0ff)) {
     double tround1 = remoteRx - ctx.txTimestamps[ctx.slot];
     double treply1 = ctx.txTimestamps[ctx.anchorId] - ctx.rxTimestamps[ctx.slot];
     double tround2 = ts - ctx.txTimestamps[ctx.anchorId];
