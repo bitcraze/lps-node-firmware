@@ -170,10 +170,10 @@ static void handleFailedRx(dwDevice_t *dev)
   }
 }
 
-static void calculateDistance(int slot, int newId, uint32_t remoteTx, uint32_t remoteRx, uint32_t ts)
+static void calculateDistance(int slot, int newId, int remotePid, uint32_t remoteTx, uint32_t remoteRx, uint32_t ts)
 {
-  // Check that the 2 last packets are consecutive packets
-  if (ctx.packetIds[slot] == ((newId-1) & 0x0ff)) {
+  // Check that the 2 last packets are consecutive packets and that our last packet is in beteen
+  if ((ctx.packetIds[slot] == ((newId-1) & 0x0ff)) && remotePid == ctx.packetIds[ctx.anchorId]) {
     double tround1 = remoteRx - ctx.txTimestamps[ctx.slot];
     double treply1 = ctx.txTimestamps[ctx.anchorId] - ctx.rxTimestamps[ctx.slot];
     double tround2 = ts - ctx.txTimestamps[ctx.anchorId];
@@ -209,7 +209,7 @@ static void handleRxPacket(dwDevice_t *dev)
   uint32_t remoteRx;
   memcpy(&remoteRx, rangePacket->timestamps[ctx.anchorId], 4);
 
-  calculateDistance(ctx.slot, rangePacket->pid[ctx.slot],
+  calculateDistance(ctx.slot, rangePacket->pid[ctx.slot], rangePacket->pid[ctx.anchorId],
                     remoteTx, remoteRx, rxTime.low32);
 
   ctx.packetIds[ctx.slot] = rangePacket->pid[ctx.slot];
