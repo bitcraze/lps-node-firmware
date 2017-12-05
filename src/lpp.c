@@ -44,7 +44,7 @@ void lppHandleShortPacket(char *data, size_t length)
   debug("Handling LPP short packet of type %02x, length %d\r\n", type, length);
   debug("Raw data: ");
   for (int i=0; i<length; i++) {
-    printf("%02x ", data[i]);
+    debug("%02x ", data[i]);
   }
   debug("\r\n");
 
@@ -65,9 +65,9 @@ void lppHandleShortPacket(char *data, size_t length)
       uwbConfig->position[2] = newpos->position[2];
       uwbConfig->positionEnabled = true;
 
-      printf("Setting new anchor position to %f, %f, %f\r\n", newpos->position[0],
-                                                              newpos->position[1],
-                                                              newpos->position[2]);
+      debug("Setting new anchor position to %f, %f, %f\r\n", newpos->position[0],
+                                                             newpos->position[1],
+                                                             newpos->position[2]);
       break;
     }
     case LPP_SHORT_REBOOT:

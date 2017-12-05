@@ -47,7 +47,7 @@
  * of any packets in this anchor clock, and so to calculate the difference time
  * of arrivale of the packets at the tag.
  */
-
+#include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -57,6 +57,8 @@
 
 #include "cfg.h"
 #include "lpp.h"
+
+#define debug(...) printf(__VA_ARGS__)
 
 // Still using modulo 2 calculation for slots
 // TODO: If A0 is the TDMA master it could transmit slots parameters and frame
@@ -81,6 +83,9 @@
 
 // Timeout for receiving a packet in a timeslot
 #define RECEIVE_TIMEOUT 300
+
+// Timeout for receiving a service packet after we TX ours
+#define RECEIVE_SERVICE_TIMEOUT 800
 
 #define TS_TX_SIZE 4
 
@@ -234,6 +239,19 @@ static void handleRxPacket(dwDevice_t *dev)
   }
 }
 
+static void handleServicePacket(dwDevice_t *dev)
+{
+  static packet_t servicePacket;
+
+  int dataLength = dwGetDataLength(dev);
+  servicePacket.payload[0] = 0;
+  dwGetData(dev, (uint8_t*)&servicePacket, dataLength);
+
+  if (servicePacket.payload[0] == SHORT_LPP) {
+    lppHandleShortPacket(&servicePacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
+  }
+}
+
 // Setup the radio to receive a packet in the next timeslot
 static void setupRx(dwDevice_t *dev)
 {
@@ -267,20 +285,20 @@ static void setTxData(dwDevice_t *dev)
 
     txPacket.payload[0] = PACKET_TYPE_TDOA2;
 
-    uwbConfig_t *uwbConfig = uwbGetConfig();
-
-    // LPP anchor position is currently sent in all packets
-    if (uwbConfig->positionEnabled) {
-      txPacket.payload[LPP_HEADER] = SHORT_LPP;
-      txPacket.payload[LPP_TYPE] = LPP_SHORT_ANCHOR_POSITION;
-
-      struct lppShortAnchorPosition_s *pos = (struct lppShortAnchorPosition_s*) &txPacket.payload[LPP_PAYLOAD];
-      memcpy(pos->position, uwbConfig->position, 3*sizeof(float));
-
-      lppLength = 2 + sizeof(struct lppShortAnchorPosition_s);
-    }
-
     firstEntry = false;
+  }
+
+  uwbConfig_t *uwbConfig = uwbGetConfig();
+
+  // LPP anchor position is currently sent in all packets
+  if (uwbConfig->positionEnabled) {
+    txPacket.payload[LPP_HEADER] = SHORT_LPP;
+    txPacket.payload[LPP_TYPE] = LPP_SHORT_ANCHOR_POSITION;
+
+    struct lppShortAnchorPosition_s *pos = (struct lppShortAnchorPosition_s*) &txPacket.payload[LPP_PAYLOAD];
+    memcpy(pos->position, uwbConfig->position, 3*sizeof(float));
+
+    lppLength = 2 + sizeof(struct lppShortAnchorPosition_s);
   }
 
   rangePacket_t *rangePacket = (rangePacket_t *)txPacket.payload;
@@ -301,10 +319,16 @@ static void setupTx(dwDevice_t *dev)
   ctx.packetIds[ctx.anchorId] = ctx.pid++;
   dwTime_t txTime = transmitTimeForSlot(ctx.nextSlot);
   ctx.txTimestamps[ctx.anchorId] = txTime.low32;
+
+  dwSetReceiveWaitTimeout(dev, RECEIVE_SERVICE_TIMEOUT);
+  dwWriteSystemConfigurationRegister(dev);
+
   dwNewTransmit(dev);
   dwSetDefaults(dev);
   setTxData(dev);
   dwSetTxRxTime(dev, txTime);
+
+  dwWaitForResponse(dev, true);
   dwStartTransmit(dev);
 }
 
@@ -326,7 +350,7 @@ static void updateSlot()
 
 // slotStep is called once per timeslot as long as TDMA is synched and setup
 // the next timeslot action
-static void slotStep(dwDevice_t *dev, uwbEvent_t event)
+static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
 {
   switch (ctx.slotState) {
     case slotRxDone:
@@ -340,20 +364,33 @@ static void slotStep(dwDevice_t *dev, uwbEvent_t event)
       if (ctx.nextSlot == ctx.anchorId) {
         setupTx(dev);
         ctx.slotState = slotTxDone;
+        updateSlot();
       } else {
         setupRx(dev);
         ctx.slotState = slotRxDone;
+        updateSlot();
       }
 
       break;
     case slotTxDone:
-      // We send one packet per slot so after sending we setup the next receive
-      setupRx(dev);
-      ctx.slotState = slotRxDone;
+    // We try to receive an LPP packet after sending our packet.
+    // After this is done, we setup the next receive.
+      if (event == eventPacketReceived || event == eventReceiveTimeout) {
+        if (event == eventPacketReceived) {
+          debug("Received service packet!\r\n");
+          handleServicePacket(dev);
+          // The service packet handling time desynchronized us, lets resynch
+          ctx.state = syncTdmaState;
+          return 0;
+        }
+        setupRx(dev);
+        ctx.slotState = slotRxDone;
+        updateSlot();
+      }
       break;
   }
 
-  updateSlot();
+  return MAX_TIMEOUT;
 }
 
 // Initialize/reset the agorithm
@@ -371,7 +408,7 @@ static void tdoa2Init(uwbConfig_t * config, dwDevice_t *dev)
 static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 {
   if (ctx.state == synchronizedState) {
-    slotStep(dev, event);
+    return slotStep(dev, event);
   } else {
     if (ctx.anchorId == 0) {
       dwGetSystemTimestamp(dev, &ctx.tdmaFrameStart);
