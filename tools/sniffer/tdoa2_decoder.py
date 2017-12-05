@@ -25,12 +25,13 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
     packetType = packet["data"][0]
 
     if packetType == 34:
-        decoded = struct.unpack("<BBBBBBBBBLLLLLLLLHHHHHHHH", packet["data"])
+        decoded = struct.unpack("<BBBBBBBBBLLLLLLLLHHHHHHHH", packet["data"][:57])
         packet["type"] = decoded[0]
-        if packet["type"] == 34:
-            packet["seqs"] = list(decoded[1:9])
-            packet["timestamps"] = list(decoded[9:17])
-            packet["distances"] = list(decoded[17:25])
+        packet["seqs"] = list(decoded[1:9])
+        packet["timestamps"] = list(decoded[9:17])
+        packet["distances"] = list(decoded[17:25])
+        if len(packet["data"]) > 57:
+            packet["lpp_data"] = packet["data"][57:]
 
     print("---")
     print(yaml.dump(packet, Dumper=yaml.CDumper))

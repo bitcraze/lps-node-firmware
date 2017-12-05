@@ -55,6 +55,9 @@
 #include "libdw1000.h"
 #include "mac.h"
 
+#include "cfg.h"
+#include "lpp.h"
+
 // Still using modulo 2 calculation for slots
 // TODO: If A0 is the TDMA master it could transmit slots parameters and frame
 //       start so that we would not be limited to modulo 2 anymore
@@ -77,7 +80,7 @@
 #define TDMA_GUARD_LENGTH (uint64_t)( TDMA_GUARD_LENGTH_S * 499.2e6 * 128 )
 
 // Timeout for receiving a packet in a timeslot
-#define RECEIVE_TIMEOUT 250
+#define RECEIVE_TIMEOUT 300
 
 #define TS_TX_SIZE 4
 
@@ -129,6 +132,10 @@ typedef struct rangePacket_s {
   uint8_t timestamps[NSLOTS][TS_TX_SIZE];  // Relevant time for anchors
   uint16_t distances[NSLOTS];
 } __attribute__((packed)) rangePacket_t;
+
+#define LPP_HEADER (sizeof(rangePacket_t))
+#define LPP_TYPE (sizeof(rangePacket_t)+1)
+#define LPP_PAYLOAD (sizeof(rangePacket_t)+2)
 
 /* Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 */
 static uint32_t adjustTxRxTime(dwTime_t *time)
@@ -249,6 +256,7 @@ static void setTxData(dwDevice_t *dev)
 {
   static packet_t txPacket;
   static bool firstEntry = true;
+  static int lppLength = 0;
 
   if (firstEntry) {
 
@@ -258,6 +266,19 @@ static void setTxData(dwDevice_t *dev)
     txPacket.destAddress[0] = 0xff;
 
     txPacket.payload[0] = PACKET_TYPE_TDOA2;
+
+    uwbConfig_t *uwbConfig = uwbGetConfig();
+
+    // LPP anchor position is currently sent in all packets
+    if (uwbConfig->positionEnabled) {
+      txPacket.payload[LPP_HEADER] = SHORT_LPP;
+      txPacket.payload[LPP_TYPE] = LPP_SHORT_ANCHOR_POSITION;
+
+      struct lppShortAnchorPosition_s *pos = (struct lppShortAnchorPosition_s*) &txPacket.payload[LPP_PAYLOAD];
+      memcpy(pos->position, uwbConfig->position, 3*sizeof(float));
+
+      lppLength = 2 + sizeof(struct lppShortAnchorPosition_s);
+    }
 
     firstEntry = false;
   }
@@ -271,7 +292,7 @@ static void setTxData(dwDevice_t *dev)
   memcpy(rangePacket->timestamps[ctx.anchorId], &ctx.txTimestamps[ctx.anchorId], TS_TX_SIZE);
   memcpy(rangePacket->distances, ctx.distances, sizeof(ctx.distances));
 
-  dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + sizeof(rangePacket_t));
+  dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + sizeof(rangePacket_t) + lppLength);
 }
 
 // Setup the radio to send a packet in the next timeslot
