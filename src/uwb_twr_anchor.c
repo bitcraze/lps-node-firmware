@@ -50,9 +50,6 @@ static struct uwbConfig_s config;
 #define FINAL 0x03
 #define REPORT 0x04 // Report contains all measurement from the anchor
 
-// LPP packets
-#define SHORT_LPP 0xF0
-
 typedef struct {
   uint8_t pollRx[5];
   uint8_t answerTx[5];

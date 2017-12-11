@@ -5,7 +5,7 @@
 
 
 // Packet format with compressed PAN and 64Bit addresses
-// Maximum 64 bytes payload
+// Maximum 128s bytes payload
 typedef struct packet_s {
     union {
       uint16_t fcf;
@@ -27,7 +27,7 @@ typedef struct packet_s {
     uint8_t destAddress[8];
     uint8_t sourceAddress[8];
 
-    uint8_t payload[64];
+    uint8_t payload[128];
 } __attribute__((packed)) packet_t;
 
 #define MAC80215_PACKET_INIT(packet, TYPE) packet.fcf_s.type = (TYPE); \

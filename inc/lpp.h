@@ -30,6 +30,8 @@
 
 void lppHandleShortPacket(char *data, size_t length);
 
+#define SHORT_LPP 0xF0
+
 #define LPP_SHORT_ANCHOR_POSITION 0x01
 #define LPP_SHORT_REBOOT 0x02
 
