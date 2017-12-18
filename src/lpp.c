@@ -86,5 +86,21 @@ void lppHandleShortPacket(char *data, size_t length)
 
       break;
     }
+    case LPP_SHORT_MODE:
+    {
+      struct lppShortMode_s* modeInfo = (struct lppShortMode_s*)&data[1];
+
+      // Set new mode
+      if (modeInfo->mode == LPP_SHORT_MODE_TWR) {
+        cfgWriteU8(cfgMode, MODE_ANCHOR);
+      } else if (modeInfo->mode == LPP_SHORT_MODE_TDOA) {
+        cfgWriteU8(cfgMode, MODE_TDOA_ANCHOR);
+      }
+
+      // Then resets!
+      NVIC_SystemReset();
+
+      break;
+    }
   }
 }
