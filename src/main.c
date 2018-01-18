@@ -203,7 +203,8 @@ int _write (int fd, const void *buf, size_t count)
 
 static void handleSerialInput(char ch) {
   bool configChanged = true;
-  static enum menu_e {mainMenu, modeMenu} currentMenu = mainMenu;
+  static enum menu_e {mainMenu, modeMenu, idMenu} currentMenu = mainMenu;
+  static unsigned int tempId = 0;
 
   switch (currentMenu) {
     case mainMenu:
@@ -219,6 +220,13 @@ static void handleSerialInput(char ch) {
         case '8':
         case '9':
           changeAddress(ch - '0');
+          break;
+        case 'i':
+          printf("Type new node ID then enter: ");
+          fflush(stdout);
+          currentMenu = idMenu;
+          configChanged = false;
+          tempId = 0;
           break;
         case 'a': changeMode(MODE_ANCHOR); break;
         case 't': changeMode(MODE_TAG); break;
@@ -268,6 +276,42 @@ static void handleSerialInput(char ch) {
         default:
           printf("Incorrect mode '%c'\r\n", ch);
           currentMenu = mainMenu;
+          configChanged = false;
+          break;
+      }
+      break;
+    case idMenu:
+      switch(ch) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          tempId *= 10;
+          tempId += ch - '0';
+          putchar(ch);
+          fflush(stdout);
+          configChanged = false;
+          break;
+        case '\n':
+        case '\r':
+          printf("\r\n");
+          fflush(stdout);
+          if (tempId < 256) {
+            printf("Setting node ID to %d\r\n", tempId);
+            changeAddress(tempId);
+          } else {
+            printf("Wrong ID '%d', the ID should be between 0 and 255\r\n", tempId);
+            configChanged = false;
+          }
+          currentMenu = mainMenu;
+          break;
+        default:
           configChanged = false;
           break;
       }
@@ -355,7 +399,8 @@ static void printMode() {
 static void help() {
   printf("Help\r\n");
   printf("-------------------\r\n");
-  printf("0-9 - set address\r\n");
+  printf("0-9 - set address (node ID)\r\n");
+  printf("i   - set node ID from 0 to 255\r\n");
   printf("a   - anchor mode\r\n");
   printf("t   - tag mode\r\n");
   printf("s   - sniffer mode\r\n");
