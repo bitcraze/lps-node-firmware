@@ -209,6 +209,36 @@ bool cfgWriteU8(ConfigField field, uint8_t value) {
     return true;
 }
 
+bool cfgReadU32(ConfigField field, uint32_t * value) {
+  int pos = tlvFindType(&tlv, field);
+
+  if (pos > -1) {
+    memcpy(value, &tlv.data[pos+2], sizeof(uint32_t));
+  }
+
+  return (pos > -1);
+}
+
+bool cfgWriteU32(ConfigField field, uint32_t value) {
+    int pos = tlvFindType(&tlv, field);
+
+    if (pos > -1) {
+      memcpy(&tlv.data[pos+2], &value, sizeof(uint32_t));
+    } else {
+      // Add new field at the end of the tlv
+      tlv.data[cfgHeader->tlvSize] = field;
+      tlv.data[cfgHeader->tlvSize+1] = sizeof(uint32_t);
+      memcpy(&tlv.data[cfgHeader->tlvSize+2], &value, sizeof(uint32_t));
+      cfgHeader->tlvSize += 2 + sizeof(uint32_t);
+    }
+
+    write_crc();
+    eepromWrite(0, buffer, NUMBER_OF_BYTES_READ);
+    HAL_Delay(10);
+    readData();
+    return true;
+}
+
 bool cfgReadU8list(ConfigField field, uint8_t list[], uint8_t length) {
   int pos = tlvFindType(&tlv, field);
 

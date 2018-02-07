@@ -102,5 +102,22 @@ void lppHandleShortPacket(char *data, size_t length)
 
       break;
     }
+    case LPP_SHORT_UWB:
+    {
+      struct lppShortUWB_s *txPower = (struct lppShortUWB_s*)&data[1];
+
+      // Set new power settings
+      debug("SmartPower: %d, Force txPower: %d", txPower->enableSmartPower, txPower->forceTxPower);
+      debug("Seting power to 0x%04X\r\n", (unsigned int)txPower->txPower);
+
+      cfgWriteU8(cfgSmartPower, txPower->enableSmartPower);
+      cfgWriteU8(cfgForceTxPower, txPower->forceTxPower);
+      cfgWriteU32(cfgTxPower, txPower->txPower);
+
+      // Then resets!
+      NVIC_SystemReset();
+
+      break;
+    }
   }
 }

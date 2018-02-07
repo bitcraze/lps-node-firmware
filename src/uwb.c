@@ -130,7 +130,26 @@ void uwbInit()
   dwSetDefaults(dwm);
   dwEnableMode(dwm, MODE_SHORTDATA_FAST_ACCURACY);
   dwSetChannel(dwm, CHANNEL_2);
-  dwUseSmartPower(dwm, true);
+
+  // Enable smart power by default
+  uint8_t enableSmartPower = 1;
+  cfgReadU8(cfgSmartPower, &enableSmartPower);
+  config.smartPower = enableSmartPower != 0;
+  if (enableSmartPower) {
+    dwUseSmartPower(dwm, true);
+  }
+
+  // Do not force power by default
+  uint8_t forceTxPower = 0;
+  cfgReadU8(cfgForceTxPower, &forceTxPower);
+  config.forceTxPower = forceTxPower != 0;
+  if (forceTxPower) {
+    uint32_t txPower = 0x1F1F1F1Ful;
+    cfgReadU32(cfgTxPower, &txPower);
+    config.txPower = txPower;
+    dwSetTxPower(dwm, txPower);
+  }
+
   dwSetPreambleCode(dwm, PREAMBLE_CODE_64MHZ_9);
 
   dwCommitConfiguration(dwm);

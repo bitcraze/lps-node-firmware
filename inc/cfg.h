@@ -34,6 +34,9 @@ typedef enum {
   cfgMode,
   cfgAnchorlist,
   cfgAnchorPos,
+  cfgSmartPower,
+  cfgForceTxPower,
+  cfgTxPower,
 } ConfigField;
 
 void cfgInit();
@@ -45,6 +48,10 @@ bool cfgFieldSize(ConfigField field, uint8_t * size);
 bool cfgReadU8(ConfigField field, uint8_t * value);
 
 bool cfgWriteU8(ConfigField field, uint8_t data);
+
+bool cfgReadU32(ConfigField field, uint32_t * value);
+
+bool cfgWriteU32(ConfigField field, uint32_t value);
 
 bool cfgReadU8list(ConfigField field, uint8_t list[], uint8_t lenth);
 

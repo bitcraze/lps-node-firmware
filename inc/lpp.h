@@ -35,8 +35,7 @@ void lppHandleShortPacket(char *data, size_t length);
 #define LPP_SHORT_ANCHOR_POSITION 0x01
 #define LPP_SHORT_REBOOT 0x02
 #define LPP_SHORT_MODE 0x03
-
-
+#define LPP_SHORT_UWB 0x04
 
 struct lppShortAnchorPosition_s {
   float position[3];
@@ -55,5 +54,11 @@ struct lppShortReboot_s {
 struct lppShortMode_s {
   uint8_t mode;
 } __attribute__((packed));
+
+struct lppShortUWB_s {
+  uint8_t enableSmartPower :1;
+  uint8_t forceTxPower :1;
+  uint32_t txPower;
+};
 
 #endif //__LPP_H__

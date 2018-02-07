@@ -139,6 +139,11 @@ static void main_task(void *pvParameters) {
                                                       uwbConfig->position[1],
                                                       uwbConfig->position[2]);
   }
+  printf("CONFIG\t: SmartPower enabled: %s\r\n", uwbConfig->smartPower?"True":"False");
+  printf("CONFIG\t: Force TX power: %s\r\n", uwbConfig->forceTxPower?"True":"False");
+  if(uwbConfig->forceTxPower) {
+    printf("CONFIG\t: TX power setting: %08X\r\n", (unsigned int)uwbConfig->txPower);
+  }
 
   HAL_Delay(500);
 
