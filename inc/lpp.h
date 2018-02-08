@@ -59,6 +59,6 @@ struct lppShortUWB_s {
   uint8_t enableSmartPower :1;
   uint8_t forceTxPower :1;
   uint32_t txPower;
-};
+} __attribute__((packed));
 
 #endif //__LPP_H__
