@@ -232,7 +232,7 @@ static void handleRxPacket(dwDevice_t *dev)
   if (ctx.slot == 0) {
     // Resync local frame start to packet from anchor 0
     dwTime_t pkTxTime = { .full = 0 };
-    memcpy(&pkTxTime, rangePacket->timestamps[ctx.slot], 5);
+    memcpy(&pkTxTime, rangePacket->timestamps[ctx.slot], TS_TX_SIZE);
     ctx.tdmaFrameStart.full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full));
 
     //TODO: Save relevant data to calculate masterTime
@@ -432,7 +432,7 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 
               // Resync local frame start to packet from anchor 0
               dwTime_t pkTxTime = { .full = 0 };
-              memcpy(&pkTxTime, rangePacket->timestamps[0], 5);
+              memcpy(&pkTxTime, rangePacket->timestamps[0], TS_TX_SIZE);
               ctx.tdmaFrameStart.full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full));
 
               ctx.tdmaFrameStart.full += TDMA_FRAME_LEN;
