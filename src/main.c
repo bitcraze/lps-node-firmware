@@ -25,6 +25,7 @@
 #include <stm32f0xx_hal.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -49,6 +50,9 @@
 
 #include "uwb.h"
 
+
+#define POWER_LEVELS 10
+
 const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
 
 static void restConfig();
@@ -57,10 +61,12 @@ static void handleSerialInput(char ch);
 static void handleButton(void);
 static void changeMode(unsigned int newMode);
 static void changeRadioMode(unsigned int newMode);
+static void changePower(uint8_t power);
 static void printModeList();
 static void printRadioModeList();
 static void printMode();
 static void printRadioMode();
+static void printPowerHelp();
 static void help();
 static void bootload(void);
 
@@ -213,7 +219,7 @@ int _write (int fd, const void *buf, size_t count)
 
 static void handleSerialInput(char ch) {
   bool configChanged = true;
-  static enum menu_e {mainMenu, modeMenu, idMenu, radioMenu} currentMenu = mainMenu;
+  static enum menu_e {mainMenu, modeMenu, idMenu, radioMenu, powerMenu} currentMenu = mainMenu;
   static unsigned int tempId = 0;
 
   switch (currentMenu) {
@@ -267,6 +273,11 @@ static void handleSerialInput(char ch) {
           printf("System halted, reset to continue\r\n");
           while(true){}
           break;
+        case 'p':
+             printPowerHelp();
+             currentMenu = powerMenu;
+             configChanged = false;
+             break;
         case 'u':
           bootload();
         default:
@@ -346,8 +357,35 @@ static void handleSerialInput(char ch) {
         default:
           configChanged = false;
           break;
+         }
+         break;
+    case powerMenu:
+      switch(ch) {
+        case 'f':
+          printf("Setting ForceTxPower\r\n");
+          cfgWriteU8(cfgSmartPower, 0);
+          cfgWriteU8(cfgForceTxPower, 1);
+          break;
+        case 's':
+          printf("Setting SmartPower\r\n");
+          cfgWriteU8(cfgSmartPower, 1);
+          cfgWriteU8(cfgForceTxPower, 0);
+          break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+		  //support 10 power levels
+          changePower(ch - '0');
+          break;
       }
-      break;
+      currentMenu = mainMenu;
   }
 
   if (configChanged) {
@@ -396,6 +434,37 @@ static void changeMode(unsigned int newMode) {
 
     printf("New device mode: ");
     printMode();
+}
+
+static void changePower(uint8_t power) { //expects [0, POWER_LEVELS-1] interval
+  // 000 11111 = 0x1F = 33.5dB = max power
+  // 110 00000 = 0xC0 = 0dB = min power
+  // first 3 bits can have 7 values 000 - 110  (111 means OFF)
+
+  // convert interval to [1, POWER_LEVELS]
+  if(power > POWER_LEVELS-1) {
+    power = POWER_LEVELS;
+  } else {
+    power++;
+  }
+
+  float desired_db = (power * 1. / POWER_LEVELS )*33.5;
+
+  //split desired power between amplifier and mixer
+  uint8_t db_amp = (uint8_t) roundf( (desired_db * 18/33.5) / 3 ) * 3;  //rounded to 3dB steps (supported by amplifier)
+  float db_mix = roundf( (desired_db - db_amp) / 0.5 ) * 0.5; //rounded to 0.5dB steps (supported by mixer)
+
+  // 7=111 minus (normalized db_amp values 1-6), all shifted to first 3 bits:
+  uint8_t amp_3bits = 0xE0 & (7-( db_amp / 3 + 1 ))<<5;  // 0xE0 bitmask 11100000
+  // mixer is 5 bits:
+  uint8_t mix_5bits = 0x1F & ( (uint8_t) (db_mix / 0.5) ); // 0x1F bitmask 00011111
+
+  uint8_t power_bits = amp_3bits | mix_5bits;
+
+  //copy power byte to all 4 bytes of txPower
+  uint32_t txPower = power_bits | (power_bits<<8) | (power_bits<<16) | (power_bits<<24);
+  printf("Setting txpower to: 0x%lX = %.1fdB\r\n", txPower, db_amp+db_mix);
+  cfgWriteU32(cfgTxPower, txPower);
 }
 
 static void printModeList()
@@ -475,6 +544,14 @@ static void printRadioModeList()
 
 
 
+static void printPowerHelp() {
+  printf("Power menu\r\n");
+  printf("-------------------\r\n");
+  printf("0-9 - to set ForceTxPower power (from 3.5dB to 33.5dB)\r\n");
+  printf("f   - for ForceTxPower\r\n");
+  printf("s   - for SmartPower\r\n");
+}
+
 static void help() {
   printf("Help\r\n");
   printf("-------------------\r\n");
@@ -485,6 +562,7 @@ static void help() {
   printf("s   - sniffer mode\r\n");
   printf("m   - List and change mode\r\n");
   printf("r   - List and change UWB radio settings\r\n");
+  printf("p   - change power mode\r\n");
   printf("d   - reset configuration\r\n");
   printf("u   - enter BSL (DFU mode)\r\n");
   printf("h   - This help\r\n");
