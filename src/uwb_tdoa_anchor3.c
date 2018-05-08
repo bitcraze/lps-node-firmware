@@ -112,7 +112,7 @@ static struct ctx_s {
 
 // Packet formats
 #define PACKET_TYPE_TDOA3 0x30
-#define TDOA_3_REMOTE_COUNT_MAX 8
+#define TDOA_3_REMOTE_COUNT_MAX 7
 
 typedef struct {
   uint8_t type;

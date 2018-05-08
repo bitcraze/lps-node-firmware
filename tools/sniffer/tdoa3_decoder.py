@@ -49,7 +49,9 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
         anchor_data_index = 7
 
         for i in range(remote_count):
-            decoded_anchor_data = struct.unpack('<BBL', packet["data"][anchor_data_index:(anchor_data_index + 6)])
+            decoded_anchor_data = struct.unpack(
+                '<BBL',
+                packet["data"][anchor_data_index:(anchor_data_index + 6)])
             seq = decoded_anchor_data[1] & 0x7f
             anchor_data = {
                 'id': decoded_anchor_data[0],
@@ -60,14 +62,36 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
 
             has_distance = ((decoded_anchor_data[1] & 0x80) != 0)
             if (has_distance):
-                decoded_distance = struct.unpack('<H', packet["data"][anchor_data_index:(anchor_data_index + 2)])
+                decoded_distance = struct.unpack(
+                    '<H',
+                    packet["data"][anchor_data_index:(anchor_data_index + 2)])
                 anchor_data['distance'] = decoded_distance[0]
                 anchor_data_index += 2
 
             packet['remoteAnchorData'].append(anchor_data)
 
-        if len(packet["data"]) > 57:
-            packet["lpp_data"] = packet["data"][57:]
+        if len(packet["data"]) > anchor_data_index:
+            if packet["data"][anchor_data_index] == 0xf0 and \
+                    packet["data"][anchor_data_index + 1] == 0x01:
+                packet["lpp_data"] = {}
+                packet["lpp_data"]['header'] = packet["data"][
+                    anchor_data_index]
+                anchor_data_index += 1
+
+                packet["lpp_data"]['type'] = packet["data"][anchor_data_index]
+                anchor_data_index += 1
+
+                decoded = struct.unpack(
+                    "<fff",
+                    packet["data"][anchor_data_index:anchor_data_index + 3 * 6]
+                )
+                packet["lpp_data"]['position'] = {}
+                packet["lpp_data"]['position']['x'] = decoded[0]
+                packet["lpp_data"]['position']['y'] = decoded[1]
+                packet["lpp_data"]['position']['z'] = decoded[2]
+                anchor_data_index += 3 * 6
+            else:
+                packet["lpp_data"] = packet["data"][anchor_data_index:]
 
     print("---")
     print(yaml.dump(packet, Dumper=yaml.CDumper))
