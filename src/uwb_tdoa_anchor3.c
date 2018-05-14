@@ -341,6 +341,36 @@ static bool extractFromPacket(const rangePacket3_t* rangePacket, uint32_t* remot
   return false;
 }
 
+
+static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
+{
+  const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
+  ctx.anchorRxCount[remoteAnchorId]++;
+  anchorContext_t* anchorCtx = getContext(remoteAnchorId);
+  if (anchorCtx) {
+    const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket->payload;
+
+    uint32_t remoteTx = rangePacket->header.txTimeStamp;
+    uint8_t remoteTxSeqNr = rangePacket->header.seq;
+
+    uint32_t remoteRx = 0;
+    uint8_t remoteRxSeqNr = 0;
+    bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
+
+    if (dataFound) {
+      uint16_t distance = calculateDistance(anchorCtx, remoteTxSeqNr, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+
+      if (distance > 0) {
+        anchorCtx->distance = distance;
+      }
+
+      anchorCtx->rxTimeStamp = rxTime;
+      anchorCtx->seqNr = remoteTxSeqNr;
+      anchorCtx->txTimeStamp = remoteTx;
+    }
+  }
+}
+
 static void handleRxPacket(dwDevice_t *dev)
 {
   static packet_t rxPacket;
@@ -353,40 +383,23 @@ static void handleRxPacket(dwDevice_t *dev)
   rxPacket.payload[0] = 0;
   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-  if (dataLength == 0 || rxPacket.payload[0] != PACKET_TYPE_TDOA3) {
+  if (dataLength == 0) {
     return;
   }
 
-  const uint8_t remoteAnchorId = rxPacket.sourceAddress[0];
-  ctx.anchorRxCount[remoteAnchorId]++;
-  anchorContext_t* anchorCtx = getContext(remoteAnchorId);
-  if (anchorCtx) {
-    const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
-
-    uint32_t remoteTx = rangePacket->header.txTimeStamp;
-    uint8_t remoteTxSeqNr = rangePacket->header.seq;
-
-    uint32_t remoteRx = 0;
-    uint8_t remoteRxSeqNr = 0;
-    bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
-
-    if (dataFound) {
-      uint16_t distance = calculateDistance(anchorCtx, remoteTxSeqNr, remoteRxSeqNr, remoteTx, remoteRx, rxTime.low32);
-
-      if (distance > 0) {
-        anchorCtx->distance = distance;
-      }
-
-      anchorCtx->rxTimeStamp = rxTime.low32;
-      anchorCtx->seqNr = remoteTxSeqNr;
-      anchorCtx->txTimeStamp = remoteTx;
-    }
+  switch(rxPacket.payload[0]) {
+  case PACKET_TYPE_TDOA3:
+    handleRangePacket(rxTime.low32, &rxPacket);
+    break;
+  case SHORT_LPP:
+    lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
+    break;
+  default:
+    // Do nothing
+    break;
   }
 }
 
-// TODO krri Handle service packets
-
-// Setup the radio to receive a packet in the next timeslot
 static void setupRx(dwDevice_t *dev)
 {
   dwNewReceive(dev);
