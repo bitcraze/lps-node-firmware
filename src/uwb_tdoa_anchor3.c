@@ -99,6 +99,7 @@ typedef struct {
   uint32_t rxTimeStamp;
   uint32_t txTimeStamp;
   uint16_t distance;
+  double clockCorrection;
 } anchorContext_t;
 
 // This context struct contains all the required global values of the algorithm
@@ -284,8 +285,6 @@ static void updateAnchorLists() {
     freq = ANCHOR_MAX_TX_FREQ;
   }
   ctx.averageTxDelay = 1000.0 / freq;
-
-  debug("Anchors: %i, delay: %i\r\n", availableCount, ctx.averageTxDelay);
 }
 
 /* Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 */
@@ -323,17 +322,28 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
   return transmitTime;
 }
 
-
-static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteTxSeqNr, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
+static double calculateClockCorrection(anchorContext_t* anchorCtx, int remoteTxSeqNr, uint32_t remoteTx, uint32_t rx)
 {
-  // Check that the 2 last packets are consecutive packets and that our last packet is in between
-  if ((anchorCtx->seqNr == ((remoteTxSeqNr - 1) & 0x07f)) && remoteRxSeqNr == ctx.seqNr) {
-    double tround1 = remoteRx - anchorCtx->txTimeStamp;
-    double treply1 = ctx.txTime - anchorCtx->rxTimeStamp;
-    double tround2 = rx - ctx.txTime;
-    double treply2 = remoteTx - remoteRx;
+  double result = 0.0d;
 
-    uint32_t distance = ((tround2 * tround1)-(treply1 * treply2)) / (2 * (treply1 + tround2));
+  uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
+  uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
+
+  if (tickCountRemote != 0) {
+    result = (double)tickCountLocal / (double)tickCountRemote;
+  }
+
+  return result;
+}
+
+static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
+{
+  // Check that the remote received seq nr is our latest tx seq nr
+  if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d) {
+    uint32_t localTime = rx - ctx.txTime;
+    uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
+    uint32_t distance = (localTime - remoteTime) / 2;
+
     return distance & 0xfffful;
   } else {
     return 0;
@@ -380,10 +390,17 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
     bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
 
     if (dataFound) {
-      uint16_t distance = calculateDistance(anchorCtx, remoteTxSeqNr, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+      double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
 
-      if (distance > 0) {
-        anchorCtx->distance = distance;
+      // TODO krri What is a reasonable max correction?
+      double const maxCorrection = 0.00001;
+      if ((1.0 - maxCorrection) < clockCorrection && clockCorrection < (1.0 + maxCorrection)) {
+        anchorCtx->clockCorrection = clockCorrection;
+
+        uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+        if (distance > 0) {
+          anchorCtx->distance = distance;
+        }
       }
 
       anchorCtx->rxTimeStamp = rxTime;
