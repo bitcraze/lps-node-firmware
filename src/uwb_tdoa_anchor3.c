@@ -75,7 +75,7 @@ The implementation must handle
 
 #define ANCHOR_LIST_UPDATE_INTERVAL 1000;
 
-#define ANCHOR_STORAGE_COUNT 8
+#define ANCHOR_STORAGE_COUNT 16
 #define REMOTE_TX_MAX_COUNT 8
 #if REMOTE_TX_MAX_COUNT > ANCHOR_STORAGE_COUNT
   #error "Invalid settings"
@@ -84,6 +84,9 @@ The implementation must handle
 #define ID_COUNT 256
 #define ID_WITHOUT_CONTEXT 0xff
 #define ID_INVALID 0xff
+
+#define SYSTEM_TX_FREQ 400.0
+#define ANCHOR_MAX_TX_FREQ 50.0
 
 // Useful constants
 static const uint8_t base_address[] = {0,0,0,0,0,0,0xcf,0xbc};
@@ -108,6 +111,7 @@ static struct ctx_s {
 
   // Next transmit time in system clock ticks
   uint32_t nextTxTick;
+  int averageTxDelay; // ms
 
   // List of ids to transmit in remote data section
   uint8_t remoteTxId[REMOTE_TX_MAX_COUNT];
@@ -193,7 +197,7 @@ static void removeAnchorContextsNotInList(const uint8_t* id, const uint8_t count
 
 static void createAnchorContext(const uint8_t id) {
   if (ctx.anchorCtxLookup[id] != ID_WITHOUT_CONTEXT) {
-    // Already has a contex, we're done
+    // Already has a context, we're done
     return;
   }
 
@@ -206,7 +210,6 @@ static void createAnchorContext(const uint8_t id) {
       anchorCtx->id = id;
       anchorCtx->isUsed = true;
 
-      debug("+ctx %i %i\r\n", id, i);
       break;
     }
   }
@@ -218,51 +221,71 @@ static void createAnchorContextsInList(const uint8_t* id, const uint8_t count) {
   }
 }
 
-
 // This function is called at regular intervals to update lists containing data
 // about which anchors to store and add to outgoing messages. This
 // update might take some time but this should not be a problem since the TX
 // times are randomized anyway. The intention is that we could plug in clever
 // algorithms here that optimizes which anchors to use.
 static void updateAnchorLists() {
-  // First naive approach is to use the first anchors that we have seen since
-  // last update.
+  // Randomize which anchors to use
 
-  // TODO krri Do something clever
+  static uint8_t availableId[ID_COUNT];
+  static bool availableUsed[ID_COUNT];
+  memset(availableId, 0, sizeof(availableId));
+  memset(availableUsed, 0, sizeof(availableUsed));
+  int availableCount = 0;
 
-  static uint8_t id[ANCHOR_STORAGE_COUNT];
-  static uint8_t count[ANCHOR_STORAGE_COUNT];
+  static uint8_t ctxts[ANCHOR_STORAGE_COUNT];
+  memset(ctxts, 0, sizeof(ctxts));
 
-  memset(id, 0, sizeof(id));
-  memset(count, 0, sizeof(count));
+  // Collect all anchors we have got a message from
+  for (int i = 0; i < ID_COUNT; i++) {
+    if (ctx.anchorRxCount[i] != 0) {
+      availableId[availableCount++] = i;
+    }
+  }
 
-  uint8_t index = 0;
+  // Out of all anchors that we have received messages from, pick two
+  // randomized subsets for storage and TX ids
+  uint8_t remoteTXIdIndex = 0;
+  uint8_t contextIndex = 0;
+  for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++) {
+    int start = rand() % availableCount;
+    // Scan forward until we find an anchor
+    for (int j = start; j < (start + availableCount); j++) {
+      const int index = j % availableCount;
+      if (!availableUsed[index]) {
 
-  for (int anchor = 0; anchor < ID_COUNT; anchor++) {
-    uint8_t rxCount = ctx.anchorRxCount[anchor];
+        const int id = availableId[index];
+        if (remoteTXIdIndex < REMOTE_TX_MAX_COUNT) {
+          ctx.remoteTxId[remoteTXIdIndex++] = id;
+        }
+        if (contextIndex < ANCHOR_STORAGE_COUNT) {
+          ctxts[contextIndex++] = id;
+        }
 
-    if (rxCount > 0) {
-      count[index] = rxCount;
-      id[index++] = anchor;
-
-      if (index >= ANCHOR_STORAGE_COUNT) {
+        availableUsed[index] = true;
         break;
       }
     }
   }
 
-  removeAnchorContextsNotInList(id, index);
-  createAnchorContextsInList(id, index);
+  removeAnchorContextsNotInList(ctxts, contextIndex);
+  createAnchorContextsInList(ctxts, contextIndex);
 
-  uint8_t remoteTXIdIndex = 0;
-  for (int i = 0; i < index; i++) {
-    if (remoteTXIdIndex < REMOTE_TX_MAX_COUNT) {
-      ctx.remoteTxId[remoteTXIdIndex++] = id[i];
-    }
-  }
   ctx.remoteTxIdCount = remoteTXIdIndex;
 
   clearAnchorRxCount();
+
+  // Set the TX rate based on the number of transmitting anchors around us
+  // Aim for 400 messages/s. Up to 8 anchors: 50 Hz / anchor
+  float freq = SYSTEM_TX_FREQ / (availableCount + 1);
+  if (freq > ANCHOR_MAX_TX_FREQ) {
+    freq = ANCHOR_MAX_TX_FREQ;
+  }
+  ctx.averageTxDelay = 1000.0 / freq;
+
+  debug("Anchors: %i, delay: %i\r\n", availableCount, ctx.averageTxDelay);
 }
 
 /* Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 */
@@ -290,7 +313,7 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
   // TODO krri Adding randomization on this level adds a long delay, is it worth it?
   // The randomization on OS level is quantized to 1 ms (tick time of the system)
   // Add a high res random to smooth it out
-  // uint32_t r = random();
+  // uint32_t r = rand();
   // uint32_t delay = r % TDMA_HIGH_RES_RAND;
   // transmitTime.full += delay;
 
@@ -486,11 +509,10 @@ static void setupTx(dwDevice_t *dev)
 
 static uint32_t randomizeDelayToNextTx()
 {
-  const uint32_t average = 20;
-  const uint32_t interval = 6;
+  const uint32_t interval = 10;
 
-  uint32_t r = random();
-  uint32_t delay = average + r % interval - interval / 2;
+  uint32_t r = rand();
+  uint32_t delay = ctx.averageTxDelay + r % interval - interval / 2;
 
   return delay;
 }
@@ -503,7 +525,7 @@ static uint32_t startNextEvent(dwDevice_t *dev)
   int32_t timeToNextTx = ctx.nextTxTick - now;
   if (timeToNextTx < 0) {
     uint32_t newDelay = randomizeDelayToNextTx();
-    ctx.nextTxTick = now + newDelay;
+    ctx.nextTxTick = now + M2T(newDelay);
 
     setupTx(dev);
   } else {
@@ -513,6 +535,7 @@ static uint32_t startNextEvent(dwDevice_t *dev)
   return ctx.nextTxTick - now;
 }
 
+
 // Initialize/reset the agorithm
 static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
 {
@@ -520,6 +543,7 @@ static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
   ctx.seqNr = 0;
   ctx.txTime = 0;
   ctx.nextTxTick = 0;
+  ctx.averageTxDelay = 1000.0 / ANCHOR_MAX_TX_FREQ;
   ctx.remoteTxIdCount = 0;
   ctx.nextAnchorListUpdate = 0;
 
@@ -529,6 +553,8 @@ static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
   }
 
   clearAnchorRxCount();
+
+  srand(ctx.anchorId);
 }
 
 // Called for each DW radio event

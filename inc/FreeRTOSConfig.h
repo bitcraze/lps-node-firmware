@@ -171,4 +171,6 @@ uses the same semantics as the standard C assert() macro. */
 extern void vAssertCalled( unsigned long ulLine, const char * const pcFileName );
 #define configASSERT( x ) if( ( x ) == 0 ) vAssertCalled( __LINE__, __FILE__ )
 
+#define M2T(X) ((unsigned int)((X)*(configTICK_RATE_HZ/1000.0)))
+
 #endif /* FREERTOS_CONFIG_H */

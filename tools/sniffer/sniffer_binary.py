@@ -9,6 +9,7 @@ import struct
 import serial
 import binascii
 import yaml
+import time
 
 if len(sys.argv) < 2:
     print("usage: {} <sniffer serial port> [format]".format(sys.argv[0]))
@@ -37,6 +38,7 @@ while True:
         data = ser.read(length)
         l2 = struct.unpack('<H', ser.read(2))[0]
         if length == l2:
+            now = time.time()
             if outputFormat == 'human':
                 print("@{:010x} from {} to {}: {}".format(ts, addrFrom, addrTo,
                       binascii.hexlify(data)
@@ -48,7 +50,7 @@ while True:
             elif outputFormat == 'yaml':
                 print("---")
                 print(yaml.dump({'ts': ts, 'from': addrFrom,
-                                 'to': addrTo, 'data': data},
+                                 'to': addrTo, 'data': data, 'rxSys': now},
                                 Dumper=yaml.CDumper))
             else:
                 sys.stderr.write("Error: Uknown output format: {}\n".format(

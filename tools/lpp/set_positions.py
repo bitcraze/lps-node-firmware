@@ -67,5 +67,6 @@ with SyncCrazyflie(uri, cf=cf) as scf:
                 LPP_SHORT_ANCHOR_POSITION = 0x01
                 position_pack = struct.pack("<Bfff", LPP_SHORT_ANCHOR_POSITION, x, y, z)
                 scf.cf.loc.send_short_lpp_packet(id, position_pack)
+                time.sleep(0.01)
 
             time.sleep(0.5)
