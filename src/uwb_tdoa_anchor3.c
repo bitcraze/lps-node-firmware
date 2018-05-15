@@ -186,7 +186,6 @@ static void removeAnchorContextsNotInList(const uint8_t* id, const uint8_t count
       if (!found) {
         ctx.anchorCtxLookup[ctxId] = ID_WITHOUT_CONTEXT;
         anchorCtx->isUsed = false;
-        debug("-ctx %i %i\r\n", ctxId, i);
       }
     }
   }
@@ -392,7 +391,9 @@ static void handleRxPacket(dwDevice_t *dev)
     handleRangePacket(rxTime.low32, &rxPacket);
     break;
   case SHORT_LPP:
-    lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
+    if (rxPacket.destAddress[0] == ctx.anchorId) {
+      lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
+    }
     break;
   default:
     // Do nothing
