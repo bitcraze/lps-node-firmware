@@ -88,6 +88,17 @@ The implementation must handle
 #define SYSTEM_TX_FREQ 400.0
 #define ANCHOR_MAX_TX_FREQ 50.0
 
+#define ANTENNA_OFFSET 154.6   // In meters
+#define ANTENNA_DELAY  ((ANTENNA_OFFSET*499.2e6*128)/299792458.0) // In radio tick
+#define MIN_TOF ANTENNA_DELAY
+
+// TODO krri What is a reasonable max correction?
+#define MAX_CLOCK_CORRECTION_DEVIATION 0.00001
+#define MIN_CLOCK_CORRECTION (1.0d - MAX_CLOCK_CORRECTION_DEVIATION)
+#define MAX_CLOCK_CORRECTION (1.0d + MAX_CLOCK_CORRECTION_DEVIATION)
+
+#define DISTANCE_VALIDITY_PERIOD M2T(2 * 1000);
+
 // Useful constants
 static const uint8_t base_address[] = {0,0,0,0,0,0,0xcf,0xbc};
 
@@ -99,6 +110,7 @@ typedef struct {
   uint32_t rxTimeStamp;
   uint32_t txTimeStamp;
   uint16_t distance;
+  uint32_t distanceUpdateTime;
   double clockCorrection;
 } anchorContext_t;
 
@@ -222,6 +234,21 @@ static void createAnchorContextsInList(const uint8_t* id, const uint8_t count) {
   }
 }
 
+static void purgeData() {
+  uint32_t now = xTaskGetTickCount();
+  uint32_t acceptedCreationTime = now - DISTANCE_VALIDITY_PERIOD;
+
+  for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++) {
+    anchorContext_t* anchorCtx = &ctx.anchorCtx[i];
+    if (anchorCtx->isUsed) {
+      if (anchorCtx->distanceUpdateTime < acceptedCreationTime) {
+        anchorCtx->distance = 0;
+        anchorCtx->clockCorrection = 0.0;
+      }
+    }
+  }
+}
+
 // This function is called at regular intervals to update lists containing data
 // about which anchors to store and add to outgoing messages. This
 // update might take some time but this should not be a problem since the TX
@@ -285,6 +312,8 @@ static void updateAnchorLists() {
     freq = ANCHOR_MAX_TX_FREQ;
   }
   ctx.averageTxDelay = 1000.0 / freq;
+
+  purgeData();
 }
 
 /* Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 */
@@ -391,15 +420,14 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
 
     if (dataFound) {
       double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
-
-      // TODO krri What is a reasonable max correction?
-      double const maxCorrection = 0.00001;
-      if ((1.0 - maxCorrection) < clockCorrection && clockCorrection < (1.0 + maxCorrection)) {
+      if (MIN_CLOCK_CORRECTION < clockCorrection && clockCorrection < MAX_CLOCK_CORRECTION) {
         anchorCtx->clockCorrection = clockCorrection;
 
         uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
-        if (distance > 0) {
+        // TODO krri Remove outliers in distances
+        if (distance > MIN_TOF) {
           anchorCtx->distance = distance;
+          anchorCtx->distanceUpdateTime = xTaskGetTickCount();
         }
       }
 
@@ -455,20 +483,27 @@ static int populateTxData(rangePacket3_t *rangePacket)
   rangePacket->header.txTimeStamp = ctx.txTime;
   rangePacket->header.remoteCount = ctx.remoteTxIdCount;
 
-  remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*) &rangePacket->remoteAnchorData;
+  uint8_t* anchorDataPtr = &rangePacket->remoteAnchorData;
   for (uint8_t i = 0; i < ctx.remoteTxIdCount; i++) {
+    remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*) anchorDataPtr;
+
     uint8_t id = ctx.remoteTxId[i];
     anchorContext_t* anchorCtx = getContext(id);
 
     anchorData->id = id;
-    anchorData->seq = anchorCtx->seqNr | 0x80;
+    anchorData->seq = anchorCtx->seqNr;
     anchorData->rxTimeStamp = anchorCtx->rxTimeStamp;
-    anchorData->distance = anchorCtx->distance;
 
-    anchorData++;
+    if (anchorCtx->distance > 0) {
+      anchorData->distance = anchorCtx->distance;
+      anchorDataPtr += sizeof(remoteAnchorDataFull_t);
+      anchorData->seq |= 0x80;
+    } else {
+      anchorDataPtr += sizeof(remoteAnchorDataShort_t);
+    }
   }
 
-  return (void*)anchorData - (void*)rangePacket;
+  return (void*)anchorDataPtr - (void*)rangePacket;
 }
 
 // Set TX data in the radio TX buffer
