@@ -34,12 +34,13 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
     data = {'id': packet['from'], 'tof': {}}
 
     for remote in packet['remoteAnchorData']:
-        tof = remote['distance']
-        remote_id = remote['id']
-        if unit == 'ticks':
-            data['tof'][remote_id] = tof
-        if unit == 'meters':
-            data['tof'][remote_id] = tof * M_PER_TICK - ANTENNA_OFFSET
+        if 'distance' in remote:
+            tof = remote['distance']
+            remote_id = remote['id']
+            if unit == 'ticks':
+                data['tof'][remote_id] = tof
+            if unit == 'meters':
+                data['tof'][remote_id] = tof * M_PER_TICK - ANTENNA_OFFSET
 
     print("---")
     print(yaml.dump(data, Dumper=yaml.CDumper))
