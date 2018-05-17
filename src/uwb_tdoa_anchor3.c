@@ -92,10 +92,13 @@ The implementation must handle
 #define ANTENNA_DELAY  ((ANTENNA_OFFSET*499.2e6*128)/299792458.0) // In radio tick
 #define MIN_TOF ANTENNA_DELAY
 
-// TODO krri What is a reasonable max correction?
-#define MAX_CLOCK_CORRECTION_DEVIATION 0.00001
-#define MIN_CLOCK_CORRECTION (1.0d - MAX_CLOCK_CORRECTION_DEVIATION)
-#define MAX_CLOCK_CORRECTION (1.0d + MAX_CLOCK_CORRECTION_DEVIATION)
+#define MAX_CLOCK_DEVIATION_SPEC 10e-6
+#define CLOCK_CORRECTION_SPEC_MIN (1.0d - MAX_CLOCK_DEVIATION_SPEC)
+#define CLOCK_CORRECTION_SPEC_MAX (1.0d + MAX_CLOCK_DEVIATION_SPEC)
+
+#define CLOCK_CORRECTION_ACCEPTED_NOISE 0.03e-6
+#define CLOCK_CORRECTION_FILTER 0.1d
+#define CLOCK_CORRECTION_BUCKET_MAX 4
 
 #define DISTANCE_VALIDITY_PERIOD M2T(2 * 1000);
 
@@ -111,7 +114,9 @@ typedef struct {
   uint32_t txTimeStamp;
   uint16_t distance;
   uint32_t distanceUpdateTime;
+
   double clockCorrection;
+  int clockCorrectionBucket;
 } anchorContext_t;
 
 // This context struct contains all the required global values of the algorithm
@@ -243,7 +248,9 @@ static void purgeData() {
     if (anchorCtx->isUsed) {
       if (anchorCtx->distanceUpdateTime < acceptedCreationTime) {
         anchorCtx->distance = 0;
+
         anchorCtx->clockCorrection = 0.0;
+        anchorCtx->clockCorrectionBucket = 0;
       }
     }
   }
@@ -355,6 +362,7 @@ static double calculateClockCorrection(anchorContext_t* anchorCtx, int remoteTxS
 {
   double result = 0.0d;
 
+  // Assigning to uint32_t truncates the diffs and takes care of wrapping clocks
   uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
   uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
 
@@ -402,6 +410,41 @@ static bool extractFromPacket(const rangePacket3_t* rangePacket, uint32_t* remot
   return false;
 }
 
+static void fillClockCorrectionBucket(anchorContext_t* anchorCtx) {
+    if (anchorCtx->clockCorrectionBucket < CLOCK_CORRECTION_BUCKET_MAX) {
+      anchorCtx->clockCorrectionBucket++;
+    }
+}
+
+static bool emptyClockCorrectionBucket(anchorContext_t* anchorCtx) {
+    if (anchorCtx->clockCorrectionBucket > 0) {
+      anchorCtx->clockCorrectionBucket--;
+      return false;
+    }
+
+    return true;
+}
+
+static bool updateClockCorrection(anchorContext_t* anchorCtx, double clockCorrection) {
+  const double diff = clockCorrection - anchorCtx->clockCorrection;
+  bool sampleIsAccepted = false;
+
+  if (-CLOCK_CORRECTION_ACCEPTED_NOISE < diff && diff < CLOCK_CORRECTION_ACCEPTED_NOISE) {
+    // LP filter
+    anchorCtx->clockCorrection = anchorCtx->clockCorrection * (1.0d - CLOCK_CORRECTION_FILTER) + clockCorrection * CLOCK_CORRECTION_FILTER;
+
+    fillClockCorrectionBucket(anchorCtx);
+    sampleIsAccepted = true;
+  } else {
+    if (emptyClockCorrectionBucket(anchorCtx)) {
+      if (CLOCK_CORRECTION_SPEC_MIN < clockCorrection && clockCorrection < CLOCK_CORRECTION_SPEC_MAX) {
+        anchorCtx->clockCorrection = clockCorrection;
+      }
+    }
+  }
+
+  return sampleIsAccepted;
+}
 
 static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
 {
@@ -420,9 +463,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
 
     if (dataFound) {
       double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
-      if (MIN_CLOCK_CORRECTION < clockCorrection && clockCorrection < MAX_CLOCK_CORRECTION) {
-        anchorCtx->clockCorrection = clockCorrection;
-
+      if (updateClockCorrection(anchorCtx, clockCorrection)) {
         uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
         // TODO krri Remove outliers in distances
         if (distance > MIN_TOF) {
