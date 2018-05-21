@@ -544,7 +544,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
     }
   }
 
-  return (void*)anchorDataPtr - (void*)rangePacket;
+  return (uint8_t*)anchorDataPtr - (uint8_t*)rangePacket;
 }
 
 // Set TX data in the radio TX buffer
