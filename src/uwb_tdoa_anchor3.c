@@ -323,14 +323,10 @@ static void updateAnchorLists() {
   purgeData();
 }
 
-/* Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 */
-static uint32_t adjustTxRxTime(dwTime_t *time)
+/* Adjust time for schedule transfer by DW1000 radio. Set 9 LSB to 0 and round up */
+static void adjustTxRxTime(dwTime_t *time)
 {
-  uint32_t added = (1<<9) - (time->low32 & ((1<<9)-1));
-
-  time->low32 = (time->low32 & ~((1<<9)-1)) + (1<<9);
-
-  return added;
+  time->full = (time->full & ~((1 << 9) - 1)) + (1 << 9);
 }
 
 static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
