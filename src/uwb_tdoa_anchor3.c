@@ -114,6 +114,7 @@ typedef struct {
   uint32_t txTimeStamp;
   uint16_t distance;
   uint32_t distanceUpdateTime;
+  bool isDataGoodForTransmission;
 
   double clockCorrection;
   int clockCorrectionBucket;
@@ -453,25 +454,29 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
     uint32_t remoteTx = rangePacket->header.txTimeStamp;
     uint8_t remoteTxSeqNr = rangePacket->header.seq;
 
-    uint32_t remoteRx = 0;
-    uint8_t remoteRxSeqNr = 0;
-    bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
+    double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
+    if (updateClockCorrection(anchorCtx, clockCorrection)) {
+      anchorCtx->isDataGoodForTransmission = true;
 
-    if (dataFound) {
-      double clockCorrection = calculateClockCorrection(anchorCtx, remoteTxSeqNr, remoteTx, rxTime);
-      if (updateClockCorrection(anchorCtx, clockCorrection)) {
+      uint32_t remoteRx = 0;
+      uint8_t remoteRxSeqNr = 0;
+      bool dataFound = extractFromPacket(rangePacket, &remoteRx, &remoteRxSeqNr);
+      if (dataFound) {
         uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+
         // TODO krri Remove outliers in distances
         if (distance > MIN_TOF) {
           anchorCtx->distance = distance;
           anchorCtx->distanceUpdateTime = xTaskGetTickCount();
         }
       }
-
-      anchorCtx->rxTimeStamp = rxTime;
-      anchorCtx->seqNr = remoteTxSeqNr;
-      anchorCtx->txTimeStamp = remoteTx;
+    } else {
+      anchorCtx->isDataGoodForTransmission = false;
     }
+
+    anchorCtx->rxTimeStamp = rxTime;
+    anchorCtx->seqNr = remoteTxSeqNr;
+    anchorCtx->txTimeStamp = remoteTx;
   }
 }
 
@@ -518,8 +523,8 @@ static int populateTxData(rangePacket3_t *rangePacket)
   // rangePacket->header.type already populated
   rangePacket->header.seq = ctx.seqNr;
   rangePacket->header.txTimeStamp = ctx.txTime;
-  rangePacket->header.remoteCount = ctx.remoteTxIdCount;
 
+  uint8_t remoteAnchorCount = 0;
   uint8_t* anchorDataPtr = &rangePacket->remoteAnchorData;
   for (uint8_t i = 0; i < ctx.remoteTxIdCount; i++) {
     remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*) anchorDataPtr;
@@ -527,18 +532,23 @@ static int populateTxData(rangePacket3_t *rangePacket)
     uint8_t id = ctx.remoteTxId[i];
     anchorContext_t* anchorCtx = getContext(id);
 
-    anchorData->id = id;
-    anchorData->seq = anchorCtx->seqNr;
-    anchorData->rxTimeStamp = anchorCtx->rxTimeStamp;
+    if (anchorCtx->isDataGoodForTransmission) {
+      anchorData->id = id;
+      anchorData->seq = anchorCtx->seqNr;
+      anchorData->rxTimeStamp = anchorCtx->rxTimeStamp;
 
-    if (anchorCtx->distance > 0) {
-      anchorData->distance = anchorCtx->distance;
-      anchorDataPtr += sizeof(remoteAnchorDataFull_t);
-      anchorData->seq |= 0x80;
-    } else {
-      anchorDataPtr += sizeof(remoteAnchorDataShort_t);
+      if (anchorCtx->distance > 0) {
+        anchorData->distance = anchorCtx->distance;
+        anchorDataPtr += sizeof(remoteAnchorDataFull_t);
+        anchorData->seq |= 0x80;
+      } else {
+        anchorDataPtr += sizeof(remoteAnchorDataShort_t);
+      }
+
+      remoteAnchorCount++;
     }
   }
+  rangePacket->header.remoteCount = remoteAnchorCount;
 
   return (uint8_t*)anchorDataPtr - (uint8_t*)rangePacket;
 }
@@ -606,13 +616,11 @@ static uint32_t randomizeDelayToNextTx()
   return delay;
 }
 
-static uint32_t startNextEvent(dwDevice_t *dev)
+static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
 {
   dwIdle(dev);
 
-  uint32_t now = xTaskGetTickCount();
-  int32_t timeToNextTx = ctx.nextTxTick - now;
-  if (timeToNextTx < 0) {
+  if (ctx.nextTxTick < now) {
     uint32_t newDelay = randomizeDelayToNextTx();
     ctx.nextTxTick = now + M2T(newDelay);
 
@@ -665,7 +673,7 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev, uwbEvent_t event)
     ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL;
   }
 
-  uint32_t timeout_ms = startNextEvent(dev);
+  uint32_t timeout_ms = startNextEvent(dev, now);
   return timeout_ms;
 }
 
