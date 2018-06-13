@@ -130,7 +130,13 @@ void uwbInit()
 
   dwNewConfiguration(dwm);
   dwSetDefaults(dwm);
+
+  #ifdef LPS_LONGER_RANGE
+  dwEnableMode(dwm, MODE_SHORTDATA_MID_ACCURACY);
+  #else
   dwEnableMode(dwm, MODE_SHORTDATA_FAST_ACCURACY);
+  #endif
+
   dwSetChannel(dwm, CHANNEL_2);
 
   // Enable smart power by default

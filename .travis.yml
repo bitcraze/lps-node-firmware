@@ -5,4 +5,9 @@ services:
 before_install:
   - docker pull bitcraze/builder
 script:
+  # Build basic config
   - docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build
+
+  # Build with TDOA3 longer range option
+  - docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/make clean
+  - docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build "EXTRA_CFLAGS=-DLPS_LONGER_RANGE"
