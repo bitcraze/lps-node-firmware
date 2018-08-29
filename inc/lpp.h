@@ -49,7 +49,8 @@ struct lppShortReboot_s {
 } __attribute__((packed));
 
 #define LPP_SHORT_MODE_TWR 0x01
-#define LPP_SHORT_MODE_TDOA 0x02
+#define LPP_SHORT_MODE_TDOA2 0x02
+#define LPP_SHORT_MODE_TDOA3 0x03
 
 struct lppShortMode_s {
   uint8_t mode;
