@@ -41,7 +41,14 @@ import cflib.crtp
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 
+if sys.argv[0] == '-h' or sys.argv[0] == '--help':
+    print("usage: {} [URI]".format(sys.argv[0]))
+    print("  URI - the URI to use to connect to the Crazyflie, default value is  radio://0/80/2M/E7E7E7E7E7")
+    sys.exit(1)
+
 uri = 'radio://0/80/2M/E7E7E7E7E7'
+if len(sys.argv) > 1:
+    uri = sys.argv[1]
 
 # Only output errors from the logging framework
 logging.basicConfig(level=logging.ERROR)
@@ -57,7 +64,7 @@ with SyncCrazyflie(uri, cf=cf) as scf:
         if not packet:
             continue
 
-        for _ in range(5):
+        while True:
             for id, position in packet.items():
                 x = position['x']
                 y = position['y']

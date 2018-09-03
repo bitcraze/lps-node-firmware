@@ -48,15 +48,6 @@ from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
 import argparse
 
 
-def print_help():
-    print("usage: {} POWER ANCHORS [URI]".format(sys.argv[0]))
-    print("  smart = smart TX power, the default setting of the anchor")
-    print("  max = max TX power, 33.5dB")
-    print("  URI - the URI to use to connect to the Crazyflie, default value "
-          "is radio://0/80/2M/E7E7E7E7E7")
-    sys.exit(1)
-
-
 def to_power_byte(db):
     if db <= 0 or db > 33.5:
         raise Exception("Out of range")
