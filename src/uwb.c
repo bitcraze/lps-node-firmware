@@ -53,7 +53,7 @@ struct {
   {.algorithm = &uwbTwrTagAlgorithm,    .name = "TWR Tag"},
   {.algorithm = &uwbSnifferAlgorithm,   .name = "Sniffer"},
   {.algorithm = &uwbTdoa2Algorithm,     .name = "TDoA Anchor V2"},
-  {.algorithm = &uwbTdoa3Algorithm,     .name = "TDoA Anchor V3 (experimental)"},
+  {.algorithm = &uwbTdoa3Algorithm,     .name = "TDoA Anchor V3"},
   {NULL, NULL},
 };
 
@@ -131,11 +131,26 @@ void uwbInit()
   dwNewConfiguration(dwm);
   dwSetDefaults(dwm);
 
+  uint8_t useLowBitrate = 0;
+  cfgReadU8(cfgLowBitrate, &useLowBitrate);
   #ifdef LPS_LONGER_RANGE
-  dwEnableMode(dwm, MODE_SHORTDATA_MID_ACCURACY);
-  #else
-  dwEnableMode(dwm, MODE_SHORTDATA_FAST_ACCURACY);
+  useLowBitrate = 1;
   #endif
+  config.lowBitrate = (useLowBitrate == 1);
+
+  uint8_t useLongPreamble = 0;
+  cfgReadU8(cfgLongPreamble, &useLongPreamble);
+  config.longPreamble = (useLongPreamble == 1);
+
+  const uint8_t* mode = MODE_SHORTDATA_FAST_ACCURACY;
+  if (useLowBitrate && !useLongPreamble) {
+    mode = MODE_SHORTDATA_MID_ACCURACY;
+  } else if (!useLowBitrate && useLongPreamble) {
+    mode = MODE_LONGDATA_FAST_ACCURACY;
+  } else if (useLowBitrate && useLongPreamble) {
+    mode = MODE_LONGDATA_MID_ACCURACY;
+  }
+  dwEnableMode(dwm, mode);
 
   dwSetChannel(dwm, CHANNEL_2);
 

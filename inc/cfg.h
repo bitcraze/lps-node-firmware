@@ -37,6 +37,8 @@ typedef enum {
   cfgSmartPower,
   cfgForceTxPower,
   cfgTxPower,
+  cfgLowBitrate,
+  cfgLongPreamble,
 } ConfigField;
 
 void cfgInit();

@@ -56,8 +56,11 @@ static void changeAddress(uint8_t addr);
 static void handleSerialInput(char ch);
 static void handleButton(void);
 static void changeMode(unsigned int newMode);
+static void changeRadioMode(unsigned int newMode);
 static void printModeList();
+static void printRadioModeList();
 static void printMode();
+static void printRadioMode();
 static void help();
 static void bootload(void);
 
@@ -144,6 +147,8 @@ static void main_task(void *pvParameters) {
   if(uwbConfig->forceTxPower) {
     printf("CONFIG\t: TX power setting: %08X\r\n", (unsigned int)uwbConfig->txPower);
   }
+  printf("CONFIG\t: Bitrate: %s\r\n", uwbConfig->lowBitrate?"low":"normal");
+  printf("CONFIG\t: Preamble: %s\r\n", uwbConfig->longPreamble?"long":"normal");
 
   HAL_Delay(500);
 
@@ -208,7 +213,7 @@ int _write (int fd, const void *buf, size_t count)
 
 static void handleSerialInput(char ch) {
   bool configChanged = true;
-  static enum menu_e {mainMenu, modeMenu, idMenu} currentMenu = mainMenu;
+  static enum menu_e {mainMenu, modeMenu, idMenu, radioMenu} currentMenu = mainMenu;
   static unsigned int tempId = 0;
 
   switch (currentMenu) {
@@ -240,6 +245,12 @@ static void handleSerialInput(char ch) {
           printModeList();
           printf("Type 0-9 to choose new mode...\r\n");
           currentMenu = modeMenu;
+          configChanged = false;
+          break;
+        case 'r':
+          printRadioModeList();
+          printf("Type 0-9 to choose new mode...\r\n");
+          currentMenu = radioMenu;
           configChanged = false;
           break;
         case 'd': restConfig(); break;
@@ -276,6 +287,22 @@ static void handleSerialInput(char ch) {
         case '8':
         case '9':
           changeMode(ch - '0');
+          currentMenu = mainMenu;
+          break;
+        default:
+          printf("Incorrect mode '%c'\r\n", ch);
+          currentMenu = mainMenu;
+          configChanged = false;
+          break;
+      }
+      break;
+    case radioMenu:
+      switch(ch) {
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+          changeRadioMode(ch - '0');
           currentMenu = mainMenu;
           break;
         default:
@@ -401,6 +428,53 @@ static void printMode() {
   printf("\r\n");
 }
 
+static void changeRadioMode(unsigned int newMode) {
+    printf("Previous radio mode: ");
+    printRadioMode();
+
+    uint8_t lowBitrate = newMode & 1;
+    uint8_t longPreamble = (newMode & 2) / 2;
+
+    cfgWriteU8(cfgLowBitrate, lowBitrate);
+    cfgWriteU8(cfgLongPreamble, longPreamble);
+
+    printf("New radio mode: ");
+    printRadioMode();
+}
+
+static void printRadioMode() {
+  uint8_t lowBitrate;
+  uint8_t longPreamble;
+
+  cfgReadU8(cfgLowBitrate, &lowBitrate);
+  cfgReadU8(cfgLongPreamble, &longPreamble);
+
+  printf("%s bitrate, %s preamble", lowBitrate?"low":"normal", longPreamble?"long":"normal");
+  printf("\r\n");
+}
+
+static void printRadioModeList()
+{
+  uint8_t lowBitrate;
+  uint8_t longPreamble;
+
+  cfgReadU8(cfgLowBitrate, &lowBitrate);
+  cfgReadU8(cfgLongPreamble, &longPreamble);
+
+  printf("-------------------\r\n");
+  printf("NOTE: only change if you use TDoA3. Other modes will stop working if changed from the default mode.\r\n");
+  printf("\r\n");
+  printf("Current mode is "); printRadioMode();
+  printf("\r\n");
+  printf("Available radio modes:\r\n");
+  printf("0: normal bitrate, normal preamble (default)\r\n");
+  printf("1: low bitrate, normal preamble (default)\r\n");
+  printf("2: normal bitrate, long preamble (default)\r\n");
+  printf("3: low bitrate, long preamble (default)\r\n");
+}
+
+
+
 static void help() {
   printf("Help\r\n");
   printf("-------------------\r\n");
@@ -410,6 +484,7 @@ static void help() {
   printf("t   - tag mode\r\n");
   printf("s   - sniffer mode\r\n");
   printf("m   - List and change mode\r\n");
+  printf("r   - List and change UWB radio settings\r\n");
   printf("d   - reset configuration\r\n");
   printf("u   - enter BSL (DFU mode)\r\n");
   printf("h   - This help\r\n");

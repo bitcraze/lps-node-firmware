@@ -45,6 +45,9 @@ typedef struct uwbConfig_s {
   bool smartPower;
   bool forceTxPower;
   uint32_t txPower;
+
+  bool lowBitrate;
+  bool longPreamble;
 } uwbConfig_t;
 
 #define MODE_ANCHOR 0

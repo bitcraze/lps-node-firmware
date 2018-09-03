@@ -121,5 +121,20 @@ void lppHandleShortPacket(char *data, size_t length)
 
       break;
     }
+    case LPP_SHORT_UWB_MODE:
+    {
+      struct lppShortUWBMode_s *mode = (struct lppShortUWBMode_s*)&data[1];
+
+      // Set new power settings
+      debug("Low bitrate: %d, Long preamble: %d", mode->enableLowBitrate, mode->enableLongPreamble);
+
+      cfgWriteU8(cfgLowBitrate, mode->enableLowBitrate);
+      cfgWriteU8(cfgLongPreamble, mode->enableLongPreamble);
+
+      // Then resets!
+      NVIC_SystemReset();
+
+      break;
+    }
   }
 }
