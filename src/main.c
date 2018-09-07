@@ -468,9 +468,9 @@ static void printRadioModeList()
   printf("\r\n");
   printf("Available radio modes:\r\n");
   printf("0: normal bitrate, normal preamble (default)\r\n");
-  printf("1: low bitrate, normal preamble (default)\r\n");
-  printf("2: normal bitrate, long preamble (default)\r\n");
-  printf("3: low bitrate, long preamble (default)\r\n");
+  printf("1: low bitrate, normal preamble\r\n");
+  printf("2: normal bitrate, long preamble\r\n");
+  printf("3: low bitrate, long preamble\r\n");
 }
 
 
