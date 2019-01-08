@@ -70,6 +70,13 @@ static void printPowerHelp();
 static void help();
 static void bootload(void);
 
+typedef enum {mainMenu, modeMenu, idMenu, radioMenu, powerMenu} Menu_t;
+typedef struct {
+  bool configChanged;
+  Menu_t currentMenu;
+  unsigned int tempId;
+} MenuState;
+
 static void main_task(void *pvParameters) {
   int i;
   char ch;
@@ -217,178 +224,206 @@ int _write (int fd, const void *buf, size_t count)
   return count;
 }
 
-static void handleSerialInput(char ch) {
-  bool configChanged = true;
-  static enum menu_e {mainMenu, modeMenu, idMenu, radioMenu, powerMenu} currentMenu = mainMenu;
-  static unsigned int tempId = 0;
+static void handleMenuMain(char ch, MenuState* menuState) {
+  switch (ch) {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      changeAddress(ch - '0');
+      break;
+    case 'i':
+      printf("Type new node ID then enter: ");
+      fflush(stdout);
+      menuState->currentMenu = idMenu;
+      menuState->configChanged = false;
+      menuState->tempId = 0;
+      break;
+    case 'a': changeMode(MODE_ANCHOR); break;
+    case 't': changeMode(MODE_TAG); break;
+    case 's': changeMode(MODE_SNIFFER); break;
+    case 'm':
+      printModeList();
+      printf("Type 0-9 to choose new mode...\r\n");
+      menuState->currentMenu = modeMenu;
+      menuState->configChanged = false;
+      break;
+    case 'r':
+      printRadioModeList();
+      printf("Type 0-9 to choose new mode...\r\n");
+      menuState->currentMenu = radioMenu;
+      menuState->configChanged = false;
+      break;
+    case 'd': restConfig(); break;
+    case 'h':
+      help();
+      menuState->configChanged = false;
+      break;
+    case 'b':
+      cfgSetBinaryMode(true);
+      menuState->configChanged = false;
+      break;
+    case '#':
+      productionTestsRun();
+      printf("System halted, reset to continue\r\n");
+      while(true){}
+      break;
+    case 'p':
+         printPowerHelp();
+         menuState->currentMenu = powerMenu;
+         menuState->configChanged = false;
+         break;
+    case 'u':
+      bootload();
+    default:
+      menuState->configChanged = false;
+      break;
+  }
+}
 
-  switch (currentMenu) {
-    case mainMenu:
-      switch (ch) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-          changeAddress(ch - '0');
-          break;
-        case 'i':
-          printf("Type new node ID then enter: ");
-          fflush(stdout);
-          currentMenu = idMenu;
-          configChanged = false;
-          tempId = 0;
-          break;
-        case 'a': changeMode(MODE_ANCHOR); break;
-        case 't': changeMode(MODE_TAG); break;
-        case 's': changeMode(MODE_SNIFFER); break;
-        case 'm':
-          printModeList();
-          printf("Type 0-9 to choose new mode...\r\n");
-          currentMenu = modeMenu;
-          configChanged = false;
-          break;
-        case 'r':
-          printRadioModeList();
-          printf("Type 0-9 to choose new mode...\r\n");
-          currentMenu = radioMenu;
-          configChanged = false;
-          break;
-        case 'd': restConfig(); break;
-        case 'h':
-          help();
-          configChanged = false;
-          break;
-        case 'b':
-          cfgSetBinaryMode(true);
-          configChanged = false;
-          break;
-        case '#':
-          productionTestsRun();
-          printf("System halted, reset to continue\r\n");
-          while(true){}
-          break;
-        case 'p':
-             printPowerHelp();
-             currentMenu = powerMenu;
-             configChanged = false;
-             break;
-        case 'u':
-          bootload();
-        default:
-          configChanged = false;
-          break;
+static void handleMenuMode(char ch, MenuState* menuState) {
+  switch(ch) {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      changeMode(ch - '0');
+      menuState->currentMenu = mainMenu;
+      break;
+    default:
+      printf("Incorrect mode '%c'\r\n", ch);
+      menuState->currentMenu = mainMenu;
+      menuState->configChanged = false;
+      break;
+  }
+}
+
+static void handleMenuRadio(char ch, MenuState* menuState) {
+  switch(ch) {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+      changeRadioMode(ch - '0');
+      menuState->currentMenu = mainMenu;
+      break;
+    default:
+      printf("Incorrect mode '%c'\r\n", ch);
+      menuState->currentMenu = mainMenu;
+      menuState->configChanged = false;
+      break;
+  }
+}
+
+static void handleMenuId(char ch, MenuState* menuState) {
+  switch(ch) {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      menuState->tempId *= 10;
+      menuState->tempId += ch - '0';
+      putchar(ch);
+      fflush(stdout);
+      menuState->configChanged = false;
+      break;
+    case '\n':
+    case '\r':
+      printf("\r\n");
+      fflush(stdout);
+      if (menuState->tempId < 256) {
+        printf("Setting node ID to %d\r\n", menuState->tempId);
+        changeAddress(menuState->tempId);
+      } else {
+        printf("Wrong ID '%d', the ID should be between 0 and 255\r\n", menuState->tempId);
+        menuState->configChanged = false;
       }
+      menuState->currentMenu = mainMenu;
+      break;
+    default:
+      menuState->configChanged = false;
+      break;
+  }
+}
+
+static void handleMenuPower(char ch, MenuState* menuState) {
+  switch(ch) {
+    case 'f':
+      printf("Setting ForceTxPower\r\n");
+      cfgWriteU8(cfgSmartPower, 0);
+      cfgWriteU8(cfgForceTxPower, 1);
+      break;
+    case 's':
+      printf("Setting SmartPower\r\n");
+      cfgWriteU8(cfgSmartPower, 1);
+      cfgWriteU8(cfgForceTxPower, 0);
+      break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      //support 10 power levels
+      changePower(ch - '0');
+      break;
+    default:
+      menuState->currentMenu = mainMenu;
+      menuState->configChanged = false;
+      break;
+  }
+}
+
+static void handleSerialInput(char ch) {
+  static MenuState menuState = {
+    .configChanged = true,
+    .currentMenu = mainMenu,
+    .tempId = 0,
+  };
+
+  menuState.configChanged = true;
+
+  switch (menuState.currentMenu) {
+    case mainMenu:
+      handleMenuMain(ch, &menuState);
       break;
     case modeMenu:
-      switch(ch) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-          changeMode(ch - '0');
-          currentMenu = mainMenu;
-          break;
-        default:
-          printf("Incorrect mode '%c'\r\n", ch);
-          currentMenu = mainMenu;
-          configChanged = false;
-          break;
-      }
+      handleMenuMode(ch, &menuState);
       break;
     case radioMenu:
-      switch(ch) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-          changeRadioMode(ch - '0');
-          currentMenu = mainMenu;
-          break;
-        default:
-          printf("Incorrect mode '%c'\r\n", ch);
-          currentMenu = mainMenu;
-          configChanged = false;
-          break;
-      }
+      handleMenuRadio(ch, &menuState);
       break;
     case idMenu:
-      switch(ch) {
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-          tempId *= 10;
-          tempId += ch - '0';
-          putchar(ch);
-          fflush(stdout);
-          configChanged = false;
-          break;
-        case '\n':
-        case '\r':
-          printf("\r\n");
-          fflush(stdout);
-          if (tempId < 256) {
-            printf("Setting node ID to %d\r\n", tempId);
-            changeAddress(tempId);
-          } else {
-            printf("Wrong ID '%d', the ID should be between 0 and 255\r\n", tempId);
-            configChanged = false;
-          }
-          currentMenu = mainMenu;
-          break;
-        default:
-          configChanged = false;
-          break;
-         }
-         break;
+      handleMenuId(ch, &menuState);
+      break;
     case powerMenu:
-      switch(ch) {
-        case 'f':
-          printf("Setting ForceTxPower\r\n");
-          cfgWriteU8(cfgSmartPower, 0);
-          cfgWriteU8(cfgForceTxPower, 1);
-          break;
-        case 's':
-          printf("Setting SmartPower\r\n");
-          cfgWriteU8(cfgSmartPower, 1);
-          cfgWriteU8(cfgForceTxPower, 0);
-          break;
-        case '0':
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-		  //support 10 power levels
-          changePower(ch - '0');
-          break;
-      }
-      currentMenu = mainMenu;
+      handleMenuPower(ch, &menuState);
+      break;
   }
 
-  if (configChanged) {
+  if (menuState.configChanged) {
     printf("EEPROM configuration changed, restart for it to take effect!\r\n");
   }
 }
