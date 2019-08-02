@@ -569,6 +569,7 @@ static void setTxData(dwDevice_t *dev)
   static int lppLength = 0;
 
   if (firstEntry) {
+    MAC80215_PACKET_INIT(txPacket, MAC802154_TYPE_DATA);
 
     memcpy(txPacket.sourceAddress, base_address, 8);
     txPacket.sourceAddress[0] = ctx.anchorId;
