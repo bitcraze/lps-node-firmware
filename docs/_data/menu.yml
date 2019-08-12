@@ -1,4 +1,8 @@
 - page_id: home
-- title: Introduction
+- title: Building and Flashing
   subs:
-    - {page_id: dummy}
+    - {page_id: build_flash}
+- title: Development
+  subs:
+    - {page_id: unit_tests}
+
