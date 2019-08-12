@@ -5,3 +5,6 @@
 /bin/**
 /generated-test/**
 /tools/lpp/cache/
+
+# jykell files generated
+docs/.jekyll-metadata
