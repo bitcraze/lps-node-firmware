@@ -30,7 +30,7 @@ the receiving party.
 Packet format
 -------------
 
-![](images/tdoa3_protocotol.png)
+![](/images/tdoa3_protocotol.png)
 
 -   **Header**
     -   **type:** 0x30
