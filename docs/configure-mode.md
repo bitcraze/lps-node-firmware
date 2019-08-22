@@ -14,7 +14,7 @@ Switching mode
 Using the client, connect a Crazyflie with a LocoDeck installed. When
 connected open the Loco Positioning System tab:
 
-![](/images/cfclient_switch_anchor_mode.png){:width="600"}
+![cfclient switch anchor mode](/images/cfclient_switch_anchor_mode.png){:width="600"}
 
 1.  Make sure your Crazyflie has good connection and clear line of sight
     with all the anchors. Ideally place it in the center of the flying

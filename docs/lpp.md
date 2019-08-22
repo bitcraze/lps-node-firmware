@@ -26,19 +26,19 @@ All ranging packet share the same format:
 
 The two way ranging protocol allows a tag to measure its distance to an
 anchor. The protocol contains 4 messages, two are sent by the tag two by
-the anchor. The message sequence is as follow: ![](/images/toa.png)
+the anchor. The message sequence is as follow: ![TOA](/images/toa.png)
 
 The time of flight is calculated using the formula:
-![](/images/formula_toa2.png){:width="400"}
+![Formula TOA](/images/formula_toa2.png){:width="400"}
 
 TWR packet IDs
 
  |  ID    |  Description| 
  |  ------|  ----------------------------------------| 
-|   0x01  |  [TWR\_POLL](/doc/lps/lpp#TWR_POLL)| 
-|   0x02  |  [TWR\_ANSWER](/doc/lps/lpp#TWR_ANSWER)| 
-|   0x03  |  [TWR\_FINAL](/doc/lps/lpp#TWR_FINAL)| 
-|   0x04   | [TWR\_REPORT](/doc/lps/lpp#TWR_REPORT)| 
+|   0x01  |  [TWR\_POLL](#TWR_POLL)| 
+|   0x02  |  [TWR\_ANSWER](#TWR_ANSWER)| 
+|   0x03  |  [TWR\_FINAL](#TWR_FINAL)| 
+|   0x04   | [TWR\_REPORT](#TWR_REPORT)| 
 
 #### TWR\_POLL
 
@@ -59,8 +59,7 @@ Format:
 
 The optional management data can be any LPP management packet deemed
 useful for the tag. Currently this is used to send the anchor position
-from the anchor to the tag using the [LPP Short anchor position
-packet](/doc/lps/lpp#x01anchor_position)
+from the anchor to the tag using the [LPP Short anchor position packet](#0x01-anchor-position)
 
 #### TWR\_FINAL
 
@@ -118,7 +117,7 @@ LPP Short packet IDs:
 
 |   LPPS\_ID  |  Description| 
 |   ---------- | ----------------------------------------------------| 
-|   0x01      |  [Anchor position](/doc/lps/lpp#x01anchor_position)| 
+|   0x01      |  [Anchor position](#0x01-anchor-position)| 
 
 #### 0x01: Anchor position
 

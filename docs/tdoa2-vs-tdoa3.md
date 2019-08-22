@@ -8,7 +8,7 @@ This page describe the basic differences between TDoA2 and TDoA3.
 
 When we designed TDoA2 the main goal was to be able to position multiple
 Crazyflies simultaneously. To solve the problem we had to go from Two
-way ranging to a [TDoA solution](/doc/lps/tdoa/principles). As the name
+way ranging to a [TDoA solution](tdoa_principles). As the name
 TDoA2 implies, there was a first iteration that has been scrapped and
 TDoA2 was the first official version. After some time we found
 limitations in the TDoA2 that we wanted to solve and this resulted in

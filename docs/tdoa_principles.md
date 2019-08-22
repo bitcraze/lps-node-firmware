@@ -115,13 +115,13 @@ that implements one of the modes.
 
 If we consider the 3 last packets sent from anchor 0 and 1:
 
-![](/images/tdoa-packets.png){:width="600"}
+![TDOA packet](/images/tdoa-packets.png){:width="600"}
 
 We can calculate the difference of time of flight (which is the
 difference of time of arrival, TDoA) by calculating the difference
 between δtx and δrx. From the tag\'s side this can be done by receiving
 the last packet from each anchor:
-![](/images/tdoa-to_tag.png){:width="600"}
+![TDOA to tag](/images/tdoa-to_tag.png){:width="600"}
 
 δrx is measured when receiving the two packets. δtx can be calculated in
 the anchor 1 clock if we know the time it takes to fly from 0 to 1:
@@ -131,14 +131,14 @@ sent by 0.
 
 The time of flight between 0 and 1 is measured by the anchors and
 transmitted in the packets. It is measured using two way ranging:
-![](/images/tdoa-anchors.png){:width="600"}
+![TDOA anchors](/images/tdoa-anchors.png){:width="600"}
 
 Once we know the transmit time of P2 in the anchor 1, we can calculate
 δtx and δrx. Though δtx is expressed in the Anchor 1 clock. Each node
 have an imperfect clock and we need to compensate for drift between the
 clocks. To do so the tag uses two consecutive packet from Anchor 1 to
 keep track of the clock drift coefficient between its own clock and
-Anchor 1 clock: ![](/images/tdoa-measure_drift.png){:width="600"}
+Anchor 1 clock: ![TDOA measure drift](/images/tdoa-measure_drift.png){:width="600"}
 
 Using these two packets we can calculate α₁ = δrx1 / δtx1. We can now
 calculate TDoA = δrx - (α₁ \* δtx).
@@ -161,13 +161,13 @@ the Tag could be anywhere on the blue line. The yellow line shows
 possible positions based on the TDoA value between A0 and A2, while the
 green line is for TDoA between A1 and A2.
 
-![](/images/in_convex_hull.jpeg){:width="600"}
+![In convex hull](/images/in_convex_hull.jpeg){:width="600"}
 
 In the second image the Tag is further away, at (3.5, -0.3). Note how
 the lines showing the possible positions are close to parallel in the
 intersection point, making it harder to estimate a correct possition.
 
-![](/images/outside_convex_hull.jpeg){:width="600"}
+![Outside convex](/images/outside_convex_hull.jpeg){:width="600"}
 
 The red lines shows the convex hull of the system, basically the space
 defined by the anchors. A good rule of thumb is that the accuracy of the

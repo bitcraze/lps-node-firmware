@@ -30,7 +30,7 @@ the receiving party.
 Packet format
 -------------
 
-![](/images/tdoa3_protocotol.png)
+![tdoa 3 protocol](/images/tdoa3_protocotol.png)
 
 -   **Header**
     -   **type:** 0x30
@@ -48,8 +48,7 @@ Packet format
         remote anchor
     -   **distance:** time of flight between the current anchor and the
         remote anchor in radio timer ticks
--   **LPP data:** See [LPP short packet
-    description](/doc/lps/lpp#lpp_short_packets)
+-   **LPP data:** See [LPP short packet description](/lpp#lpp-short-packets)
 
 Tag implementation
 ------------------
@@ -61,4 +60,4 @@ calculate its position.
 Calculating TDoA
 ----------------
 
-[Please see TDoA positioning principles](/doc/lps/tdoa/principles)
+[Please see TDoA positioning principles](/tdoa_principles/)

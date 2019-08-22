@@ -15,5 +15,5 @@ eventually also when starting in a different orientation, but it will
 take a long time and the Crazyflie will behave in an odd way during the
 process.
 
-![](/images/crazyflie_isometric_drawing_2.png){:.align-center
+![crazyflie lps starting position](/images/crazyflie_isometric_drawing_2.png){:.align-center
 width="600"}
