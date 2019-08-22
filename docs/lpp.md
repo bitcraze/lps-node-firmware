@@ -35,10 +35,10 @@ TWR packet IDs
 
  |  ID    |  Description| 
  |  ------|  ----------------------------------------| 
-|   0x01  |  [TWR\_POLL](#TWR_POLL)| 
-|   0x02  |  [TWR\_ANSWER](#TWR_ANSWER)| 
-|   0x03  |  [TWR\_FINAL](#TWR_FINAL)| 
-|   0x04   | [TWR\_REPORT](#TWR_REPORT)| 
+|   0x01  |  [TWR\_POLL](#twr_poll)| 
+|   0x02  |  [TWR\_ANSWER](#twr_answer)| 
+|   0x03  |  [TWR\_FINAL](#twr_final)| 
+|   0x04   | [TWR\_REPORT](#twr_report)| 
 
 #### TWR\_POLL
 
