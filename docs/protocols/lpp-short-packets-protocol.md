@@ -1,6 +1,6 @@
 ---
 title: LPP Short packets protocol
-page_id: lpp-short-message-protocol
+page_id: lpp-short-packets-protocol
 ---
 
 The LPP short packets are management packets, short enough to be sent

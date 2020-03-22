@@ -48,7 +48,7 @@ Packet format
         remote anchor
     -   **distance:** time of flight between the current anchor and the
         remote anchor in radio timer ticks
--   **LPP data:** See [LPP short packet description](/lpp#lpp-short-packets)
+-   **LPP data:** See [LPP short packet description](/protocols/lpp-short-packets-protocol/)
 
 Tag implementation
 ------------------

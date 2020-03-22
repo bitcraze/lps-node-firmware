@@ -38,7 +38,7 @@ Format:
 
 The optional management data can be any LPP management packet deemed
 useful for the tag. Currently this is used to send the anchor position
-from the anchor to the tag using the [LPP Short anchor position packet](/protocols/lpp-short-message-protocol)
+from the anchor to the tag using the [LPP Short anchor position packet](/protocols/lpp-short-packets-protocol/)
 
 ## TWR\_FINAL
 

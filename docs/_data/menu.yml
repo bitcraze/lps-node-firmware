@@ -27,4 +27,4 @@
     - {page_id: twr-protocol}
     - {page_id: tdoa2_protocol}
     - {page_id: tdoa3_protocol}
-    - {page_id: lpp-short-message-protocol}
+    - {page_id: lpp-short-packets-protocol}
