@@ -4,7 +4,7 @@ page_id: anchor-setup
 ---
 
 
-Use the [LPS configuration tool](/tools/)
+Use the [LPS configuration tool](/user-guides/tools/)
 to update the firmware and set the addresses of the nodes from 0-5. Note
 the address on the nodes.
 

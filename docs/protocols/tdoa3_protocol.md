@@ -60,4 +60,4 @@ calculate its position.
 Calculating TDoA
 ----------------
 
-[Please see TDoA positioning principles](/tdoa_principles/)
+[Please see TDoA positioning principles](/functional-areas/tdoa_principles/)

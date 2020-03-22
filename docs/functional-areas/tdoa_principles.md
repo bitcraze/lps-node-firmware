@@ -1,5 +1,5 @@
 ---
-title: Loco Positioning TDoA principles
+title: TDoA principles
 page_id: tdoa_principles
 ---
 

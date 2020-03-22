@@ -1,10 +1,10 @@
 ---
 title: TDoA Anchor protocol V2
-page_id: tdoa_protocol
+page_id: tdoa2_protocol
 ---
 
 
-This page describes the [TDoA](https://wiki.bitcraze.io/doc:lps:tdoa) anchor protocol V2.
+This page describes the TDoA anchor protocol V2.
 
 System architecture
 -------------------
@@ -73,4 +73,4 @@ Though this is not a requirement.
 Calculating TDoA
 ----------------
 
-[Please see TDoA positioning principles](/tdoa_principles/)
+[Please see TDoA positioning principles](/functional-areas/tdoa_principles/)
