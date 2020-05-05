@@ -44,6 +44,7 @@ if len(sys.argv) > 1:
 
 for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
     if not packet:
+        print("There is no TDoA3 packet!")
         continue
 
     id = packet['from']
