@@ -46,16 +46,18 @@ ser.write(b'b')
 
 while True:
     c = ser.read(1)
-    if c == b'\xbc':
+    if c == b'\xbc':      # the anchor is in sniffer mode
         ts = ser.read(5)
         ts += b'\0\0\0'
         ts = struct.unpack('<Q', ts)[0]
         addrFrom, addrTo = struct.unpack('<BB', ser.read(2))
         length = struct.unpack('<H', ser.read(2))[0]
+        # print(struct.unpack('<H', ser.read(2))[0])
         if length > 1024:
-            continue
+            continue                     # continues the while loop
         data = ser.read(length)
         l2 = struct.unpack('<H', ser.read(2))[0]
+       
         if length == l2:
             now = time.time()
             if outputFormat == 'human':
@@ -71,9 +73,6 @@ while True:
                 print(yaml.dump({'ts': ts, 'from': addrFrom,
                                  'to': addrTo, 'data': data, 'rxSys': now},
                                 Dumper=yaml.CDumper))
-                # write into yaml file
-                # with open('data.yaml', 'w') as outfile:
-                #     yaml.dump({'ts': ts, 'from': addrFrom, 'to': addrTo, 'data': data, 'rxSys': now}, outfile)
             else:
                 sys.stderr.write("Error: Uknown output format: {}\n".format(
                                  outputFormat))

@@ -54,13 +54,13 @@ static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
     dwStartReceive(dev);
 
     if (cfgIsBinaryMode()) {
-      write(STDOUT_FILENO, "\xbc", 1);
+      write(STDOUT_FILENO, "\xbc", 1);  // Write a header to show it's in sniffer mode
       write(STDOUT_FILENO, &arrival.full, 5);
       write(STDOUT_FILENO, &rxPacket.sourceAddress[0], 1);
       write(STDOUT_FILENO, &rxPacket.destAddress[0], 1);
       dataLength -= MAC802154_HEADER_LENGTH;
       write(STDOUT_FILENO, &dataLength, 2);
-      write(STDOUT_FILENO, rxPacket.payload, dataLength);
+      write(STDOUT_FILENO, rxPacket.payload, dataLength);  // This is the data
       write(STDOUT_FILENO, &dataLength, 2);  // Length repeated for sync detection
     } else {
       printf("From %02x to %02x @%02x%08x: ", rxPacket.sourceAddress[0],

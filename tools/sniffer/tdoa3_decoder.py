@@ -23,10 +23,10 @@ if len(sys.argv) > 1:
 
 # Packet format:
 # typedef struct {
-#     uint8_t type;
-# uint8_t seq;
-# uint32_t txTimeStamp;
-# uint8_t remoteCount;
+#  uint8_t type;          ----> B
+#  uint8_t seq;           ----> B 
+#  uint32_t txTimeStamp;  ----> L
+#  uint8_t remoteCount;   ----> B
 # } __attribute__((packed)) rangePacketHeader3_t;
 #
 # typedef struct {
