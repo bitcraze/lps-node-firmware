@@ -30,7 +30,7 @@ the receiving party.
 Packet format
 -------------
 
-{% ditaa %}
+{% ditaa --alt "TDoA3 protocol structure" %}
                     +--------+----------------------------------+----------+
 Packet    :         | Header | remoteCount x Remote anchor data | LPP data |
                     +--------+----------------------------------+----------+
