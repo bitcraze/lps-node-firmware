@@ -2,6 +2,8 @@
 
 This project contains the source code for the Local positioning System node firmware. 
 
+See the [Bitcraze documentation](https://www.bitcraze.io/documentation/repository/lps-node-firmware/master/) for more information.
+
 ## Dependencies
 
 You'll need to use either the Crazyflie VM, install some ARM toolchain or the Bitcraze docker builder image. If you install a toolchain, the [arm embedded gcc](https://launchpad.net/gcc-arm-embedded) toolchain is recomended.
