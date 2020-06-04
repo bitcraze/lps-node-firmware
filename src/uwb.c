@@ -89,7 +89,7 @@ static void rxfailedcallback(dwDevice_t *dev) {
   timeout = algorithm->onEvent(dev, eventReceiveFailed);
 }
 
-
+// -------------------------------------------------------------------------------- //
 void uwbInit()
 {
   // Initializing the low level radio handling
@@ -179,7 +179,7 @@ void uwbInit()
 
   isInit = true;
 }
-
+// -------------------------------------------------------------------------------- //
 bool uwbTest()
 {
   return isInit;
@@ -208,11 +208,11 @@ static int checkIrq()
 {
   return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_0);
 }
-
+// -------------------------------------------------------------------------------- //
 static void uwbTask(void* parameters)
 {
   configASSERT(isInit);
-
+  // init the algorithm
   algorithm->init(&config, dwm);
 
   while(1) {
@@ -236,6 +236,7 @@ void uwbStart()
                       configMAX_PRIORITIES - 1, uwbStaticStack, &uwbStaticTask);
   }
 }
+// --------------------------------------------------------------------------------- //
 
 char * uwbStrError()
 {

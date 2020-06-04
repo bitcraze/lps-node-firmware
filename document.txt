@@ -12,6 +12,16 @@ Try these
 5) python3 sniffer_binary.py /dev/ttyACM0 yaml | python3 tdoa3_decoder.py | python3 tdoa3_tof.py  m
 
 
+Flash the code on the anchors
+1) in the folder "lps-node-firmware"
+	
+	make
+
+2) in the folder "lps-tools"
+
+	sudo python3 -m lpstools    ---> open the GUI of lps
+
+3) flash from the GUI
 
 
 
