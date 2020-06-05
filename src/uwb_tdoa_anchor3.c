@@ -193,7 +193,7 @@ static anchorContext_t* getContext(uint8_t anchorId) {
 
   return &ctx.anchorCtx[slot];
 }
-
+// -------------------- help functions for updateAnchorLists --------------------------- //
 static void clearAnchorRxCount() {
   memset(&ctx.anchorRxCount, 0, ID_COUNT);
 }
@@ -261,6 +261,7 @@ static void purgeData() {
     }
   }
 }
+// ------------------------------------------------------------------------------------- //
 
 // This function is called at regular intervals to update lists containing data
 // about which anchors to store and add to outgoing messages. This
@@ -288,6 +289,7 @@ static void updateAnchorLists() {
 
   // Out of all anchors that we have received messages from, pick two
   // randomized subsets for storage and TX ids
+  // [Question]: Where is the two randomized subsets for storage and TX ids ??
   uint8_t remoteTXIdIndex = 0;
   uint8_t contextIndex = 0;
   for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++) {
@@ -304,7 +306,6 @@ static void updateAnchorLists() {
         if (contextIndex < ANCHOR_STORAGE_COUNT) {
           ctxts[contextIndex++] = id;
         }
-
         availableUsed[index] = true;
         break;
       }
@@ -378,6 +379,7 @@ static double calculateClockCorrection(anchorContext_t* anchorCtx, int remoteTxS
   return result;
 }
 
+// [TWR] compute the distance between remote anchor and current anchor. Follows an easy TWR equation
 static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
 {
   // Check that the remote received seq nr is our latest tx seq nr
@@ -426,7 +428,6 @@ static bool emptyClockCorrectionBucket(anchorContext_t* anchorCtx) {
       anchorCtx->clockCorrectionBucket--;
       return false;
     }
-
     return true;
 }
 
@@ -447,10 +448,9 @@ static bool updateClockCorrection(anchorContext_t* anchorCtx, double clockCorrec
       }
     }
   }
-
   return sampleIsAccepted;
 }
-
+// callback function for handleRxPacket
 static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
 {
   const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
@@ -488,6 +488,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
   }
 }
 
+// callback function when receive a radio signal
 static void handleRxPacket(dwDevice_t *dev)
 {
   static packet_t rxPacket;
@@ -526,6 +527,7 @@ static void setupRx(dwDevice_t *dev)
   dwStartReceive(dev);
 }
 
+// [Question] 
 static int populateTxData(rangePacket3_t *rangePacket)
 {
   // rangePacket->header.type already populated
