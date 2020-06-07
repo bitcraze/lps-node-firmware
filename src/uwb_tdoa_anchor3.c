@@ -145,9 +145,9 @@ static struct ctx_s {
   uint32_t nextAnchorListUpdate;
 
   // Remote anchor data
-  uint8_t anchorCtxLookup[ID_COUNT];
+  uint8_t anchorCtxLookup[ID_COUNT];                 // current available anchor id for sending msg
   anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
-  uint8_t anchorRxCount[ID_COUNT];
+  uint8_t anchorRxCount[ID_COUNT];                   // the anchor id list that I received msg from
 } ctx;
 
 // Packet formats

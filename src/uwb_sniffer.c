@@ -155,7 +155,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
   static packet_t rxPacket;
 
   if (event == eventPacketReceived) {
-
+    // printf("received msg \r\n");
     int dataLength = dwGetDataLength(dev);
     dwGetRawReceiveTimestamp(dev, &arrival);
     dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
@@ -164,23 +164,27 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     setupRx(dev);
 
     // the anchor ID that send the radio signal
-    uint8_t remoteAnchorId = rxPacket.sourceAddress[0]; 
+    // for anchor code
+    // uint8_t remoteAnchorId = rxPacket.sourceAddress[0]; 
+    // for Crazyflie code, the anchor ID is not correct now 
+    uint8_t remoteAnchorId = *rxPacket.sourceAddress & 0xff;
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
 
     remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*)anchorDataPtr;
     // the anchor ID that receives the radio signal
     const uint8_t id = anchorData->id;
-    // printf("id in the remoteAnchorDatafull: %d \r\n", (int)id);
+
     bool hasDistance = ((anchorData->seq & 0x80) != 0);
+    // printf("hasDistance %d \r\n", (int) hasDistance);
     if (hasDistance) {
         uint16_t tof = anchorData->distance;
     //  M_PER_TICK = SPEED_OF_LIGHT / LOCODECK_TS_FREQ
     //  precompute value
         double M_PER_TICK = 0.0046917639786157855; 
-    // printf("M_PER_TICK: %.19f\r\n", M_PER_TICK);
+    // printf("M_PER_TICK: %.19f\r\n", M_PER_TICK)
         double ranging = tof * M_PER_TICK - ANTENNA_OFFSET; 
-        printf("tof ranging distance from anchor %d to anchor %d: %lf \r\n", (int) remoteAnchorId,  (int)id, ranging);
+        printf("tof ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAnchorId,  (int)id, ranging);
     }
 
   } else {
