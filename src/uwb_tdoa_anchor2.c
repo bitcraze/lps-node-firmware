@@ -471,7 +471,25 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
   return MAX_TIMEOUT;
 }
 
-uwbAlgorithm_t uwbTdoa2Algorithm = {
+// [Change]  original name is uwbTdoa2Algorithm
+uwbAlgorithm_t uwbTdoa2Algorithm_1 = {
   .init = tdoa2Init,
   .onEvent = tdoa2UwbEvent,
 };
+
+// -------------------------------------------------------------//
+// changing UWB sniffer code leading to ram overflow
+// use dummy tdoa2 algorithm to reduce the ram size
+
+static void tdoa2Init_dummy(uwbConfig_t * config, dwDevice_t *dev){
+// do nothing
+}
+static uint32_t tdoa2UwbEvent_dummy(dwDevice_t *dev, uwbEvent_t event){
+    // do nothing
+    return 0;
+}
+uwbAlgorithm_t uwbTdoa2Algorithm = {
+  .init = tdoa2Init_dummy,
+  .onEvent = tdoa2UwbEvent_dummy,
+};
+// -------------------------------------------------------------//

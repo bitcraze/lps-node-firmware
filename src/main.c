@@ -431,7 +431,7 @@ static void handleSerialInput(char ch) {
 
   menuState.configChanged = true;
   printf("The current menu state: %d\r\n",menuState.currentMenu);
-  // A state vector machine: main loop is mainMenu. By pressing certain button, menuState change to other menu. 
+  // A FAM: main loop is mainMenu. By pressing certain button, menuState change to other menu. 
   // Press again for certain purpose and then comes back to the mainMenu.
   switch (menuState.currentMenu) {
     case mainMenu:

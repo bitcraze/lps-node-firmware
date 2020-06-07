@@ -24,7 +24,9 @@ typedef struct packet_s {
 
     uint8_t seq;
     uint16_t pan;
-    uint8_t destAddress[8];
+    // used in txPacket, indicates the destination anchor ID of the radio signal
+    uint8_t destAddress[8];   
+    // used in rxPacket, indicates the anchor ID that send the radio signal
     uint8_t sourceAddress[8];
 
     uint8_t payload[128];
