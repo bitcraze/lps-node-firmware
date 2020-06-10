@@ -147,13 +147,18 @@ struct lppShortAnchorPos_s {
   float x;
   float y;
   float z;
+  float q0;
+  float q1;
+  float q2;
+  float q3;
 } __attribute__((packed));
 // [New] Define a struct containing the info of remote "anchor" --> agent
 // global variable
 static struct remoteAgentInfo_s{
-    int remoteAgentID;
+    int remoteAgentID;           // source Agent 
+    int destAgentID;             // destination Agent
     bool hasDistance;
-    struct lppShortAnchorPos_s Pos;
+    struct lppShortAnchorPos_s Pose;
     double ranging;
 }remoteAgentInfo;
 
@@ -170,9 +175,20 @@ static void handleLppShortPacket(const uint8_t *data, const int length) {
   if (type == LPP_SHORT_ANCHORPOS) {
     struct lppShortAnchorPos_s *pos = (struct lppShortAnchorPos_s*)&data[1];
     // printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
-    remoteAgentInfo.Pos.x = pos->x;
-    remoteAgentInfo.Pos.y = pos->y;
-    remoteAgentInfo.Pos.z = pos->z;
+    // printf("Raw data: \r\n");
+    // for (int i=0; i<length; i++) {
+    //     printf("%02x ", data[i]);
+    // }
+    // resutls --> Raw data: 01 00 00 00 00 cd cc cc 3d cd cc 4c 3e 
+    // a float -> 4 bytes. Raw data 13 bytes, the first one is type. 
+    // The rest 12 bytes -> float x, y, z
+    remoteAgentInfo.Pose.x = pos->x;
+    remoteAgentInfo.Pose.y = pos->y;
+    remoteAgentInfo.Pose.z = pos->z;
+    remoteAgentInfo.Pose.q0 = pos->q0;
+    remoteAgentInfo.Pose.q1 = pos->q1;
+    remoteAgentInfo.Pose.q2 = pos->q2;
+    remoteAgentInfo.Pose.q3 = pos->q3;
     }
 }
 
@@ -197,6 +213,9 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
   static packet_t rxPacket;
 
   if (event == eventPacketReceived) {
+    // [Note] For the implementation on CF, we need to check if the radio is sent to this agent
+    // check if anchorData->id is the destAddress 
+    // Similar to uwb_tdoa_anchor3.c --> case SHORT_LPP --> if (rxPacket.destAddress[0] == ctx.anchorId)
     int dataLength = dwGetDataLength(dev);
     dwGetRawReceiveTimestamp(dev, &arrival);
     dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
@@ -211,7 +230,8 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
 
     remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*)anchorDataPtr;
     // the anchor ID that receives the radio signal
-    const uint8_t id = anchorData->id;
+    // const uint8_t id = anchorData->id;
+    remoteAgentInfo.destAgentID = anchorData->id;
 
     remoteAgentInfo.hasDistance = ((anchorData->seq & 0x80) != 0);            // save "hasDistance"  
     if (remoteAgentInfo.hasDistance) {
@@ -230,8 +250,9 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     int rangeDataLength = (uint8_t*)anchorDataPtr - (uint8_t*)rangePacket;
     handleLppPacket(dataLength, rangeDataLength, &rxPacket);
     // print out
-    printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)id, remoteAgentInfo.ranging);
-    printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pos.x,remoteAgentInfo.Pos.y,remoteAgentInfo.Pos.z);
+    printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)remoteAgentInfo.destAgentID, remoteAgentInfo.ranging);
+    printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
+    printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
     printf("\r\n");
   } else {
     setupRx(dev);
