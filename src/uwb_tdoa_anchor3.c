@@ -394,6 +394,7 @@ static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr,
   }
 }
 
+
 static bool extractFromPacket(const rangePacket3_t* rangePacket, uint32_t* remoteRx, uint8_t* remoteRxSeqNr) {
   const void* anchorDataPtr = &rangePacket->remoteAnchorData;
   for (uint8_t i = 0; i < rangePacket->header.remoteCount; i++) {
@@ -453,7 +454,7 @@ static bool updateClockCorrection(anchorContext_t* anchorCtx, double clockCorrec
 // callback function for handleRxPacket
 static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
 {
-  const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
+  const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];   // ID: where the radio comes from
   ctx.anchorRxCount[remoteAnchorId]++;
   anchorContext_t* anchorCtx = getContext(remoteAnchorId);
   if (anchorCtx) {
@@ -499,7 +500,7 @@ static void handleRxPacket(dwDevice_t *dev)
 
   int dataLength = dwGetDataLength(dev);
   rxPacket.payload[0] = 0;
-  dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
+  dwGetData(dev, (uint8_t*)&rxPacket, dataLength); // read data from dec to rxpacket
 
   if (dataLength == 0) {
     return;
@@ -509,7 +510,7 @@ static void handleRxPacket(dwDevice_t *dev)
   case PACKET_TYPE_TDOA3:
     handleRangePacket(rxTime.low32, &rxPacket);
     break;
-  case SHORT_LPP:
+  case SHORT_LPP:                                 // unicast to an anchor, set (x,y,z) as new position
     if (rxPacket.destAddress[0] == ctx.anchorId) {
       lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
     }
@@ -564,6 +565,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
 }
 
 // Set TX data in the radio TX buffer
+// Modify this one if we want to transmit EKF states
 static void setTxData(dwDevice_t *dev)
 {
   static packet_t txPacket;
@@ -647,7 +649,7 @@ static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
 // Initialize/reset the agorithm
 static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
 {
-  ctx.anchorId = config->address[0];
+  ctx.anchorId = config->address[0];         // config is achieved from uwb.c code. 
   ctx.seqNr = 0;
   ctx.txTime = 0;
   ctx.nextTxTick = 0;
@@ -677,13 +679,13 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev, uwbEvent_t event)
       // Nothing here
       break;
   }
-
+  // update anchor list
   uint32_t now = xTaskGetTickCount();
   if (now > ctx.nextAnchorListUpdate) {
     updateAnchorLists();
     ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL;
   }
-
+  // Send or receive data (based on time)
   uint32_t timeout_ms = startNextEvent(dev, now);
   return timeout_ms;
 }

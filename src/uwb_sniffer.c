@@ -44,29 +44,34 @@
 #include "lpp.h"
 
 
-  //------------------------------- useful constents ----------------------------------- //
-  #define REMOTE_TX_MAX_COUNT 8
-  #define ID_COUNT 256
-  #define ANCHOR_STORAGE_COUNT 16
-  #define ANTENNA_OFFSET 154.6   // In meters
-  #define ANTENNA_DELAY  ((ANTENNA_OFFSET*499.2e6*128)/299792458.0) // In radio tick
-  #define MIN_TOF ANTENNA_DELAY
-  #define ID_COUNT 256
-  #define ID_WITHOUT_CONTEXT 0xff
-  #define ID_INVALID 0xff
+//------------------------------- useful constents ----------------------------------- //
+#define REMOTE_TX_MAX_COUNT 8
+#define ID_COUNT 256
+#define ANCHOR_STORAGE_COUNT 16
+#define ANTENNA_OFFSET 154.6   // In meters
+#define ANTENNA_DELAY  ((ANTENNA_OFFSET*499.2e6*128)/299792458.0) // In radio tick
+#define MIN_TOF ANTENNA_DELAY
+#define ID_COUNT 256
+#define ID_WITHOUT_CONTEXT 0xff
+#define ID_INVALID 0xff
 
-  #define MAX_CLOCK_DEVIATION_SPEC 10e-6
-  #define CLOCK_CORRECTION_SPEC_MIN (1.0d - MAX_CLOCK_DEVIATION_SPEC * 2)
-  #define CLOCK_CORRECTION_SPEC_MAX (1.0d + MAX_CLOCK_DEVIATION_SPEC * 2) 
+#define MAX_CLOCK_DEVIATION_SPEC 10e-6
+#define CLOCK_CORRECTION_SPEC_MIN (1.0d - MAX_CLOCK_DEVIATION_SPEC * 2)
+#define CLOCK_CORRECTION_SPEC_MAX (1.0d + MAX_CLOCK_DEVIATION_SPEC * 2) 
 
-  #define CLOCK_CORRECTION_ACCEPTED_NOISE 0.03e-6
-  #define CLOCK_CORRECTION_FILTER 0.1d
-  #define CLOCK_CORRECTION_BUCKET_MAX 4
+#define CLOCK_CORRECTION_ACCEPTED_NOISE 0.03e-6
+#define CLOCK_CORRECTION_FILTER 0.1d
+#define CLOCK_CORRECTION_BUCKET_MAX 4
 
-  // for computing tof ranging distance
-  #define ANTENNA_OFFSET  154.6
-  #define LOCODECK_TS_FREQ  499.2e6 * 128
-  #define SPEED_OF_LIGHT  299792458.0
+// for computing tof ranging distance
+#define ANTENNA_OFFSET  154.6
+#define LOCODECK_TS_FREQ  499.2e6 * 128
+#define SPEED_OF_LIGHT  299792458.0
+// LPP Packet types and format
+#define LPP_HEADER_SHORT_PACKET 0xF0
+
+#define LPP_SHORT_ANCHORPOS 0x01
+
 // -------------------------------- necessary defination ------------------------------ //
 // Packet formats
 #define PACKET_TYPE_TDOA3 0x30
@@ -111,14 +116,12 @@ typedef struct {
   uint8_t remoteAnchorData;
 } __attribute__((packed)) rangePacket3_t;
 
-
-
 // This context struct contains all the required global values of the algorithm
 static struct ctx_s {
   int anchorId;
   // Information about latest transmitted packet
   uint8_t seqNr;
-  uint32_t txTime; // In UWB clock ticks
+  uint32_t txTime; 
 
   // Next transmit time in system clock ticks
   uint32_t nextTxTick;
@@ -137,10 +140,13 @@ static struct ctx_s {
   uint8_t anchorRxCount[ID_COUNT];
 } ctx;
 
-
+// lpp packet
+struct lppShortAnchorPos_s {
+  float x;
+  float y;
+  float z;
+} __attribute__((packed));
 // --------------------------------------------------------------------------------- //
-
-
 static void setupRx(dwDevice_t *dev)
 {
   dwNewReceive(dev);
@@ -149,24 +155,43 @@ static void setupRx(dwDevice_t *dev)
 }
 
 
+static void handleLppShortPacket(const uint8_t *data, const int length) {
+  uint8_t type = data[0];
+  if (type == LPP_SHORT_ANCHORPOS) {
+    struct lppShortAnchorPos_s *pos = (struct lppShortAnchorPos_s*)&data[1];
+    printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
+    }
+}
+
+static void handleLppPacket(const int dataLength, int rangePacketLength, const packet_t* rxPacket) {
+  const int32_t payloadLength = dataLength - MAC802154_HEADER_LENGTH;
+  const int32_t startOfLppDataInPayload = rangePacketLength;
+  const int32_t lppDataLength = payloadLength - startOfLppDataInPayload;
+  const int32_t lppTypeInPayload = startOfLppDataInPayload + 1;
+//   printf("payloadLentgh is %d\r\n",(int)payloadLength);
+//   printf("startOfLppDataInPayload is %d\r\n",(int)startOfLppDataInPayload);
+  if (lppDataLength > 0) {
+    const uint8_t lppPacketHeader = rxPacket->payload[startOfLppDataInPayload];
+    if (lppPacketHeader == LPP_HEADER_SHORT_PACKET) {
+      const int32_t lppTypeAndPayloadLength = lppDataLength - 1;
+      handleLppShortPacket(&rxPacket->payload[lppTypeInPayload], lppTypeAndPayloadLength);
+    }
+  }
+}
+
 static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
    
   static dwTime_t arrival;
   static packet_t rxPacket;
 
   if (event == eventPacketReceived) {
-    // printf("received msg \r\n");
     int dataLength = dwGetDataLength(dev);
     dwGetRawReceiveTimestamp(dev, &arrival);
     dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
-
-    // Reset the radio into receive mode 
     setupRx(dev);
-
-    // the anchor ID that send the radio signal
+    /*----------------- get access to ID and distance---------------------------*/
     // for anchor code
     // uint8_t remoteAnchorId = rxPacket.sourceAddress[0]; 
-    // for Crazyflie code, the anchor ID is not correct now 
     uint8_t remoteAnchorId = *rxPacket.sourceAddress & 0xff;
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
@@ -176,19 +201,25 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     const uint8_t id = anchorData->id;
 
     bool hasDistance = ((anchorData->seq & 0x80) != 0);
-    // printf("hasDistance %d \r\n", (int) hasDistance);
+
     if (hasDistance) {
         uint16_t tof = anchorData->distance;
     //  M_PER_TICK = SPEED_OF_LIGHT / LOCODECK_TS_FREQ
     //  precompute value
         double M_PER_TICK = 0.0046917639786157855; 
-    // printf("M_PER_TICK: %.19f\r\n", M_PER_TICK)
         double ranging = tof * M_PER_TICK - ANTENNA_OFFSET; 
-        printf("tof ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAnchorId,  (int)id, ranging);
+        printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAnchorId,  (int)id, ranging);
+        anchorDataPtr += sizeof(remoteAnchorDataFull_t);
+    }else{
+        anchorDataPtr += sizeof(remoteAnchorDataShort_t);
     }
+    /*----------------- get access to remote anchor positions---------------------------*/
+    // moved from lpsTdoa3Tag.c --> rxcallback
+    int rangeDataLength = (uint8_t*)anchorDataPtr - (uint8_t*)rangePacket;
+    handleLppPacket(dataLength, rangeDataLength, &rxPacket);
 
+    // printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
   } else {
-    // Reset the radio into receive mode 
     setupRx(dev);
   }
 
