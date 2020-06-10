@@ -24,7 +24,10 @@
  */
 /* uwb_sniffer.c: Uwb sniffer implementation */
 
-/* ------------------ modify the uwb_sniffer.c code for TDoA3 ------------------ */
+/* ------------------ Modify the uwb_sniffer.c code for TDoA3 ------------------ */
+
+/*-------------------- test in sniffer and then implement on Crazyflie--------------------*/
+
 #include "uwb.h"
 
 #include <string.h>
@@ -139,13 +142,21 @@ static struct ctx_s {
   anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
   uint8_t anchorRxCount[ID_COUNT];
 } ctx;
-
 // lpp packet
 struct lppShortAnchorPos_s {
   float x;
   float y;
   float z;
 } __attribute__((packed));
+// [New] Define a struct containing the info of remote "anchor" --> agent
+// global variable
+static struct remoteAgentInfo_s{
+    int remoteAgentID;
+    bool hasDistance;
+    struct lppShortAnchorPos_s Pos;
+    double ranging;
+}remoteAgentInfo;
+
 // --------------------------------------------------------------------------------- //
 static void setupRx(dwDevice_t *dev)
 {
@@ -154,12 +165,14 @@ static void setupRx(dwDevice_t *dev)
   dwStartReceive(dev);
 }
 
-
 static void handleLppShortPacket(const uint8_t *data, const int length) {
   uint8_t type = data[0];
   if (type == LPP_SHORT_ANCHORPOS) {
     struct lppShortAnchorPos_s *pos = (struct lppShortAnchorPos_s*)&data[1];
-    printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
+    // printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
+    remoteAgentInfo.Pos.x = pos->x;
+    remoteAgentInfo.Pos.y = pos->y;
+    remoteAgentInfo.Pos.z = pos->z;
     }
 }
 
@@ -180,7 +193,6 @@ static void handleLppPacket(const int dataLength, int rangePacketLength, const p
 }
 
 static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
-   
   static dwTime_t arrival;
   static packet_t rxPacket;
 
@@ -190,9 +202,10 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
     setupRx(dev);
     /*----------------- get access to ID and distance---------------------------*/
-    // for anchor code
+    // // For anchor code:
     // uint8_t remoteAnchorId = rxPacket.sourceAddress[0]; 
-    uint8_t remoteAnchorId = *rxPacket.sourceAddress & 0xff;
+    remoteAgentInfo.remoteAgentID = *rxPacket.sourceAddress & 0xff;            // save the Agent IDs
+
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
 
@@ -200,15 +213,14 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     // the anchor ID that receives the radio signal
     const uint8_t id = anchorData->id;
 
-    bool hasDistance = ((anchorData->seq & 0x80) != 0);
-
-    if (hasDistance) {
+    remoteAgentInfo.hasDistance = ((anchorData->seq & 0x80) != 0);            // save "hasDistance"  
+    if (remoteAgentInfo.hasDistance) {
         uint16_t tof = anchorData->distance;
     //  M_PER_TICK = SPEED_OF_LIGHT / LOCODECK_TS_FREQ
     //  precompute value
         double M_PER_TICK = 0.0046917639786157855; 
-        double ranging = tof * M_PER_TICK - ANTENNA_OFFSET; 
-        printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAnchorId,  (int)id, ranging);
+        remoteAgentInfo.ranging = tof * M_PER_TICK - ANTENNA_OFFSET;         // save the ranging info
+
         anchorDataPtr += sizeof(remoteAnchorDataFull_t);
     }else{
         anchorDataPtr += sizeof(remoteAnchorDataShort_t);
@@ -217,8 +229,10 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     // moved from lpsTdoa3Tag.c --> rxcallback
     int rangeDataLength = (uint8_t*)anchorDataPtr - (uint8_t*)rangePacket;
     handleLppPacket(dataLength, rangeDataLength, &rxPacket);
-
-    // printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
+    // print out
+    printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)id, remoteAgentInfo.ranging);
+    printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pos.x,remoteAgentInfo.Pos.y,remoteAgentInfo.Pos.z);
+    printf("\r\n");
   } else {
     setupRx(dev);
   }
