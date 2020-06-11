@@ -397,6 +397,9 @@ static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr,
 
 static bool extractFromPacket(const rangePacket3_t* rangePacket, uint32_t* remoteRx, uint8_t* remoteRxSeqNr) {
   const void* anchorDataPtr = &rangePacket->remoteAnchorData;
+  // loop through all the remote anchors
+  // [Question] i is not used in the loop
+  // [Answer] after each loop --> anchorDataPtr += sizeof(remoteAnchorDataFull_t), the address move backwards
   for (uint8_t i = 0; i < rangePacket->header.remoteCount; i++) {
     remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*)anchorDataPtr;
 
