@@ -227,10 +227,10 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
 
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
+    printf("----------------------start packet---------------------\r\n");
     printf("destAddress in packet data is %d \r\n", *rxPacket.destAddress);
     printf("sourceAddress in packet data is %d \r\n", *rxPacket.sourceAddress);    
     // loop over all remote anchor data 
-    printf("----------------------start loop---------------------\r\n");
     for (uint8_t i = 0; i < rangePacket->header.remoteCount; i++) {
     // [Check!!!!] need a storing system to save the remote anchor information 
     // (check tdoaStorage in lpsTdoa3Tag.c)
@@ -240,7 +240,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
         remoteAgentInfo.destAgentID = anchorData->id;
 
         remoteAgentInfo.hasDistance = ((anchorData->seq & 0x80) != 0);            // save "hasDistance" 
-        printf("remote ID %d is %d \r\n", i,anchorData->id);
+        printf("remote ID number %d is %d \r\n", i,anchorData->id);
         if (remoteAgentInfo.hasDistance) {
             uint16_t tof = anchorData->distance;
         //  M_PER_TICK = SPEED_OF_LIGHT / LOCODECK_TS_FREQ
@@ -249,20 +249,20 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
             double ranging = tof * M_PER_TICK - ANTENNA_OFFSET;         // save the ranging info
             remoteAgentInfo.ranging = ranging;
             anchorDataPtr += sizeof(remoteAnchorDataFull_t);
-            printf("remote ID %d has ranging %f \r\n", i,ranging);
+            printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", *rxPacket.sourceAddress,anchorData->id,ranging);
         }else{
             anchorDataPtr += sizeof(remoteAnchorDataShort_t);
         }
     }
-    printf("----------------------------------------------------\r\n");
     /*----------------- get access to remote anchor positions---------------------------*/
     // moved from lpsTdoa3Tag.c --> rxcallback
     int rangeDataLength = (uint8_t*)anchorDataPtr - (uint8_t*)rangePacket;
     handleLppPacket(dataLength, rangeDataLength, &rxPacket);
     // print out
-    printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)remoteAgentInfo.destAgentID, remoteAgentInfo.ranging);
+    // printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)remoteAgentInfo.destAgentID, remoteAgentInfo.ranging);
     printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
     printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
+    printf("----------------------------------------------------\r\n");
     printf("\r\n");
   } else {
     setupRx(dev);
