@@ -151,6 +151,12 @@ struct lppShortAnchorPos_s {
   float q1;
   float q2;
   float q3;
+  float imu0;
+  float imu1;
+  float imu2;
+  float imu3;
+  float imu4;
+  float imu5;
 } __attribute__((packed));
 // [New] Define a struct containing the info of remote "anchor" --> agent
 // global variable
@@ -189,6 +195,12 @@ static void handleLppShortPacket(const uint8_t *data, const int length) {
     remoteAgentInfo.Pose.q1 = pos->q1;
     remoteAgentInfo.Pose.q2 = pos->q2;
     remoteAgentInfo.Pose.q3 = pos->q3;
+    remoteAgentInfo.Pose.imu0 = pos->imu0;
+    remoteAgentInfo.Pose.imu1 = pos->imu1;
+    remoteAgentInfo.Pose.imu2 = pos->imu2;
+    remoteAgentInfo.Pose.imu3 = pos->imu3;
+    remoteAgentInfo.Pose.imu4 = pos->imu4;
+    remoteAgentInfo.Pose.imu5 = pos->imu5;
     }
 }
 
@@ -262,6 +274,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     // printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)remoteAgentInfo.destAgentID, remoteAgentInfo.ranging);
     printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
     printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
+    printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.imu0,remoteAgentInfo.Pose.imu1,remoteAgentInfo.Pose.imu2, remoteAgentInfo.Pose.imu3,remoteAgentInfo.Pose.imu4, remoteAgentInfo.Pose.imu5);
     printf("----------------------------------------------------\r\n");
     printf("\r\n");
   } else {
