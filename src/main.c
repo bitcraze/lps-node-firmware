@@ -235,8 +235,12 @@ static void handleButtonInteract(char ch){
         //[New]
         case 'w':
         // printf("Test for Button '%c'\r\n",ch);
-        modeSwitch();
-        break;
+            modeSwitch_w();
+            break;
+        case 'd':
+        // printf("Test for Button '%c'\r\n",ch);
+            modeSwitch_d();
+            break;
         default:
             printf("Incorrect mode '%c'\r\n", ch);
         break;

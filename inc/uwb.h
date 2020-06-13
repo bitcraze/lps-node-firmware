@@ -62,7 +62,8 @@ typedef enum uwbEvent_e {
   eventPacketSent,
   eventReceiveTimeout,
   eventReceiveFailed,
-  eventModeSwitch,
+  eventModeSwitch_w,
+  eventModeSwitch_d
 } uwbEvent_t;
 
 // Callback for one uwb algorithm
