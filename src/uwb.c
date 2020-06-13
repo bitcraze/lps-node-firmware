@@ -89,6 +89,10 @@ static void rxfailedcallback(dwDevice_t *dev) {
   timeout = algorithm->onEvent(dev, eventReceiveFailed);
 }
 
+//[New]
+void modeSwitch(){
+  timeout = algorithm->onEvent(dwm, eventModeSwitch);
+}
 // -------------------------------------------------------------------------------- //
 void uwbInit()
 {

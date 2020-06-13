@@ -58,6 +58,9 @@ const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
 static void restConfig();
 static void changeAddress(uint8_t addr);
 static void handleSerialInput(char ch);
+// [New]
+static void handleButtonInteract(char ch);
+
 static void handleButton(void);
 static void changeMode(unsigned int newMode);
 static void changeRadioMode(unsigned int newMode);
@@ -199,7 +202,9 @@ static void main_task(void *pvParameters) {
 #else
     if(usbcommRead(&ch, 1)) {
 #endif
-      handleSerialInput(ch);
+    // [Test]
+    //   handleSerialInput(ch);
+        handleButtonInteract(ch);
     }
   }
 }
@@ -224,18 +229,35 @@ int _write (int fd, const void *buf, size_t count)
   return count;
 }
 
+// [Test] Directly Button interaction
+static void handleButtonInteract(char ch){
+    switch(ch){
+        //[New]
+        case 'w':
+        // printf("Test for Button '%c'\r\n",ch);
+        modeSwitch();
+        break;
+        default:
+            printf("Incorrect mode '%c'\r\n", ch);
+        break;
+    }
+}
+
+
 // test the Button interaction
 static void handleButtonTest(char ch, MenuState* menuState){
     switch(ch){
+        //[New]
         case 'w':
-        printf("Test for Button '%c'\r\n",ch);
-        menuState->currentMenu = mainMenu;
-        menuState->configChanged = false;
-        printf("The anchor config info is as follows\r\n");
-        struct uwbConfig_s * uwbConfig = uwbGetConfig();
-        printf("CONFIG\t: Address is 0x%X\r\n", uwbConfig->address[0]);
-        printf("CONFIG\t: Mode is %s\r\n", uwbAlgorithmName(uwbConfig->mode));
-        printf("CONFIG\t: Tag mode anchor list (%i): ", uwbConfig->anchorListSize);
+        // printf("Test for Button '%c'\r\n",ch);
+        modeSwitch();
+        // menuState->currentMenu = mainMenu;
+        // menuState->configChanged = false;
+        // printf("The anchor config info is as follows\r\n");
+        // struct uwbConfig_s * uwbConfig = uwbGetConfig();
+        // printf("CONFIG\t: Address is 0x%X\r\n", uwbConfig->address[0]);
+        // printf("CONFIG\t: Mode is %s\r\n", uwbAlgorithmName(uwbConfig->mode));
+        // printf("CONFIG\t: Tag mode anchor list (%i): ", uwbConfig->anchorListSize);
         break;
         default:
             printf("Incorrect mode '%c'\r\n", ch);

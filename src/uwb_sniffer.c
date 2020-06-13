@@ -72,12 +72,24 @@
 #define SPEED_OF_LIGHT  299792458.0
 // LPP Packet types and format
 #define LPP_HEADER_SHORT_PACKET 0xF0
-
 #define LPP_SHORT_ANCHORPOS 0x01
-
+// Time length of the preamble
+#define PREAMBLE_LENGTH_S ( 128 * 1017.63e-9 )
+#define PREAMBLE_LENGTH (uint64_t)( PREAMBLE_LENGTH_S * 499.2e6 * 128 )
+// Guard length to account for clock drift and time of flight
+#define TDMA_GUARD_LENGTH_S ( 1e-6 )
+#define TDMA_GUARD_LENGTH (uint64_t)( TDMA_GUARD_LENGTH_S * 499.2e6 * 128 )
+#define TDMA_EXTRA_LENGTH_S ( 300e-6 )
+#define TDMA_EXTRA_LENGTH (uint64_t)( TDMA_EXTRA_LENGTH_S * 499.2e6 * 128 )
+#define TDMA_HIGH_RES_RAND_S ( 1e-3 )
+#define TDMA_HIGH_RES_RAND (uint64_t)( TDMA_HIGH_RES_RAND_S * 499.2e6 * 128 )
 // -------------------------------- necessary defination ------------------------------ //
 // Packet formats
 #define PACKET_TYPE_TDOA3 0x30
+
+#define PAYLOAD_TYPE 0
+#define TYPE 1
+#define MODE 2
 
 // Anchor context
 typedef struct {
@@ -167,7 +179,63 @@ static struct remoteAgentInfo_s{
     struct lppShortAnchorPos_s Pose;
     double ranging;
 }remoteAgentInfo;
+// ------------------------------- Send TxData ------------------------------------ //
+static const uint8_t base_address[] = {0,0,0,0,0,0,0xcf,0xbc};
+static void adjustTxRxTime(dwTime_t *time)
+{
+  time->full = (time->full & ~((1 << 9) - 1)) + (1 << 9);
+}
+// Setup the radio to send a packet
+static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
+{
+  dwTime_t transmitTime = { .full = 0 };
+  dwGetSystemTimestamp(dev, &transmitTime);
+  // Add guard and preamble time
+  transmitTime.full += TDMA_GUARD_LENGTH;
+  transmitTime.full += PREAMBLE_LENGTH;
+  // And some extra
+  transmitTime.full += TDMA_EXTRA_LENGTH;
+  // DW1000 can only schedule time with 9 LSB at 0, adjust for it
+  adjustTxRxTime(&transmitTime);
+  return transmitTime;
+}
+// send short lpp packet
+static void setTxData(dwDevice_t *dev){
+    static packet_t txPacket;
+    // static bool firstEntry = true;
+    static int lppLength = 0;
+    
+    // if(firstEntry){
+    MAC80215_PACKET_INIT(txPacket, MAC802154_TYPE_DATA);
+    // [change]: add '&' in front of txPacket 
+    memcpy(&txPacket.sourceAddress, base_address, 8);
+    // The ID of the Agent that send the signal. Set to 0 for sniffer
+    txPacket.sourceAddress[0] = 0;    
+    memcpy(&txPacket.destAddress, base_address, 8);
+    txPacket.destAddress[0] = 2;      // The ID of the Agent you want to switch  
+    txPacket.payload[PAYLOAD_TYPE] = SHORT_LPP;   // payload type
+        // firstEntry = false;
+    // }
 
+    txPacket.payload[TYPE] = LPP_SHORT_MODE;      // SHORT LPP type
+    txPacket.payload[MODE] = LPP_SHORT_MODE_TDOA3; // switch to tdoa3 mode
+    lppLength = 2; // "LPP_SHORT_MODE" and "LPP_SHORT_MODE_TDOA3"
+    dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + lppLength);
+}
+
+void setupTx(dwDevice_t *dev)
+{
+    dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
+    //   ctx.txTime = txTime.low32;
+    //   ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
+    setTxData(dev);
+
+    dwNewTransmit(dev);
+    dwSetDefaults(dev);
+    dwSetTxRxTime(dev, txTime);
+
+    dwStartTransmit(dev);
+}
 // --------------------------------------------------------------------------------- //
 static void setupRx(dwDevice_t *dev)
 {
@@ -277,7 +345,11 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.imu0,remoteAgentInfo.Pose.imu1,remoteAgentInfo.Pose.imu2, remoteAgentInfo.Pose.imu3,remoteAgentInfo.Pose.imu4, remoteAgentInfo.Pose.imu5);
     printf("----------------------------------------------------\r\n");
     printf("\r\n");
-  } else {
+  } else if(event == eventModeSwitch){
+      printf("-------------------Switch Mode------------------------\r\n");
+      dwIdle(dev);
+      setupTx(dev);
+  }else {
     setupRx(dev);
   }
 
