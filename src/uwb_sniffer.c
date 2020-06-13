@@ -212,19 +212,20 @@ static void setTxData(dwDevice_t *dev){
     // The ID of the Agent that send the signal. Set to 0 for sniffer
     txPacket.sourceAddress[0] = 0;    
     memcpy(&txPacket.destAddress, base_address, 8);
-    txPacket.destAddress[0] = 2;      // The ID of the Agent you want to switch  
+    txPacket.destAddress[0] = 0;      // The ID of the Agent you want to switch  
     txPacket.payload[PAYLOAD_TYPE] = SHORT_LPP;   // payload type
         // firstEntry = false;
     // }
 
     txPacket.payload[TYPE] = LPP_SHORT_MODE;      // SHORT LPP type
     txPacket.payload[MODE] = LPP_SHORT_MODE_TDOA3; // switch to tdoa3 mode
-    lppLength = 2; // "LPP_SHORT_MODE" and "LPP_SHORT_MODE_TDOA3"
+    lppLength = 3; // SHORT LPP type", "LPP_SHORT_MODE" and "LPP_SHORT_MODE_TDOA3"
     dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + lppLength);
 }
 
 void setupTx(dwDevice_t *dev)
 {
+    dwIdle(dev);
     dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
     //   ctx.txTime = txTime.low32;
     //   ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
@@ -347,7 +348,6 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     printf("\r\n");
   } else if(event == eventModeSwitch){
       printf("-------------------Switch Mode------------------------\r\n");
-      dwIdle(dev);
       setupTx(dev);
   }else {
     setupRx(dev);
