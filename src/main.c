@@ -254,7 +254,7 @@ static void handleButtonTest(char ch, MenuState* menuState){
         //[New]
         case 'w':
         // printf("Test for Button '%c'\r\n",ch);
-        modeSwitch();
+        modeSwitch_w();
         // menuState->currentMenu = mainMenu;
         // menuState->configChanged = false;
         // printf("The anchor config info is as follows\r\n");
