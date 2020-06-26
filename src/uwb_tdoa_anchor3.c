@@ -86,10 +86,13 @@ The implementation must handle
 #define ID_INVALID 0xff
 
 #define SYSTEM_TX_FREQ 400.0
-#define ANCHOR_MAX_TX_FREQ 50.0
+// [Note] each anchor transmitting freq_max
+#define ANCHOR_MAX_TX_FREQ 50.0       
+
 // We need a lower limit of minimum tx rate. The TX timestamp in the protocol is
 // only 32 bits (equal to 67 ms) and we want to avoid double wraps of the TX counter.
 // To have some margin set the lowest tx frequency to 20 Hz (= 50 ms)
+// [Note] each anchor transmitting freq_min
 #define ANCHOR_MIN_TX_FREQ 20.0
 
 

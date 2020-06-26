@@ -182,6 +182,7 @@ static void handleFailedRx(dwDevice_t *dev)
   }
 }
 
+// [TWR] compute the distance between remote anchor and current anchor.
 static void calculateDistance(int slot, int newId, int remotePid, uint32_t remoteTx, uint32_t remoteRx, uint32_t ts)
 {
   // Check that the 2 last packets are consecutive packets and that our last packet is in beteen
