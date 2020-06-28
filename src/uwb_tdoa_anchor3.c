@@ -382,11 +382,14 @@ static double calculateClockCorrection(anchorContext_t* anchorCtx, int remoteTxS
   return result;
 }
 
+// uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+
 // [TWR] compute the distance between remote anchor and current anchor. Follows an easy TWR equation
 static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
 {
   // Check that the remote received seq nr is our latest tx seq nr
   if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d) {
+    // rx is local_rx, ctx.txtime is local_tx 
     uint32_t localTime = rx - ctx.txTime;
     uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
     uint32_t distance = (localTime - remoteTime) / 2;
@@ -488,7 +491,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
     } else {
       anchorCtx->isDataGoodForTransmission = false;
     }
-
+    // update the local_rx time and remote_rx time
     anchorCtx->rxTimeStamp = rxTime;
     anchorCtx->seqNr = remoteTxSeqNr;
     anchorCtx->txTimeStamp = remoteTx;
