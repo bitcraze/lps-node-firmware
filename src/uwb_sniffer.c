@@ -84,8 +84,10 @@
 #define TDMA_HIGH_RES_RAND_S ( 1e-3 )
 #define TDMA_HIGH_RES_RAND (uint64_t)( TDMA_HIGH_RES_RAND_S * 499.2e6 * 128 )
 // -------------------------------- necessary defination ------------------------------ //
-// Packet formats
+// tdoa3 packet formats
 #define PACKET_TYPE_TDOA3 0x30
+// tdoa4 protocol version
+#define PACKET_TYPE_TDOA4 0x60
 
 #define PAYLOAD_TYPE 0
 #define TYPE 1
@@ -131,29 +133,30 @@ typedef struct {
   uint8_t remoteAnchorData;
 } __attribute__((packed)) rangePacket3_t;
 
-// This context struct contains all the required global values of the algorithm
-static struct ctx_s {
-  int anchorId;
-  // Information about latest transmitted packet
-  uint8_t seqNr;
-  uint32_t txTime; 
+// // This context struct contains all the required global values of the algorithm
+    // static struct ctx_s {
+    //   int anchorId;
+    //   // Information about latest transmitted packet
+    //   uint8_t seqNr;
+    //   uint32_t txTime; 
 
-  // Next transmit time in system clock ticks
-  uint32_t nextTxTick;
-  int averageTxDelay; // ms
+    //   // Next transmit time in system clock ticks
+    //   uint32_t nextTxTick;
+    //   int averageTxDelay; // ms
 
-  // List of ids to transmit in remote data section
-  uint8_t remoteTxId[REMOTE_TX_MAX_COUNT];
-  uint8_t remoteTxIdCount;
+    //   // List of ids to transmit in remote data section
+    //   uint8_t remoteTxId[REMOTE_TX_MAX_COUNT];
+    //   uint8_t remoteTxIdCount;
 
-  // The list of anchors to transmit and store is updated at regular intervals
-  uint32_t nextAnchorListUpdate;
+    //   // The list of anchors to transmit and store is updated at regular intervals
+    //   uint32_t nextAnchorListUpdate;
 
-  // Remote anchor data
-  uint8_t anchorCtxLookup[ID_COUNT];
-  anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
-  uint8_t anchorRxCount[ID_COUNT];
-} ctx;
+    //   // Remote anchor data
+    //   uint8_t anchorCtxLookup[ID_COUNT];
+    //   anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
+    //   uint8_t anchorRxCount[ID_COUNT];
+// } ctx;
+
 // lpp packet
 struct lppShortAnchorPos_s {
   float x;
@@ -331,7 +334,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
   static dwTime_t arrival;
   static packet_t rxPacket;
 
-  if (event == eventPacketReceived) {
+  if (event == eventPacketReceived ) {
     // [Note] For the implementation on CF, we need to check if the radio is sent to this agent
     // check if anchorData->id is the destAddress 
     // Similar to uwb_tdoa_anchor3.c --> case SHORT_LPP --> if (rxPacket.destAddress[0] == ctx.anchorId)
@@ -346,6 +349,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
 
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
+    if (rxPacket.payload[0] == PACKET_TYPE_TDOA4 ){
     printf("----------------------start packet---------------------\r\n");
     printf("destAddress in packet data is %d \r\n", *rxPacket.destAddress);
     printf("sourceAddress in packet data is %d \r\n", *rxPacket.sourceAddress);    
@@ -384,6 +388,10 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.imu0,remoteAgentInfo.Pose.imu1,remoteAgentInfo.Pose.imu2, remoteAgentInfo.Pose.imu3,remoteAgentInfo.Pose.imu4, remoteAgentInfo.Pose.imu5);
     printf("----------------------------------------------------\r\n");
     printf("\r\n");
+    } // print tdoa4 data 
+    else{
+        // complete if, do nothing
+    }
   } else if(event == eventModeSwitch_w){
       printf("-------------------Switch Mode (w)-----------------------\r\n");
       setupTx_w(dev);
@@ -398,49 +406,49 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
   return MAX_TIMEOUT;
 }
 
-// original sniffer Event code
-static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
-{
-  static dwTime_t arrival;
-  static packet_t rxPacket;
+// // original sniffer Event code
+    // static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
+    // {
+    //   static dwTime_t arrival;
+    //   static packet_t rxPacket;
 
-  if (event == eventPacketReceived) {
-    int dataLength = dwGetDataLength(dev);
-    dwGetRawReceiveTimestamp(dev, &arrival);
-    dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
+    //   if (event == eventPacketReceived) {
+    //     int dataLength = dwGetDataLength(dev);
+    //     dwGetRawReceiveTimestamp(dev, &arrival);
+    //     dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-    dwNewReceive(dev);
-    dwSetDefaults(dev);
-    dwStartReceive(dev);
+    //     dwNewReceive(dev);
+    //     dwSetDefaults(dev);
+    //     dwStartReceive(dev);
 
-    if (cfgIsBinaryMode()) {
-      write(STDOUT_FILENO, "\xbc", 1);  // Write a header to show it's in sniffer mode
-      write(STDOUT_FILENO, &arrival.full, 5);
-      write(STDOUT_FILENO, &rxPacket.sourceAddress[0], 1);
-      write(STDOUT_FILENO, &rxPacket.destAddress[0], 1);
-      dataLength -= MAC802154_HEADER_LENGTH;
-      write(STDOUT_FILENO, &dataLength, 2);
-      write(STDOUT_FILENO, rxPacket.payload, dataLength);  // This is the data
-      write(STDOUT_FILENO, &dataLength, 2);  // Length repeated for sync detection
-    } else {
-      printf("From %02x to %02x @%02x%08x: ", rxPacket.sourceAddress[0],
-                                            rxPacket.destAddress[0],
-                                            (unsigned int) arrival.high8,
-                                            (unsigned int) arrival.low32);
-      for (int i=0; i<(dataLength - MAC802154_HEADER_LENGTH); i++) {
-        printf("%02x", rxPacket.payload[i]);
-      }
-      printf("\r\n");
-    }
+    //     if (cfgIsBinaryMode()) {
+    //       write(STDOUT_FILENO, "\xbc", 1);  // Write a header to show it's in sniffer mode
+    //       write(STDOUT_FILENO, &arrival.full, 5);
+    //       write(STDOUT_FILENO, &rxPacket.sourceAddress[0], 1);
+    //       write(STDOUT_FILENO, &rxPacket.destAddress[0], 1);
+    //       dataLength -= MAC802154_HEADER_LENGTH;
+    //       write(STDOUT_FILENO, &dataLength, 2);
+    //       write(STDOUT_FILENO, rxPacket.payload, dataLength);  // This is the data
+    //       write(STDOUT_FILENO, &dataLength, 2);  // Length repeated for sync detection
+    //     } else {
+    //       printf("From %02x to %02x @%02x%08x: ", rxPacket.sourceAddress[0],
+    //                                             rxPacket.destAddress[0],
+    //                                             (unsigned int) arrival.high8,
+    //                                             (unsigned int) arrival.low32);
+    //       for (int i=0; i<(dataLength - MAC802154_HEADER_LENGTH); i++) {
+    //         printf("%02x", rxPacket.payload[i]);
+    //       }
+    //       printf("\r\n");
+    //     }
 
-  } else {
-    dwNewReceive(dev);
-    dwSetDefaults(dev);
-    dwStartReceive(dev);
-  }
+    //   } else {
+    //     dwNewReceive(dev);
+    //     dwSetDefaults(dev);
+    //     dwStartReceive(dev);
+    //   }
 
-  return MAX_TIMEOUT;
-}
+    //   return MAX_TIMEOUT;
+// }
 
 static void SnifferInit(uwbConfig_t * newconfig, dwDevice_t *dev)
 {
