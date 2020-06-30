@@ -88,6 +88,8 @@
 #define PACKET_TYPE_TDOA3 0x30
 // tdoa4 protocol version
 #define PACKET_TYPE_TDOA4 0x60
+// define a packet type for Agent info
+#define LPP_SHORT_AGENT_INFO 0x07
 
 #define PAYLOAD_TYPE 0
 #define TYPE 1
@@ -287,8 +289,9 @@ static void setupRx(dwDevice_t *dev)
 }
 
 static void handleLppShortPacket(const uint8_t *data, const int length) {
+    // printf("get in handleLppShortPacket \r\n");
   uint8_t type = data[0];
-  if (type == LPP_SHORT_ANCHORPOS) {
+  if (type == LPP_SHORT_AGENT_INFO) {
     struct lppShortAnchorPos_s *pos = (struct lppShortAnchorPos_s*)&data[1];
     // printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
     // printf("Raw data: \r\n");
@@ -315,6 +318,7 @@ static void handleLppShortPacket(const uint8_t *data, const int length) {
 }
 
 static void handleLppPacket(const int dataLength, int rangePacketLength, const packet_t* rxPacket) {
+    // printf("get in handleLppPacket \r\n");
   const int32_t payloadLength = dataLength - MAC802154_HEADER_LENGTH;
   const int32_t startOfLppDataInPayload = rangePacketLength;
   const int32_t lppDataLength = payloadLength - startOfLppDataInPayload;
