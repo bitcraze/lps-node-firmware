@@ -354,8 +354,8 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
     if (rxPacket.payload[0] == PACKET_TYPE_TDOA4 ){
-    printf("----------------------start packet---------------------\r\n");
-    printf("destAddress in packet data is %d \r\n", *rxPacket.destAddress);
+    // printf("----------------------start packet---------------------\r\n");
+    // printf("destAddress in packet data is %d \r\n", *rxPacket.destAddress);
     printf("sourceAddress in packet data is %d \r\n", *rxPacket.sourceAddress);    
     // loop over all remote anchor data 
     for (uint8_t i = 0; i < rangePacket->header.remoteCount; i++) {
@@ -387,10 +387,10 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     handleLppPacket(dataLength, rangeDataLength, &rxPacket);
     // print out
     // printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)remoteAgentInfo.destAgentID, remoteAgentInfo.ranging);
-    printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
-    printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
-    printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.imu0,remoteAgentInfo.Pose.imu1,remoteAgentInfo.Pose.imu2, remoteAgentInfo.Pose.imu3,remoteAgentInfo.Pose.imu4, remoteAgentInfo.Pose.imu5);
-    printf("----------------------------------------------------\r\n");
+    // printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
+    // printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
+    // printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.imu0,remoteAgentInfo.Pose.imu1,remoteAgentInfo.Pose.imu2, remoteAgentInfo.Pose.imu3,remoteAgentInfo.Pose.imu4, remoteAgentInfo.Pose.imu5);
+    // printf("----------------------------------------------------\r\n");
     printf("\r\n");
     } // print tdoa4 data 
     else{
