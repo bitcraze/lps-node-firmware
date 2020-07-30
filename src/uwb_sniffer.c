@@ -353,7 +353,8 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
 
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
-    if (rxPacket.payload[0] == PACKET_TYPE_TDOA4 ){
+    // if (rxPacket.payload[0] == PACKET_TYPE_TDOA4 ){
+    if(1){
     // printf("----------------------start packet---------------------\r\n");
     // printf("destAddress in packet data is %d \r\n", *rxPacket.destAddress);
     printf("sourceAddress in packet data is %d \r\n", *rxPacket.sourceAddress);    
