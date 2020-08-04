@@ -73,4 +73,4 @@ Though this is not a requirement.
 Calculating TDoA
 ----------------
 
-[Please see TDoA positioning principles](/functional-areas/tdoa_principles/)
+[Please see TDoA positioning principles](/docs/functional-areas/tdoa_principles.md)

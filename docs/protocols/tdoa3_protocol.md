@@ -68,7 +68,7 @@ Remote anchor data: |   id   | hasDistance |  seq   | rxTimeStamp |   distance  
         remote anchor
     -   **distance:** time of flight between the current anchor and the
         remote anchor in radio timer ticks
--   **LPP data:** See [LPP short packet description](/protocols/lpp-short-packets-protocol/)
+-   **LPP data:** See [LPP short packet description](/docs/protocols/lpp-short-packets-protocol.md)
 
 Tag implementation
 ------------------
@@ -80,4 +80,4 @@ calculate its position.
 Calculating TDoA
 ----------------
 
-[Please see TDoA positioning principles](/functional-areas/tdoa_principles/)
+[Please see TDoA positioning principles](/docs/functional-areas/tdoa_principles.md)

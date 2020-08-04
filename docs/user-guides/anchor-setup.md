@@ -4,7 +4,7 @@ page_id: anchor-setup
 ---
 
 
-Use the [LPS configuration tool](/user-guides/tools/)
+Use the [LPS configuration tool](/docs/user-guides/tools.md)
 to update the firmware and set the addresses of the nodes from 0-5. Note
 the address on the nodes.
 
@@ -13,12 +13,12 @@ our reference set-up we accomplish this by using
 [these](https://github.com/bitcraze/bitcraze-mechanics/blob/master/LPS-anchor-stand/anchor-stand.stl)
 3D printed stands.
 
-![loco reference distance](/images/locorefdist.png){:width="400"}
+![loco reference distance](/docs/images/locorefdist.png){:width="400"}
 
 Power the anchors with 5V using either the micro-USB connector, the
 terminal or the DJ-jack.
 
-![dwm setup](/images/dwm-setup.jpg)
+![dwm setup](/docs/images/dwm-setup.jpg)
 
 Note; If you\'re not following our reference set-up for placing the
 nodes try to space them out at lest 2 meters apart and at different

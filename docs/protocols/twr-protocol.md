@@ -5,10 +5,10 @@ page_id: twr-protocol
 
 The two way ranging protocol allows a tag to measure its distance to an
 anchor. The protocol contains 4 messages, two are sent by the tag and two by
-the anchor. The message sequence is as follow: ![TOA](/images/toa.png)
+the anchor. The message sequence is as follow: ![TOA](/docs/images/toa.png)
 
 The time of flight is calculated using the formula:
-![Formula TOA](/images/formula_toa2.png){:width="400"}
+![Formula TOA](/docs/images/formula_toa2.png){:width="400"}
 
 TWR packet IDs
 
@@ -38,7 +38,7 @@ Format:
 
 The optional management data can be any LPP management packet deemed
 useful for the tag. Currently this is used to send the anchor position
-from the anchor to the tag using the [LPP Short anchor position packet](/protocols/lpp-short-packets-protocol/)
+from the anchor to the tag using the [LPP Short anchor position packet](/docs/protocols/lpp-short-packets-protocol.md)
 
 ## TWR\_FINAL
 

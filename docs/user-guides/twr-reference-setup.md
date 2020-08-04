@@ -13,7 +13,7 @@ to get good accuracy in X, Y and Z. There are [measurements of accuracy
 and precision](https://wiki.bitcraze.io/misc:investigations:lps-max-range) for this reference
 system.
 
-![LPS reference 6](/images/loco_ref_system_6_anchors.png){:width="1200"}
+![LPS reference 6](/docs/images/loco_ref_system_6_anchors.png){:width="1200"}
 
 Reference set-up using 8 anchors (TDoA/TWR)
 ===========================================
@@ -24,4 +24,4 @@ setup we have placed 4 anchors above and 4 anchors bellow the flight
 area, shaped like a box. Note the numbering of the anchors, this allows
 to get good accuracy in X, Y and Z.
 
-![LPS reference 8](/images/loco_ref_system_8.png){:width="1200"}
+![LPS reference 8](/docs/images/loco_ref_system_8.png){:width="1200"}

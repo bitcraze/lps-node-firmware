@@ -17,5 +17,4 @@ To use the LPS tool start the program and follow the step by step
 instructions.
 
 
-![LPStools start dialog](/images/lpstools_start_dialog.png){:.align-right width="400"}
-
+![LPStools start dialog](/docs/images/lpstools_start_dialog.png){:.align-right width="400"}
