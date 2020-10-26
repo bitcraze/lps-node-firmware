@@ -84,8 +84,12 @@
 #define TDMA_HIGH_RES_RAND_S ( 1e-3 )
 #define TDMA_HIGH_RES_RAND (uint64_t)( TDMA_HIGH_RES_RAND_S * 499.2e6 * 128 )
 // -------------------------------- necessary defination ------------------------------ //
-// Packet formats
+// tdoa3 packet formats
 #define PACKET_TYPE_TDOA3 0x30
+// tdoa4 protocol version
+#define PACKET_TYPE_TDOA4 0x60
+// define a packet type for Agent info
+#define LPP_SHORT_AGENT_INFO 0x07
 
 #define PAYLOAD_TYPE 0
 #define TYPE 1
@@ -285,8 +289,9 @@ static void setupRx(dwDevice_t *dev)
 }
 
 static void handleLppShortPacket(const uint8_t *data, const int length) {
+    // printf("get in handleLppShortPacket \r\n");
   uint8_t type = data[0];
-  if (type == LPP_SHORT_ANCHORPOS) {
+  if (type == LPP_SHORT_AGENT_INFO) {
     struct lppShortAnchorPos_s *pos = (struct lppShortAnchorPos_s*)&data[1];
     // printf("Position data is: (%f,%f,%f) \r\n", pos->x, pos->y, pos->z);
     // printf("Raw data: \r\n");
@@ -313,6 +318,7 @@ static void handleLppShortPacket(const uint8_t *data, const int length) {
 }
 
 static void handleLppPacket(const int dataLength, int rangePacketLength, const packet_t* rxPacket) {
+    // printf("get in handleLppPacket \r\n");
   const int32_t payloadLength = dataLength - MAC802154_HEADER_LENGTH;
   const int32_t startOfLppDataInPayload = rangePacketLength;
   const int32_t lppDataLength = payloadLength - startOfLppDataInPayload;
@@ -332,7 +338,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
   static dwTime_t arrival;
   static packet_t rxPacket;
 
-  if (event == eventPacketReceived) {
+  if (event == eventPacketReceived ) {
     // [Note] For the implementation on CF, we need to check if the radio is sent to this agent
     // check if anchorData->id is the destAddress 
     // Similar to uwb_tdoa_anchor3.c --> case SHORT_LPP --> if (rxPacket.destAddress[0] == ctx.anchorId)
@@ -386,6 +392,10 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.remoteData.imu0,remoteAgentInfo.remoteData.imu1,remoteAgentInfo.remoteData.imu2, remoteAgentInfo.remoteData.imu3,remoteAgentInfo.remoteData.imu4, remoteAgentInfo.remoteData.imu5);
     printf("----------------------------------------------------\r\n");
     printf("\r\n");
+    } // print tdoa4 data 
+    else{
+        // complete if, do nothing
+    }
   } else if(event == eventModeSwitch_w){
       printf("-------------------Switch Mode (w)-----------------------\r\n");
       setupTx_w(dev);
