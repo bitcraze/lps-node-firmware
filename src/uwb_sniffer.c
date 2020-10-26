@@ -131,44 +131,45 @@ typedef struct {
   uint8_t remoteAnchorData;
 } __attribute__((packed)) rangePacket3_t;
 
+// [Not used now]
 // This context struct contains all the required global values of the algorithm
-static struct ctx_s {
-  int anchorId;
-  // Information about latest transmitted packet
-  uint8_t seqNr;
-  uint32_t txTime; 
+    // static struct ctx_s {
+    //   int anchorId;
+    //   // Information about latest transmitted packet
+    //   uint8_t seqNr;
+    //   uint32_t txTime; 
 
-  // Next transmit time in system clock ticks
-  uint32_t nextTxTick;
-  int averageTxDelay; // ms
+    //   // Next transmit time in system clock ticks
+    //   uint32_t nextTxTick;
+    //   int averageTxDelay; // ms
 
-  // List of ids to transmit in remote data section
-  uint8_t remoteTxId[REMOTE_TX_MAX_COUNT];
-  uint8_t remoteTxIdCount;
+    //   // List of ids to transmit in remote data section
+    //   uint8_t remoteTxId[REMOTE_TX_MAX_COUNT];
+    //   uint8_t remoteTxIdCount;
 
-  // The list of anchors to transmit and store is updated at regular intervals
-  uint32_t nextAnchorListUpdate;
+    //   // The list of anchors to transmit and store is updated at regular intervals
+    //   uint32_t nextAnchorListUpdate;
 
-  // Remote anchor data
-  uint8_t anchorCtxLookup[ID_COUNT];
-  anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
-  uint8_t anchorRxCount[ID_COUNT];
-} ctx;
+    //   // Remote anchor data
+    //   uint8_t anchorCtxLookup[ID_COUNT];
+    //   anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
+    //   uint8_t anchorRxCount[ID_COUNT];
+// } ctx;
 // lpp packet
 struct lppShortAnchorPos_s {
-  float x;
-  float y;
-  float z;
-  float q0;
-  float q1;
-  float q2;
-  float q3;
-  float imu0;
-  float imu1;
-  float imu2;
-  float imu3;
-  float imu4;
-  float imu5;
+    //   float x;
+    //   float y;
+    //   float z;
+    //   float q0;
+    //   float q1;
+    //   float q2;
+    //   float q3;
+    float imu0;
+    float imu1;
+    float imu2;
+    float imu3;
+    float imu4;
+    float imu5;
 } __attribute__((packed));
 // [New] Define a struct containing the info of remote "anchor" --> agent
 // global variable
@@ -176,7 +177,7 @@ static struct remoteAgentInfo_s{
     int remoteAgentID;           // source Agent 
     int destAgentID;             // destination Agent
     bool hasDistance;
-    struct lppShortAnchorPos_s Pose;
+    struct lppShortAnchorPos_s remoteData;
     double ranging;
 }remoteAgentInfo;
 // ------------------------------- Send TxData ------------------------------------ //
@@ -292,22 +293,22 @@ static void handleLppShortPacket(const uint8_t *data, const int length) {
     // for (int i=0; i<length; i++) {
     //     printf("%02x ", data[i]);
     // }
-    // resutls --> Raw data: 01 00 00 00 00 cd cc cc 3d cd cc 4c 3e 
+    // results --> Raw data: 01 00 00 00 00 cd cc cc 3d cd cc 4c 3e 
     // a float -> 4 bytes. Raw data 13 bytes, the first one is type. 
     // The rest 12 bytes -> float x, y, z
-    remoteAgentInfo.Pose.x = pos->x;
-    remoteAgentInfo.Pose.y = pos->y;
-    remoteAgentInfo.Pose.z = pos->z;
-    remoteAgentInfo.Pose.q0 = pos->q0;
-    remoteAgentInfo.Pose.q1 = pos->q1;
-    remoteAgentInfo.Pose.q2 = pos->q2;
-    remoteAgentInfo.Pose.q3 = pos->q3;
-    remoteAgentInfo.Pose.imu0 = pos->imu0;
-    remoteAgentInfo.Pose.imu1 = pos->imu1;
-    remoteAgentInfo.Pose.imu2 = pos->imu2;
-    remoteAgentInfo.Pose.imu3 = pos->imu3;
-    remoteAgentInfo.Pose.imu4 = pos->imu4;
-    remoteAgentInfo.Pose.imu5 = pos->imu5;
+    // remoteAgentInfo.remoteData.x = pos->x;
+    // remoteAgentInfo.remoteData.y = pos->y;
+    // remoteAgentInfo.remoteData.z = pos->z;
+    // remoteAgentInfo.remoteData.q0 = pos->q0;
+    // remoteAgentInfo.remoteData.q1 = pos->q1;
+    // remoteAgentInfo.remoteData.q2 = pos->q2;
+    // remoteAgentInfo.remoteData.q3 = pos->q3;
+    remoteAgentInfo.remoteData.imu0 = pos->imu0;
+    remoteAgentInfo.remoteData.imu1 = pos->imu1;
+    remoteAgentInfo.remoteData.imu2 = pos->imu2;
+    remoteAgentInfo.remoteData.imu3 = pos->imu3;
+    remoteAgentInfo.remoteData.imu4 = pos->imu4;
+    remoteAgentInfo.remoteData.imu5 = pos->imu5;
     }
 }
 
@@ -347,6 +348,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
     printf("----------------------start packet---------------------\r\n");
+    // if destAddress == 255 ---> broadcast ?
     printf("destAddress in packet data is %d \r\n", *rxPacket.destAddress);
     printf("sourceAddress in packet data is %d \r\n", *rxPacket.sourceAddress);    
     // loop over all remote anchor data 
@@ -359,7 +361,7 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
         remoteAgentInfo.destAgentID = anchorData->id;
 
         remoteAgentInfo.hasDistance = ((anchorData->seq & 0x80) != 0);            // save "hasDistance" 
-        printf("remote ID number %d is %d \r\n", i,anchorData->id);
+        printf("remote ID  # %d is %d \r\n", i, anchorData->id);
         if (remoteAgentInfo.hasDistance) {
             uint16_t tof = anchorData->distance;
         //  M_PER_TICK = SPEED_OF_LIGHT / LOCODECK_TS_FREQ
@@ -379,9 +381,9 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     handleLppPacket(dataLength, rangeDataLength, &rxPacket);
     // print out
     // printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)remoteAgentInfo.destAgentID, remoteAgentInfo.ranging);
-    printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
-    printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
-    printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.imu0,remoteAgentInfo.Pose.imu1,remoteAgentInfo.Pose.imu2, remoteAgentInfo.Pose.imu3,remoteAgentInfo.Pose.imu4, remoteAgentInfo.Pose.imu5);
+    // printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
+    // printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
+    printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.remoteData.imu0,remoteAgentInfo.remoteData.imu1,remoteAgentInfo.remoteData.imu2, remoteAgentInfo.remoteData.imu3,remoteAgentInfo.remoteData.imu4, remoteAgentInfo.remoteData.imu5);
     printf("----------------------------------------------------\r\n");
     printf("\r\n");
   } else if(event == eventModeSwitch_w){
@@ -399,48 +401,48 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
 }
 
 // original sniffer Event code
-static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
-{
-  static dwTime_t arrival;
-  static packet_t rxPacket;
+// static uint32_t twrAnchorOnEvent(dwDevice_t *dev, uwbEvent_t event)
+    // {
+    //   static dwTime_t arrival;
+    //   static packet_t rxPacket;
 
-  if (event == eventPacketReceived) {
-    int dataLength = dwGetDataLength(dev);
-    dwGetRawReceiveTimestamp(dev, &arrival);
-    dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
+    //   if (event == eventPacketReceived) {
+    //     int dataLength = dwGetDataLength(dev);
+    //     dwGetRawReceiveTimestamp(dev, &arrival);
+    //     dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-    dwNewReceive(dev);
-    dwSetDefaults(dev);
-    dwStartReceive(dev);
+    //     dwNewReceive(dev);
+    //     dwSetDefaults(dev);
+    //     dwStartReceive(dev);
 
-    if (cfgIsBinaryMode()) {
-      write(STDOUT_FILENO, "\xbc", 1);  // Write a header to show it's in sniffer mode
-      write(STDOUT_FILENO, &arrival.full, 5);
-      write(STDOUT_FILENO, &rxPacket.sourceAddress[0], 1);
-      write(STDOUT_FILENO, &rxPacket.destAddress[0], 1);
-      dataLength -= MAC802154_HEADER_LENGTH;
-      write(STDOUT_FILENO, &dataLength, 2);
-      write(STDOUT_FILENO, rxPacket.payload, dataLength);  // This is the data
-      write(STDOUT_FILENO, &dataLength, 2);  // Length repeated for sync detection
-    } else {
-      printf("From %02x to %02x @%02x%08x: ", rxPacket.sourceAddress[0],
-                                            rxPacket.destAddress[0],
-                                            (unsigned int) arrival.high8,
-                                            (unsigned int) arrival.low32);
-      for (int i=0; i<(dataLength - MAC802154_HEADER_LENGTH); i++) {
-        printf("%02x", rxPacket.payload[i]);
-      }
-      printf("\r\n");
-    }
+    //     if (cfgIsBinaryMode()) {
+    //       write(STDOUT_FILENO, "\xbc", 1);  // Write a header to show it's in sniffer mode
+    //       write(STDOUT_FILENO, &arrival.full, 5);
+    //       write(STDOUT_FILENO, &rxPacket.sourceAddress[0], 1);
+    //       write(STDOUT_FILENO, &rxPacket.destAddress[0], 1);
+    //       dataLength -= MAC802154_HEADER_LENGTH;
+    //       write(STDOUT_FILENO, &dataLength, 2);
+    //       write(STDOUT_FILENO, rxPacket.payload, dataLength);  // This is the data
+    //       write(STDOUT_FILENO, &dataLength, 2);  // Length repeated for sync detection
+    //     } else {
+    //       printf("From %02x to %02x @%02x%08x: ", rxPacket.sourceAddress[0],
+    //                                             rxPacket.destAddress[0],
+    //                                             (unsigned int) arrival.high8,
+    //                                             (unsigned int) arrival.low32);
+    //       for (int i=0; i<(dataLength - MAC802154_HEADER_LENGTH); i++) {
+    //         printf("%02x", rxPacket.payload[i]);
+    //       }
+    //       printf("\r\n");
+    //     }
 
-  } else {
-    dwNewReceive(dev);
-    dwSetDefaults(dev);
-    dwStartReceive(dev);
-  }
+    //   } else {
+    //     dwNewReceive(dev);
+    //     dwSetDefaults(dev);
+    //     dwStartReceive(dev);
+    //   }
 
-  return MAX_TIMEOUT;
-}
+    //   return MAX_TIMEOUT;
+// }
 
 static void SnifferInit(uwbConfig_t * newconfig, dwDevice_t *dev)
 {
