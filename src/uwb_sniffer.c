@@ -95,6 +95,8 @@
 #define TYPE 1
 #define MODE 2
 
+#define AGENT_ID 1    // select the agent to switch the mode
+
 // Anchor context
 typedef struct {
   uint8_t id;
@@ -217,7 +219,7 @@ static void setTxData_w(dwDevice_t *dev){
     // The ID of the Agent that send the signal. Set to 6 for sniffer
     txPacket.sourceAddress[0] = 6;    
     memcpy(&txPacket.destAddress, base_address, 8);
-    txPacket.destAddress[0] = 0;      // The ID of the Agent you want to switch  
+    txPacket.destAddress[0] = AGENT_ID;      // The ID of the Agent you want to switch  
     txPacket.payload[PAYLOAD_TYPE] = SHORT_LPP;   // payload type
         // firstEntry = false;
     // }
@@ -255,7 +257,7 @@ static void setTxData_d(dwDevice_t *dev){
     // The ID of the Agent that send the signal. Set to 6 for sniffer
     txPacket.sourceAddress[0] = 6;    
     memcpy(&txPacket.destAddress, base_address, 8);
-    txPacket.destAddress[0] = 0;      // The ID of the Agent you want to switch  
+    txPacket.destAddress[0] = AGENT_ID;      // The ID of the Agent you want to switch  
     txPacket.payload[PAYLOAD_TYPE] = SHORT_LPP;   // payload type
         // firstEntry = false;
     // }
@@ -323,8 +325,8 @@ static void handleLppPacket(const int dataLength, int rangePacketLength, const p
   const int32_t startOfLppDataInPayload = rangePacketLength;
   const int32_t lppDataLength = payloadLength - startOfLppDataInPayload;
   const int32_t lppTypeInPayload = startOfLppDataInPayload + 1;
-//   printf("payloadLentgh is %d\r\n",(int)payloadLength);
-//   printf("startOfLppDataInPayload is %d\r\n",(int)startOfLppDataInPayload);
+    //   printf("payloadLentgh is %d\r\n",(int)payloadLength);
+    //   printf("startOfLppDataInPayload is %d\r\n",(int)startOfLppDataInPayload);
   if (lppDataLength > 0) {
     const uint8_t lppPacketHeader = rxPacket->payload[startOfLppDataInPayload];
     if (lppPacketHeader == LPP_HEADER_SHORT_PACKET) {
@@ -337,7 +339,7 @@ static void handleLppPacket(const int dataLength, int rangePacketLength, const p
 static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
   static dwTime_t arrival;
   static packet_t rxPacket;
-
+  //check event
   if (event == eventPacketReceived ) {
     // [Note] For the implementation on CF, we need to check if the radio is sent to this agent
     // check if anchorData->id is the destAddress 
@@ -353,6 +355,9 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
 
     const rangePacket3_t* rangePacket = (rangePacket3_t *)rxPacket.payload;
     const void* anchorDataPtr = &rangePacket->remoteAnchorData;
+     if (rxPacket.payload[0] == PACKET_TYPE_TDOA4 ){
+         printf("----------------------Receive TDOA4 msg---------------------\r\n");
+
     printf("----------------------start packet---------------------\r\n");
     // if destAddress == 255 ---> broadcast ?
     printf("destAddress in packet data is %d \r\n", *rxPacket.destAddress);
@@ -392,20 +397,19 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.remoteData.imu0,remoteAgentInfo.remoteData.imu1,remoteAgentInfo.remoteData.imu2, remoteAgentInfo.remoteData.imu3,remoteAgentInfo.remoteData.imu4, remoteAgentInfo.remoteData.imu5);
     printf("----------------------------------------------------\r\n");
     printf("\r\n");
-    } // print tdoa4 data 
-    else{
-        // complete if, do nothing
-    }
-  } else if(event == eventModeSwitch_w){
-      printf("-------------------Switch Mode (w)-----------------------\r\n");
-      setupTx_w(dev);
+    }else if(rxPacket.payload[0] == PACKET_TYPE_TDOA3){printf("----------------------Receive TDOA3 msg---------------------\r\n");}
+     else{ printf("----------------------Receive unknown msg---------------------\r\n");}
   }
-  else if(event == eventModeSwitch_d){
-      printf("-------------------Switch Mode (d)-----------------------\r\n");
-      setupTx_d(dev);
-  }else {
-    setupRx(dev);
-  }
+    //check event
+    else if(event == eventModeSwitch_w){
+        printf("-------------------Switch Mode (w)-----------------------\r\n");
+        setupTx_w(dev);}
+    //check event
+    else if(event == eventModeSwitch_d){
+        printf("-------------------Switch Mode (d)-----------------------\r\n");
+        setupTx_d(dev);}
+    //check event
+    else{setupRx(dev);}
 
   return MAX_TIMEOUT;
 }

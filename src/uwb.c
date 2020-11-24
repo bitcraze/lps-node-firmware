@@ -89,7 +89,7 @@ static void rxfailedcallback(dwDevice_t *dev) {
   timeout = algorithm->onEvent(dev, eventReceiveFailed);
 }
 
-//[New]
+//[Change]
 void modeSwitch_w(){
   timeout = algorithm->onEvent(dwm, eventModeSwitch_w);
 }

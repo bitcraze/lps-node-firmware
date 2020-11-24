@@ -232,7 +232,7 @@ int _write (int fd, const void *buf, size_t count)
 // [Test] Directly Button interaction
 static void handleButtonInteract(char ch){
     switch(ch){
-        //[New]
+        //[Change]
         case 'w':
         // printf("Test for Button '%c'\r\n",ch);
             modeSwitch_w();
