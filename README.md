@@ -1,4 +1,4 @@
-# LPS node firmware  [![Build Status](https://api.travis-ci.org/bitcraze/lps-node-firmware.svg)](https://travis-ci.org/bitcraze/lps-node-firmware)
+# LPS node firmware  [![CI](https://github.com/bitcraze/lps-node-firmware/workflows/CI/badge.svg)](https://github.com/bitcraze/lps-node-firmware/actions?query=workflow%3ACI)
 
 This project contains the source code for the Local positioning System node firmware. 
 
