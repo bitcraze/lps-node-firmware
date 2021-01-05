@@ -1,0 +1,21 @@
+# Build the project using the Bitcraze builder docker image
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build 
+    - name: Build long range
+      run: |
+        docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/make clean
+        docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build "EXTRA_CFLAGS=-DLPS_LONGER_RANGE"
