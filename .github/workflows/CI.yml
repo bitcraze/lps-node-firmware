@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodule: true
     - name: Build
       run: docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/build 
     - name: Build long range
