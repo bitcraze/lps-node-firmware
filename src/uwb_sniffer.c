@@ -163,13 +163,13 @@ typedef struct {
 // } ctx;
 // lpp packet
 struct lppShortAnchorPos_s {
-    //   float x;
-    //   float y;
-    //   float z;
-    //   float q0;
-    //   float q1;
-    //   float q2;
-    //   float q3;
+      float x;
+      float y;
+      float z;
+      float q0;
+      float q1;
+      float q2;
+      float q3;
     float imu0;
     float imu1;
     float imu2;
@@ -303,13 +303,13 @@ static void handleLppShortPacket(const uint8_t *data, const int length) {
     // results --> Raw data: 01 00 00 00 00 cd cc cc 3d cd cc 4c 3e 
     // a float -> 4 bytes. Raw data 13 bytes, the first one is type. 
     // The rest 12 bytes -> float x, y, z
-    // remoteAgentInfo.remoteData.x = pos->x;
-    // remoteAgentInfo.remoteData.y = pos->y;
-    // remoteAgentInfo.remoteData.z = pos->z;
-    // remoteAgentInfo.remoteData.q0 = pos->q0;
-    // remoteAgentInfo.remoteData.q1 = pos->q1;
-    // remoteAgentInfo.remoteData.q2 = pos->q2;
-    // remoteAgentInfo.remoteData.q3 = pos->q3;
+    remoteAgentInfo.remoteData.x = pos->x;
+    remoteAgentInfo.remoteData.y = pos->y;
+    remoteAgentInfo.remoteData.z = pos->z;
+    remoteAgentInfo.remoteData.q0 = pos->q0;
+    remoteAgentInfo.remoteData.q1 = pos->q1;
+    remoteAgentInfo.remoteData.q2 = pos->q2;
+    remoteAgentInfo.remoteData.q3 = pos->q3;
     remoteAgentInfo.remoteData.imu0 = pos->imu0;
     remoteAgentInfo.remoteData.imu1 = pos->imu1;
     remoteAgentInfo.remoteData.imu2 = pos->imu2;
@@ -391,9 +391,8 @@ static uint32_t tdoa3SnifferOnEvent(dwDevice_t *dev, uwbEvent_t event){
     int rangeDataLength = (uint8_t*)anchorDataPtr - (uint8_t*)rangePacket;
     handleLppPacket(dataLength, rangeDataLength, &rxPacket);
     // print out
-    // printf("Ranging distance from Drone %d to Drone %d: %lf [m]\r\n", (int) remoteAgentInfo.remoteAgentID,  (int)remoteAgentInfo.destAgentID, remoteAgentInfo.ranging);
-    // printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.x,remoteAgentInfo.Pose.y,remoteAgentInfo.Pose.z);
-    // printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.Pose.q0,remoteAgentInfo.Pose.q1,remoteAgentInfo.Pose.q2,remoteAgentInfo.Pose.q3);
+    printf("The position of the remote agent %d is: (%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.remoteData.x,remoteAgentInfo.remoteData.y,remoteAgentInfo.remoteData.z);
+    printf("The attitude of the remote agent %d is: (%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.remoteData.q0,remoteAgentInfo.remoteData.q1,remoteAgentInfo.remoteData.q2,remoteAgentInfo.remoteData.q3);
     printf("The IMU of the remote agent %d is: (%f,%f,%f,%f,%f,%f)\r\n",(int) remoteAgentInfo.remoteAgentID, remoteAgentInfo.remoteData.imu0,remoteAgentInfo.remoteData.imu1,remoteAgentInfo.remoteData.imu2, remoteAgentInfo.remoteData.imu3,remoteAgentInfo.remoteData.imu4, remoteAgentInfo.remoteData.imu5);
     printf("----------------------------------------------------\r\n");
     printf("\r\n");
