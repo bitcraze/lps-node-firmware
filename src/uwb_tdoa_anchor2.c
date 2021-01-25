@@ -182,9 +182,10 @@ static void handleFailedRx(dwDevice_t *dev)
   }
 }
 
+// [TWR] compute the distance between remote anchor and current anchor.
 static void calculateDistance(int slot, int newId, int remotePid, uint32_t remoteTx, uint32_t remoteRx, uint32_t ts)
 {
-  // Check that the 2 last packets are consecutive packets and that our last packet is in beteen
+  // Check that the 2 last packets are consecutive packets and that our last packet is in between
   if ((ctx.packetIds[slot] == ((newId-1) & 0x0ff)) && remotePid == ctx.packetIds[ctx.anchorId]) {
     double tround1 = remoteRx - ctx.txTimestamps[ctx.slot];
     double treply1 = ctx.txTimestamps[ctx.anchorId] - ctx.rxTimestamps[ctx.slot];
@@ -234,7 +235,6 @@ static void handleRxPacket(dwDevice_t *dev)
     dwTime_t pkTxTime = { .full = 0 };
     memcpy(&pkTxTime, rangePacket->timestamps[ctx.slot], TS_TX_SIZE);
     ctx.tdmaFrameStart.full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full));
-
     //TODO: Save relevant data to calculate masterTime
   }
 }
@@ -419,7 +419,8 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 
       ctx.slotState = slotTxDone;
       updateSlot();
-    } else {
+    } else { 
+    // if the anchor id is not 0, synchronized to 0
       switch (event) {
         case eventPacketReceived: {
             static packet_t rxPacket;
@@ -430,7 +431,7 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 
             if (rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) {
               rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
-
+              // [Question]: Synchronize the time of anchors to anchor 0 here??  Not fully understand
               // Resync local frame start to packet from anchor 0
               dwTime_t pkTxTime = { .full = 0 };
               memcpy(&pkTxTime, rangePacket->timestamps[0], TS_TX_SIZE);
@@ -471,7 +472,25 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
   return MAX_TIMEOUT;
 }
 
+// [Change]  original name is uwbTdoa2Algorithm
 uwbAlgorithm_t uwbTdoa2Algorithm = {
   .init = tdoa2Init,
   .onEvent = tdoa2UwbEvent,
 };
+
+// -------------------------------------------------------------//
+// changing UWB sniffer code leading to ram overflow
+// use dummy tdoa2 algorithm to reduce the ram size
+
+static void tdoa2Init_dummy(uwbConfig_t * config, dwDevice_t *dev){
+// do nothing
+}
+static uint32_t tdoa2UwbEvent_dummy(dwDevice_t *dev, uwbEvent_t event){
+    // do nothing
+    return 0;
+}
+uwbAlgorithm_t uwbTdoa2Algorithm_1 = {
+  .init = tdoa2Init_dummy,
+  .onEvent = tdoa2UwbEvent_dummy,
+};
+// -------------------------------------------------------------//

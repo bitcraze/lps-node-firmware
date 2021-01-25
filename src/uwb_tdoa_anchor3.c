@@ -86,10 +86,13 @@ The implementation must handle
 #define ID_INVALID 0xff
 
 #define SYSTEM_TX_FREQ 400.0
-#define ANCHOR_MAX_TX_FREQ 50.0
+
+// [Note] original 20 ~ 50, try increasing anchor side to 40 ~ 60, inter-drone ranging works, but tdoa3 not.
+#define ANCHOR_MAX_TX_FREQ 50.0       
 // We need a lower limit of minimum tx rate. The TX timestamp in the protocol is
 // only 32 bits (equal to 67 ms) and we want to avoid double wraps of the TX counter.
 // To have some margin set the lowest tx frequency to 20 Hz (= 50 ms)
+// [Note] each anchor transmitting freq_min
 #define ANCHOR_MIN_TX_FREQ 20.0
 
 
@@ -145,9 +148,9 @@ static struct ctx_s {
   uint32_t nextAnchorListUpdate;
 
   // Remote anchor data
-  uint8_t anchorCtxLookup[ID_COUNT];
+  uint8_t anchorCtxLookup[ID_COUNT];                 // current available anchor id for sending msg
   anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
-  uint8_t anchorRxCount[ID_COUNT];
+  uint8_t anchorRxCount[ID_COUNT];                   // the anchor id list that I received msg from
 } ctx;
 
 // Packet formats
@@ -193,7 +196,7 @@ static anchorContext_t* getContext(uint8_t anchorId) {
 
   return &ctx.anchorCtx[slot];
 }
-
+// -------------------- help functions for updateAnchorLists --------------------------- //
 static void clearAnchorRxCount() {
   memset(&ctx.anchorRxCount, 0, ID_COUNT);
 }
@@ -261,6 +264,7 @@ static void purgeData() {
     }
   }
 }
+// ------------------------------------------------------------------------------------- //
 
 // This function is called at regular intervals to update lists containing data
 // about which anchors to store and add to outgoing messages. This
@@ -288,6 +292,7 @@ static void updateAnchorLists() {
 
   // Out of all anchors that we have received messages from, pick two
   // randomized subsets for storage and TX ids
+  // [Question]: Where is the two randomized subsets for storage and TX ids ??
   uint8_t remoteTXIdIndex = 0;
   uint8_t contextIndex = 0;
   for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++) {
@@ -304,7 +309,6 @@ static void updateAnchorLists() {
         if (contextIndex < ANCHOR_STORAGE_COUNT) {
           ctxts[contextIndex++] = id;
         }
-
         availableUsed[index] = true;
         break;
       }
@@ -378,10 +382,14 @@ static double calculateClockCorrection(anchorContext_t* anchorCtx, int remoteTxS
   return result;
 }
 
+// uint16_t distance = calculateDistance(anchorCtx, remoteRxSeqNr, remoteTx, remoteRx, rxTime);
+
+// [TWR] compute the distance between remote anchor and current anchor. Follows an easy TWR equation
 static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr, uint32_t remoteTx, uint32_t remoteRx, uint32_t rx)
 {
   // Check that the remote received seq nr is our latest tx seq nr
   if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d) {
+    // rx is local_rx, ctx.txtime is local_tx 
     uint32_t localTime = rx - ctx.txTime;
     uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
     uint32_t distance = (localTime - remoteTime) / 2;
@@ -392,8 +400,12 @@ static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr,
   }
 }
 
+
 static bool extractFromPacket(const rangePacket3_t* rangePacket, uint32_t* remoteRx, uint8_t* remoteRxSeqNr) {
   const void* anchorDataPtr = &rangePacket->remoteAnchorData;
+  // loop through all the remote anchors
+  // [Question] i is not used in the loop
+  // [Answer] after each loop --> anchorDataPtr += sizeof(remoteAnchorDataFull_t), the address move backwards
   for (uint8_t i = 0; i < rangePacket->header.remoteCount; i++) {
     remoteAnchorDataFull_t* anchorData = (remoteAnchorDataFull_t*)anchorDataPtr;
 
@@ -426,7 +438,6 @@ static bool emptyClockCorrectionBucket(anchorContext_t* anchorCtx) {
       anchorCtx->clockCorrectionBucket--;
       return false;
     }
-
     return true;
 }
 
@@ -447,13 +458,12 @@ static bool updateClockCorrection(anchorContext_t* anchorCtx, double clockCorrec
       }
     }
   }
-
   return sampleIsAccepted;
 }
-
+// callback function for handleRxPacket
 static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
 {
-  const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
+  const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];   // ID: where the radio comes from
   ctx.anchorRxCount[remoteAnchorId]++;
   anchorContext_t* anchorCtx = getContext(remoteAnchorId);
   if (anchorCtx) {
@@ -481,13 +491,14 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
     } else {
       anchorCtx->isDataGoodForTransmission = false;
     }
-
+    // update the local_rx time and remote_rx time
     anchorCtx->rxTimeStamp = rxTime;
     anchorCtx->seqNr = remoteTxSeqNr;
     anchorCtx->txTimeStamp = remoteTx;
   }
 }
 
+// callback function when receive a radio signal
 static void handleRxPacket(dwDevice_t *dev)
 {
   static packet_t rxPacket;
@@ -498,7 +509,7 @@ static void handleRxPacket(dwDevice_t *dev)
 
   int dataLength = dwGetDataLength(dev);
   rxPacket.payload[0] = 0;
-  dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
+  dwGetData(dev, (uint8_t*)&rxPacket, dataLength); // read data from dec to rxpacket
 
   if (dataLength == 0) {
     return;
@@ -508,7 +519,7 @@ static void handleRxPacket(dwDevice_t *dev)
   case PACKET_TYPE_TDOA3:
     handleRangePacket(rxTime.low32, &rxPacket);
     break;
-  case SHORT_LPP:
+  case SHORT_LPP:                                 // unicast to an anchor, set (x,y,z) as new position
     if (rxPacket.destAddress[0] == ctx.anchorId) {
       lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
     }
@@ -526,6 +537,7 @@ static void setupRx(dwDevice_t *dev)
   dwStartReceive(dev);
 }
 
+// [Question] 
 static int populateTxData(rangePacket3_t *rangePacket)
 {
   // rangePacket->header.type already populated
@@ -562,6 +574,7 @@ static int populateTxData(rangePacket3_t *rangePacket)
 }
 
 // Set TX data in the radio TX buffer
+// Modify this one if we want to transmit EKF states
 static void setTxData(dwDevice_t *dev)
 {
   static packet_t txPacket;
@@ -645,7 +658,7 @@ static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
 // Initialize/reset the agorithm
 static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
 {
-  ctx.anchorId = config->address[0];
+  ctx.anchorId = config->address[0];         // config is achieved from uwb.c code. 
   ctx.seqNr = 0;
   ctx.txTime = 0;
   ctx.nextTxTick = 0;
@@ -675,13 +688,13 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev, uwbEvent_t event)
       // Nothing here
       break;
   }
-
+  // update anchor list
   uint32_t now = xTaskGetTickCount();
   if (now > ctx.nextAnchorListUpdate) {
     updateAnchorLists();
     ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL;
   }
-
+  // Send or receive data (based on time)
   uint32_t timeout_ms = startNextEvent(dev, now);
   return timeout_ms;
 }

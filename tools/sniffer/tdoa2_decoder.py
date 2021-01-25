@@ -11,11 +11,13 @@ import struct
 # Packet format:
 # NSLOTS = 8
 # typedef struct rangePacket_s {
-#   uint8_t type;
+#   uint8_t type;                  
 #   uint8_t seqs[NSLOTS];  // Packet sequence number of the timestamps
 #   uint32_t timestamps[NSLOTS];  // Relevant time for anchors
 #   uint16_t distances[NSLOTS];
 # } __attribute__((packed)) rangePacket_t;
+
+# Note: uint8_t ---> B, uint32_t ---> L, uint16_t ---> H    
 
 for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
     if not packet:
@@ -25,7 +27,8 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
     packetType = packet["data"][0]
 
     if packetType == 34:
-        decoded = struct.unpack("<BBBBBBBBBLLLLLLLLHHHHHHHH", packet["data"][:57])
+        decoded = struct.unpack("<BBBBBBBBBLLLLLLLLHHHHHHHH", packet["data"][:57])  
+         # 9 * uint8 + 8 * uint32 + 8 * uint16 = 57,  uint32 = 4*uint8, uint16 = 2*uint8 
         packet["type"] = decoded[0]
         packet["seqs"] = list(decoded[1:9])
         packet["timestamps"] = list(decoded[9:17])

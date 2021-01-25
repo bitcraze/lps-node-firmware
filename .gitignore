@@ -9,3 +9,7 @@
 # jykell files generated
 docs/.jekyll-metadata
 docs/.jekyll-cache
+
+\.vscode/
+
+vendor/

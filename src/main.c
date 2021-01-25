@@ -58,6 +58,9 @@ const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
 static void restConfig();
 static void changeAddress(uint8_t addr);
 static void handleSerialInput(char ch);
+// [New]
+static void handleButtonInteract(char ch);
+
 static void handleButton(void);
 static void changeMode(unsigned int newMode);
 static void changeRadioMode(unsigned int newMode);
@@ -70,7 +73,7 @@ static void printPowerHelp();
 static void help();
 static void bootload(void);
 
-typedef enum {mainMenu, modeMenu, idMenu, radioMenu, powerMenu} Menu_t;
+typedef enum {mainMenu, modeMenu, idMenu, radioMenu, powerMenu, testMenu} Menu_t;
 typedef struct {
   bool configChanged;
   Menu_t currentMenu;
@@ -95,7 +98,7 @@ static void main_task(void *pvParameters) {
   ledOn(ledMode);
   buttonInit(buttonIdle);
 
-  printf("\r\n\r\n====================\r\n");
+  printf("\r\n\r\n========== Hello!! ==========\r\n");
 
   printf("SYSTEM\t: CPU-ID: ");
   for (i=0; i<12; i++) {
@@ -199,7 +202,9 @@ static void main_task(void *pvParameters) {
 #else
     if(usbcommRead(&ch, 1)) {
 #endif
-      handleSerialInput(ch);
+    // [Test]
+    //   handleSerialInput(ch);
+        handleButtonInteract(ch);
     }
   }
 }
@@ -222,6 +227,48 @@ int _write (int fd, const void *buf, size_t count)
   }
 
   return count;
+}
+
+// [Test] Directly Button interaction
+static void handleButtonInteract(char ch){
+    switch(ch){
+        //[Change]
+        case 'w':
+        // printf("Test for Button '%c'\r\n",ch);
+            modeSwitch_w();
+            break;
+        case 'd':
+        // printf("Test for Button '%c'\r\n",ch);
+            modeSwitch_d();
+            break;
+        default:
+            printf("Incorrect mode '%c'\r\n", ch);
+        break;
+    }
+}
+
+
+// test the Button interaction
+static void handleButtonTest(char ch, MenuState* menuState){
+    switch(ch){
+        //[New]
+        case 'w':
+        // printf("Test for Button '%c'\r\n",ch);
+        modeSwitch_w();
+        // menuState->currentMenu = mainMenu;
+        // menuState->configChanged = false;
+        // printf("The anchor config info is as follows\r\n");
+        // struct uwbConfig_s * uwbConfig = uwbGetConfig();
+        // printf("CONFIG\t: Address is 0x%X\r\n", uwbConfig->address[0]);
+        // printf("CONFIG\t: Mode is %s\r\n", uwbAlgorithmName(uwbConfig->mode));
+        // printf("CONFIG\t: Tag mode anchor list (%i): ", uwbConfig->anchorListSize);
+        break;
+        default:
+            printf("Incorrect mode '%c'\r\n", ch);
+            menuState->currentMenu = mainMenu;
+            menuState->configChanged = false;
+        break;
+    }
 }
 
 static void handleMenuMain(char ch, MenuState* menuState) {
@@ -267,6 +314,11 @@ static void handleMenuMain(char ch, MenuState* menuState) {
       break;
     case 'b':
       cfgSetBinaryMode(true);
+      menuState->configChanged = false;
+      break;
+    case 'w':
+      printf("Go to testMenu...\r\n");
+      menuState->currentMenu = testMenu;
       menuState->configChanged = false;
       break;
     case '#':
@@ -404,9 +456,12 @@ static void handleSerialInput(char ch) {
   };
 
   menuState.configChanged = true;
-
+  printf("The current menu state: %d\r\n",menuState.currentMenu);
+  // A FAM: main loop is mainMenu. By pressing certain button, menuState change to other menu. 
+  // Press again for certain purpose and then comes back to the mainMenu.
   switch (menuState.currentMenu) {
     case mainMenu:
+    //   printf("I am here!\r\n");
       handleMenuMain(ch, &menuState);
       break;
     case modeMenu:
@@ -420,6 +475,9 @@ static void handleSerialInput(char ch) {
       break;
     case powerMenu:
       handleMenuPower(ch, &menuState);
+      break;
+    case testMenu:
+      handleButtonTest(ch, &menuState);
       break;
   }
 
