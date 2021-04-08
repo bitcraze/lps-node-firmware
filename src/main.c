@@ -22,7 +22,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stm32f0xx_hal.h>
+//#include <stm32f0xx_hal.h>
+#include <stm32l4xx_hal.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -87,6 +88,8 @@ static void main_task(void *pvParameters) {
   MX_I2C1_Init();
   MX_USART1_UART_Init();
   MX_SPI1_Init();
+  // Init USB queues before he USB device
+  usbcommInit();
   MX_USB_DEVICE_Init();
 
   // Light up all LEDs to test

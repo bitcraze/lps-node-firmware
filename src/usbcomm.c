@@ -5,22 +5,43 @@
 
 #include "usbd_conf.h"
 #include "usbd_cdc_if.h"
+#include "usbcomm.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 
 #define INITBUFFER_LEN 1024
+
+QueueHandle_t rxq;
+static StaticQueue_t rxqBuffer;
+static uint8_t rxqStorage[ RX_Q_SIZE * Q_ITEM_SIZE ];
 
 static char initBuffer[INITBUFFER_LEN];
 static int initPtr = 0;
 
 static bool isInit = false;
 
+bool usbcommInit(void)
+{
+  rxq = xQueueCreateStatic(RX_Q_SIZE, Q_ITEM_SIZE, rxqStorage, &rxqBuffer);
+
+  if (rxq)
+  {
+    isInit = true;
+  }
+
+  return isInit;
+}
+
 int usbcommRead(char* buffer, size_t len)
 {
   return CDC_Read(buffer, len);
 }
 
-void usbcommWrite(char *data, int len)
+void usbcommWrite(char const *data, int len)
 {
-  if (isInit) {
+  if (CDC_IsUsbInit()) {
     if (USBD_IsSerialConnected()) {
       CDC_Write(data, len);
     }

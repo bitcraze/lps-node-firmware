@@ -24,7 +24,8 @@
  */
 /* uwb.c: Uwb radio implementation, low level handling */
 
-#include <stm32f0xx_hal.h>
+//#include <stm32f0xx_hal.h>
+#include <stm32l4xx_hal.h>
 
 #include "uwb.h"
 
@@ -248,7 +249,8 @@ struct uwbConfig_s * uwbGetConfig()
 }
 
 /**** DWM1000 interrupt handling *****/
-#define DWM_IRQn EXTI0_1_IRQn
+//#define DWM_IRQn EXTI0_1_IRQn
+#define DWM_IRQn EXTI0_IRQn
 #define DWM_IRQ_PIN GPIO_PIN_0
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

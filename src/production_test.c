@@ -98,7 +98,7 @@ void initPins(UART_HandleTypeDef* huart) {
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF1_USART1;
+    GPIO_InitStruct.Alternate = GPIO_AF7_USART1; //FIXME
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
   } else if(huart->Instance==USART3) {
     /* Peripheral clock enable */
@@ -112,7 +112,7 @@ void initPins(UART_HandleTypeDef* huart) {
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
     GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
-    GPIO_InitStruct.Alternate = GPIO_AF4_USART3;
+    GPIO_InitStruct.Alternate = GPIO_AF7_USART3; //FIXME
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
   }
 }

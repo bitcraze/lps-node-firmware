@@ -22,9 +22,8 @@
  * You should have received a copy of the GNU General Public License
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <stm32l4xx_hal.h>
 #include <stdio.h>
-
-#include "stm32f0xx_hal.h"
 
 #include "lpp.h"
 

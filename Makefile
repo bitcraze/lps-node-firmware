@@ -1,7 +1,6 @@
 OPENOCD           ?= openocd
-OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
-OPENOCD_CMDS      ?=
-REV               ?= B
+OPENOCD_INTERFACE ?= interface/stlink.cfg
+REV               ?= C
 PYTHON2           ?= python2
 # CFLAGS          += -fdiagnostics-color=auto
 # CFLAGS += -DUSE_FTDI_UART
@@ -14,7 +13,13 @@ else ifeq ($(strip $(REV)),B)
 HAL_ROOT=hal/stm32f0xx
 CPU=f0
 PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32F072xB
-OPENOCD_TARGET    ?= target/stm32f0x_stlink.cfg
+OPENOCD_TARGET    ?= target/stm32l4x.cfg
+else ifeq ($(strip $(REV)),C)
+HAL_ROOT=hal/stm32l4xx
+CPU=l4
+#PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32L422xx
+PROCESSOR=-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -DSTM32L422xx
+OPENOCD_TARGET    ?= target/stm32l4x.cfg
 else
 $(error Rev.$(REV) unknown)
 endif
@@ -27,18 +32,24 @@ OBJS+=$(foreach mod, $(FREERTOS_OBJS), lib/freertos/src/$(mod).o)
 INCLUDES+=-Ilib/freertos/inc
 
 # Platform specific files
-OBJS+=src/f0/startup_stm32f072xb.o src/f0/system_stm32f0xx.o src/f0/stm32f0xx_it.o src/f0/stm32f0xx_hal_msp.o
-OBJS+=src/f0/gpio.o src/f0/i2c.o src/f0/spi.o src/f0/system.o src/f0/usart.o
-OBJS+=src/f0/usbd_conf.o src/eeprom.o src/bootmode.o
-HALS+=i2c_ex
+#OBJS+=src/f0/startup_stm32f072xb.o src/f0/system_stm32f0xx.o src/f0/stm32f0xx_it.o src/f0/stm32f0xx_hal_msp.o
+#OBJS+=src/f0/gpio.o src/f0/i2c.o src/f0/spi.o src/f0/system.o src/f0/usart.o
+#OBJS+=src/f0/usbd_conf.o src/eeprom.o src/bootmode.o
+#HALS+=i2c_ex
+
+OBJS+=src/l4/startup_stm32l422xx.o src/l4/system_stm32l4xx.o src/l4/stm32l4xx_it.o src/l4/stm32l4xx_hal_msp.o
+OBJS+=src/l4/gpio.o src/l4/i2c.o src/l4/spi.o src/l4/usart.o src/l4/system.o
+OBJS+=src/l4/usbd_conf.o hal/stm32l4xx/Src/stm32l4xx_ll_usb.o
+OBJS+=src/l4/usb_device.o src/l4/usbd_cdc_if.o src/l4/usbd_desc.o 
 
 OBJS+=src/main.o
-OBJS+=src/usb_device.o src/usbd_cdc_if.o src/usbd_desc.o src/lps25h.o src/led.o src/button.o
+OBJS+=src/eeprom.o src/bootmode.o
+OBJS+=src/lps25h.o src/led.o src/button.o
 OBJS+=src/cfg.o src/usbcomm.o src/test_support.o src/production_test.o
 OBJS+=src/uwb.o src/uwb_twr_anchor.o src/uwb_sniffer.o src/uwb_twr_tag.o
 OBJS+=src/lpp.o src/uwb_tdoa_anchor2.o src/uwb_tdoa_anchor3.o
 
-HALS+=gpio rcc cortex i2c pcd dma pcd_ex rcc_ex spi uart pwr
+HALS+=gpio rcc cortex i2c i2c_ex pcd dma pcd_ex rcc_ex spi uart pwr pwr_ex
 OBJS+=$(foreach mod, $(HALS), $(HAL_ROOT)/Src/stm32$(CPU)xx_hal_$(mod).o)
 OBJS+=$(HAL_ROOT)/Src/stm32$(CPU)xx_hal.o
 

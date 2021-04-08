@@ -50,6 +50,7 @@ extern USBD_CDC_ItfTypeDef  USBD_Interface_fops_FS;
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 
 // User functions
+bool CDC_IsUsbInit(void);
 int CDC_Write(char* buffer, int len);
 int CDC_WriteBlocking(char *buffer, int len);
 int CDC_Read(char *buffer, int len);
