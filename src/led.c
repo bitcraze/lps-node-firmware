@@ -22,8 +22,10 @@
  * You should have received a copy of the GNU General Public License
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stm32f0xx_hal.h>
-#include <stm32f0xx_hal_gpio.h>
+//#include <stm32f0xx_hal.h>
+//#include <stm32f0xx_hal_gpio.h>
+#include <stm32l4xx_hal.h>
+#include <stm32l4xx_hal_gpio.h>
 
 #include "led.h"
 
@@ -33,7 +35,7 @@ typedef struct {
 } led_t;
 
 static const led_t leds_revd[] = {
-    [ledRanging] = {.pin = GPIO_PIN_1, .port = GPIOF},
+    [ledRanging] = {.pin = GPIO_PIN_1, .port = GPIOH},
     [ledSync] = {.pin = GPIO_PIN_1, .port = GPIOA},
     [ledMode] = {.pin = GPIO_PIN_2, .port = GPIOA}
 };

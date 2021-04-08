@@ -26,14 +26,15 @@
 
 #include <string.h>
 
-#include <stm32f0xx_hal.h>
+//#include <stm32f0xx_hal.h>
+#include <stm32l4xx_hal.h>
 #include "spi.h"
 
 extern SPI_HandleTypeDef hspi1;
 
 // #define DEBUG_SPI
 
-#define DWM_IRQn EXTI0_1_IRQn
+#define DWM_IRQn EXTI0_IRQn
 
 static dwDevice_t *dev;
 
@@ -41,8 +42,8 @@ static dwDevice_t *dev;
 void dwOpsInit(dwDevice_t *device)
 {
   dev = device;
-
-  NVIC_EnableIRQ(DWM_IRQn);
+  HAL_NVIC_SetPriority(DWM_IRQn, 7, 0);
+  HAL_NVIC_EnableIRQ(DWM_IRQn);
 }
 
 // Aligned buffer of 128bytes

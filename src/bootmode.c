@@ -23,7 +23,8 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "stm32f0xx_hal.h"
+//#include "stm32f0xx_hal.h"
+#include "stm32l4xx_hal.h"
 #include "bootmode.h"
 
 
@@ -32,21 +33,24 @@
 static void writeBuRegister(uint32_t data);
 
 void bootmodeSetBootloaderModeFlag() {
-  writeBuRegister(MAGIC_BOOT_MODE_MARKER);
+  //FIXME
+//  writeBuRegister(MAGIC_BOOT_MODE_MARKER);
 }
 
 void bootmodeClearBootloaderModeFlag() {
-  writeBuRegister(0);
+  //FIXME
+//  writeBuRegister(0);
 }
 
 
 static void writeBuRegister(uint32_t data) {
-  __HAL_RCC_PWR_CLK_ENABLE();
-  HAL_PWR_EnableBkUpAccess();
-
-  // Disable write protection
-  RTC->WPR = 0xCA;
-  RTC->WPR = 0x53;
-
-  RTC->BKP0R = data;
+//FIXME
+//  __HAL_RCC_PWR_CLK_ENABLE();
+//  HAL_PWR_EnableBkUpAccess();
+//
+//  // Disable write protection
+//  RTC->WPR = 0xCA;
+//  RTC->WPR = 0x53;
+//
+//  RTC->BKP0R = data;
 }
