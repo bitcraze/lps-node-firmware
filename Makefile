@@ -11,14 +11,16 @@ ifeq ($(strip $(REV)),A)
 $(error Rev.A not supported anymore)
 else ifeq ($(strip $(REV)),B)
 HAL_ROOT=hal/stm32f0xx
+FREERTOS_PORT=lib/freertos/ARM_CM0
 CPU=f0
 PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32F072xB
 OPENOCD_TARGET    ?= target/stm32l4x.cfg
 else ifeq ($(strip $(REV)),C)
 HAL_ROOT=hal/stm32l4xx
+FREERTOS_PORT=lib/freertos/ARM_CM0
 CPU=l4
-#PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32L422xx
-PROCESSOR=-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -DSTM32L422xx
+PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32L422xx
+#PROCESSOR=-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -DSTM32L422xx
 OPENOCD_TARGET    ?= target/stm32l4x.cfg
 else
 $(error Rev.$(REV) unknown)
@@ -27,9 +29,11 @@ endif
 INCLUDES=-Iinc -Iinc/$(CPU) -I$(HAL_ROOT)/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc
 
 # FreeRTOS
-FREERTOS_OBJS=list queue timers tasks port event_groups
+OBJS+= $(FREERTOS_PORT)/port.o
+FREERTOS_OBJS=list queue timers tasks event_groups
 OBJS+=$(foreach mod, $(FREERTOS_OBJS), lib/freertos/src/$(mod).o)
 INCLUDES+=-Ilib/freertos/inc
+INCLUDES+=-I$(FREERTOS_PORT)
 
 # Platform specific files
 #OBJS+=src/f0/startup_stm32f072xb.o src/f0/system_stm32f0xx.o src/f0/stm32f0xx_it.o src/f0/stm32f0xx_hal_msp.o
