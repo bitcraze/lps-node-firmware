@@ -3,13 +3,13 @@
  * Title:        arm_q7_to_q31.c
  * Description:  Converts the elements of the Q7 vector to Q31 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,49 +29,56 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupSupport
+ * @ingroup groupSupport
  */
 
 /**
-  @addtogroup q7_to_x
-  @{
+ * @addtogroup q7_to_x
+ * @{
  */
 
 /**
-  @brief         Converts the elements of the Q7 vector to Q31 vector.
-  @param[in]     pSrc       points to the Q7 input vector
-  @param[out]    pDst       points to the Q31 output vector
-  @param[in]     blockSize  number of samples in each vector
-  @return        none
-
-  @par           Details
-                   The equation used for the conversion process is:
-  <pre>
-      pDst[n] = (q31_t) pSrc[n] << 24;   0 <= n < blockSize.
-  </pre>
+ * @brief Converts the elements of the Q7 vector to Q31 vector.
+ * @param[in]       *pSrc points to the Q7 input vector
+ * @param[out]      *pDst points to the Q31 output vector
+ * @param[in]       blockSize length of the input vector
+ * @return none.
+ *
+ * \par Description:
+ *
+ * The equation used for the conversion process is:
+ *
+ * <pre>
+ * 	pDst[n] = (q31_t) pSrc[n] << 24;   0 <= n < blockSize.
+ * </pre>
+ *
  */
+
 
 void arm_q7_to_q31(
-  const q7_t * pSrc,
-        q31_t * pDst,
-        uint32_t blockSize)
+  q7_t * pSrc,
+  q31_t * pDst,
+  uint32_t blockSize)
 {
-        uint32_t blkCnt;                               /* Loop counter */
-  const q7_t *pIn = pSrc;                              /* Source pointer */
+  q7_t *pIn = pSrc;                              /* Src pointer */
+  uint32_t blkCnt;                               /* loop counter */
 
-#if defined (ARM_MATH_LOOPUNROLL)
+#if defined (ARM_MATH_DSP)
 
-        q31_t in;
+  q31_t in;
 
-  /* Loop unrolling: Compute 4 outputs at a time */
+  /* Run the below code for Cortex-M4 and Cortex-M3 */
+
+  /*loop Unrolling */
   blkCnt = blockSize >> 2U;
 
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = (q31_t) A << 24 */
-
-    /* Convert from q7 to q31 and store result in destination buffer */
-    in = read_q7x4_ia ((q7_t **) &pIn);
+    /* convert from q7 to q31 and then store the results in the destination buffer */
+    in = *__SIMD32(pIn)++;
 
 #ifndef ARM_MATH_BIG_ENDIAN
 
@@ -87,35 +94,37 @@ void arm_q7_to_q31(
     *pDst++ = (__ROR(in, 16)) & 0xFF000000;
     *pDst++ = (__ROR(in, 8)) & 0xFF000000;
 
-#endif /* #ifndef ARM_MATH_BIG_ENDIAN */
+#endif //              #ifndef ARM_MATH_BIG_ENDIAN
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Loop unrolling: Compute remaining outputs */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Initialize blkCnt with number of samples */
+  /* Run the below code for Cortex-M0 */
+
+  /* Loop over blockSize number of values */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+#endif /* #if defined (ARM_MATH_DSP) */
 
   while (blkCnt > 0U)
   {
     /* C = (q31_t) A << 24 */
-
-    /* Convert from q7 to q31 and store result in destination buffer */
+    /* convert from q7 to q31 and then store the results in the destination buffer */
     *pDst++ = (q31_t) * pIn++ << 24;
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
 }
 
 /**
-  @} end of q7_to_x group
+ * @} end of q7_to_x group
  */

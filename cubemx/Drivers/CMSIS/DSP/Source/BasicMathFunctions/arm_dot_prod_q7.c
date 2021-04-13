@@ -3,13 +3,13 @@
  * Title:        arm_dot_prod_q7.c
  * Description:  Q7 dot product
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,58 +29,61 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupMath
+ * @ingroup groupMath
  */
 
 /**
-  @addtogroup BasicDotProd
-  @{
+ * @addtogroup dot_prod
+ * @{
  */
 
 /**
-  @brief         Dot product of Q7 vectors.
-  @param[in]     pSrcA      points to the first input vector
-  @param[in]     pSrcB      points to the second input vector
-  @param[in]     blockSize  number of samples in each vector
-  @param[out]    result     output result returned here
-  @return        none
-
-  @par           Scaling and Overflow Behavior
-                   The intermediate multiplications are in 1.7 x 1.7 = 2.14 format and these
-                   results are added to an accumulator in 18.14 format.
-                   Nonsaturating additions are used and there is no danger of wrap around as long as
-                   the vectors are less than 2^18 elements long.
-                   The return result is in 18.14 format.
+ * @brief Dot product of Q7 vectors.
+ * @param[in]       *pSrcA points to the first input vector
+ * @param[in]       *pSrcB points to the second input vector
+ * @param[in]       blockSize number of samples in each vector
+ * @param[out]      *result output result returned here
+ * @return none.
+ *
+ * <b>Scaling and Overflow Behavior:</b>
+ * \par
+ * The intermediate multiplications are in 1.7 x 1.7 = 2.14 format and these
+ * results are added to an accumulator in 18.14 format.
+ * Nonsaturating additions are used and there is no danger of wrap around as long as
+ * the vectors are less than 2^18 elements long.
+ * The return result is in 18.14 format.
  */
 
 void arm_dot_prod_q7(
-  const q7_t * pSrcA,
-  const q7_t * pSrcB,
-        uint32_t blockSize,
-        q31_t * result)
+  q7_t * pSrcA,
+  q7_t * pSrcB,
+  uint32_t blockSize,
+  q31_t * result)
 {
-        uint32_t blkCnt;                               /* Loop counter */
-        q31_t sum = 0;                                 /* Temporary return variable */
+  uint32_t blkCnt;                               /* loop counter */
 
-#if defined (ARM_MATH_LOOPUNROLL)
+  q31_t sum = 0;                                 /* Temporary variables to store output */
 
 #if defined (ARM_MATH_DSP)
-  q31_t input1, input2;                          /* Temporary variables */
-  q31_t inA1, inA2, inB1, inB2;                  /* Temporary variables */
-#endif
 
-  /* Loop unrolling: Compute 4 outputs at a time */
+/* Run the below code for Cortex-M4 and Cortex-M3 */
+
+  q31_t input1, input2;                          /* Temporary variables to store input */
+  q31_t inA1, inA2, inB1, inB2;                  /* Temporary variables to store input */
+
+
+
+  /*loop Unrolling */
   blkCnt = blockSize >> 2U;
 
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* C = A[0]* B[0] + A[1]* B[1] + A[2]* B[2] + .....+ A[blockSize-1]* B[blockSize-1] */
-
-#if defined (ARM_MATH_DSP)
     /* read 4 samples at a time from sourceA */
-    input1 = read_q7x4_ia ((q7_t **) &pSrcA);
+    input1 = *__SIMD32(pSrcA)++;
     /* read 4 samples at a time from sourceB */
-    input2 = read_q7x4_ia ((q7_t **) &pSrcB);
+    input2 = *__SIMD32(pSrcB)++;
 
     /* extract two q7_t samples to q15_t samples */
     inA1 = __SXTB16(__ROR(input1, 8));
@@ -94,46 +97,51 @@ void arm_dot_prod_q7(
     /* multiply and accumulate two samples at a time */
     sum = __SMLAD(inA1, inB1, sum);
     sum = __SMLAD(inA2, inB2, sum);
-#else
-    sum += (q31_t) ((q15_t) *pSrcA++ * *pSrcB++);
-    sum += (q31_t) ((q15_t) *pSrcA++ * *pSrcB++);
-    sum += (q31_t) ((q15_t) *pSrcA++ * *pSrcB++);
-    sum += (q31_t) ((q15_t) *pSrcA++ * *pSrcB++);
-#endif
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Loop unrolling: Compute remaining outputs */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
-
-#else
-
-  /* Initialize blkCnt with number of samples */
-  blkCnt = blockSize;
-
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
     /* C = A[0]* B[0] + A[1]* B[1] + A[2]* B[2] + .....+ A[blockSize-1]* B[blockSize-1] */
+    /* Dot product and then store the results in a temporary buffer. */
+    sum = __SMLAD(*pSrcA++, *pSrcB++, sum);
 
-    /* Calculate dot product and store result in a temporary buffer. */
-//#if defined (ARM_MATH_DSP)
-//    sum  = __SMLAD(*pSrcA++, *pSrcB++, sum);
-//#else
-    sum += (q31_t) ((q15_t) *pSrcA++ * *pSrcB++);
-//#endif
-
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Store result in destination buffer in 18.14 format */
+#else
+
+  /* Run the below code for Cortex-M0 */
+
+
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+  while (blkCnt > 0U)
+  {
+    /* C = A[0]* B[0] + A[1]* B[1] + A[2]* B[2] + .....+ A[blockSize-1]* B[blockSize-1] */
+    /* Dot product and then store the results in a temporary buffer. */
+    sum += (q31_t) ((q15_t) * pSrcA++ * *pSrcB++);
+
+    /* Decrement the loop counter */
+    blkCnt--;
+  }
+
+#endif /* #if defined (ARM_MATH_DSP) */
+
+
+  /* Store the result in the destination buffer in 18.14 format */
   *result = sum;
 }
 
 /**
-  @} end of BasicDotProd group
+ * @} end of dot_prod group
  */

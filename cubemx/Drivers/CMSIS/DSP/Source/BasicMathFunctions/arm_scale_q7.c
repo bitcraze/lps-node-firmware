@@ -3,13 +3,13 @@
  * Title:        arm_scale_q7.c
  * Description:  Multiplies a Q7 vector by a scalar
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,101 +29,109 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupMath
+ * @ingroup groupMath
  */
 
 /**
-  @addtogroup BasicScale
-  @{
+ * @addtogroup scale
+ * @{
  */
 
 /**
-  @brief         Multiplies a Q7 vector by a scalar.
-  @param[in]     pSrc       points to the input vector
-  @param[in]     scaleFract fractional portion of the scale value
-  @param[in]     shift      number of bits to shift the result by
-  @param[out]    pDst       points to the output vector
-  @param[in]     blockSize  number of samples in each vector
-  @return        none
-
-  @par           Scaling and Overflow Behavior
-                   The input data <code>*pSrc</code> and <code>scaleFract</code> are in 1.7 format.
-                   These are multiplied to yield a 2.14 intermediate result and this is shifted with saturation to 1.7 format.
+ * @brief Multiplies a Q7 vector by a scalar.
+ * @param[in]       *pSrc points to the input vector
+ * @param[in]       scaleFract fractional portion of the scale value
+ * @param[in]       shift number of bits to shift the result by
+ * @param[out]      *pDst points to the output vector
+ * @param[in]       blockSize number of samples in the vector
+ * @return none.
+ *
+ * <b>Scaling and Overflow Behavior:</b>
+ * \par
+ * The input data <code>*pSrc</code> and <code>scaleFract</code> are in 1.7 format.
+ * These are multiplied to yield a 2.14 intermediate result and this is shifted with saturation to 1.7 format.
  */
 
 void arm_scale_q7(
-  const q7_t * pSrc,
-        q7_t scaleFract,
-        int8_t shift,
-        q7_t * pDst,
-        uint32_t blockSize)
+  q7_t * pSrc,
+  q7_t scaleFract,
+  int8_t shift,
+  q7_t * pDst,
+  uint32_t blockSize)
 {
-        uint32_t blkCnt;                               /* Loop counter */
-        int8_t kShift = 7 - shift;                     /* Shift to apply after scaling */
-
-#if defined (ARM_MATH_LOOPUNROLL)
+  int8_t kShift = 7 - shift;                     /* shift to apply after scaling */
+  uint32_t blkCnt;                               /* loop counter */
 
 #if defined (ARM_MATH_DSP)
-  q7_t in1,  in2,  in3,  in4;                    /* Temporary input variables */
-  q7_t out1, out2, out3, out4;                   /* Temporary output variables */
-#endif
 
-  /* Loop unrolling: Compute 4 outputs at a time */
+/* Run the below code for Cortex-M4 and Cortex-M3 */
+  q7_t in1, in2, in3, in4, out1, out2, out3, out4;      /* Temporary variables to store input & output */
+
+
+  /*loop Unrolling */
   blkCnt = blockSize >> 2U;
 
+
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
-    /* C = A * scale */
-
-#if defined (ARM_MATH_DSP)
     /* Reading 4 inputs from memory */
     in1 = *pSrc++;
     in2 = *pSrc++;
     in3 = *pSrc++;
     in4 = *pSrc++;
 
-    /* Scale inputs and store result in the temporary variable. */
+    /* C = A * scale */
+    /* Scale the inputs and then store the results in the temporary variables. */
     out1 = (q7_t) (__SSAT(((in1) * scaleFract) >> kShift, 8));
     out2 = (q7_t) (__SSAT(((in2) * scaleFract) >> kShift, 8));
     out3 = (q7_t) (__SSAT(((in3) * scaleFract) >> kShift, 8));
     out4 = (q7_t) (__SSAT(((in4) * scaleFract) >> kShift, 8));
 
-    /* Pack and store result in destination buffer (in single write) */
-    write_q7x4_ia (&pDst, __PACKq7(out1, out2, out3, out4));
-#else
-    *pDst++ = (q7_t) (__SSAT((((q15_t) *pSrc++ * scaleFract) >> kShift), 8));
-    *pDst++ = (q7_t) (__SSAT((((q15_t) *pSrc++ * scaleFract) >> kShift), 8));
-    *pDst++ = (q7_t) (__SSAT((((q15_t) *pSrc++ * scaleFract) >> kShift), 8));
-    *pDst++ = (q7_t) (__SSAT((((q15_t) *pSrc++ * scaleFract) >> kShift), 8));
-#endif
+    /* Packing the individual outputs into 32bit and storing in
+     * destination buffer in single write */
+    *__SIMD32(pDst)++ = __PACKq7(out1, out2, out3, out4);
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Loop unrolling: Compute remaining outputs */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
-
-#else
-
-  /* Initialize blkCnt with number of samples */
-  blkCnt = blockSize;
-
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
 
   while (blkCnt > 0U)
   {
     /* C = A * scale */
+    /* Scale the input and then store the result in the destination buffer. */
+    *pDst++ = (q7_t) (__SSAT(((*pSrc++) * scaleFract) >> kShift, 8));
 
-    /* Scale input and store result in destination buffer. */
-    *pDst++ = (q7_t) (__SSAT((((q15_t) *pSrc++ * scaleFract) >> kShift), 8));
-
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
+
+#else
+
+  /* Run the below code for Cortex-M0 */
+
+  /* Initialize blkCnt with number of samples */
+  blkCnt = blockSize;
+
+  while (blkCnt > 0U)
+  {
+    /* C = A * scale */
+    /* Scale the input and then store the result in the destination buffer. */
+    *pDst++ = (q7_t) (__SSAT((((q15_t) * pSrc++ * scaleFract) >> kShift), 8));
+
+    /* Decrement the loop counter */
+    blkCnt--;
+  }
+
+#endif /* #if defined (ARM_MATH_DSP) */
 
 }
 
 /**
-  @} end of BasicScale group
+ * @} end of scale group
  */

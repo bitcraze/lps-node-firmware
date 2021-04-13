@@ -2,7 +2,7 @@
 #define _JTEST_SYSTICK_H_
 
 /*--------------------------------------------------------------------------------*/
-/* Includes                                                                       */
+/* Includes */
 /*--------------------------------------------------------------------------------*/
 
 /* Get access to the SysTick structure. */
@@ -10,8 +10,6 @@
   #include "ARMCM0.h"
 #elif defined ARMCM0P
   #include "ARMCM0plus.h"
-#elif defined ARMCM0P_MPU
-  #include "ARMCM0plus_MPU.h"
 #elif defined ARMCM3
   #include "ARMCM3.h"
 #elif defined ARMCM4
@@ -42,22 +40,22 @@
   #include "ARMv8MML_DP.h"
 #elif defined ARMv8MML_DSP_DP
   #include "ARMv8MML_DSP_DP.h"
-#elif defined ARMv7A
-  /* TODO */
+
 #else
   #warning "no appropriate header file found!"
 #endif
 
 /*--------------------------------------------------------------------------------*/
-/* Macros and Defines                                                             */
+/* Macros and Defines */
 /*--------------------------------------------------------------------------------*/
 
 /**
  *  Initial value for the SysTick module.
  *
- *  This is also the maximum value, important as SysTick is a decrementing counter.
+ *  @note This is also the maximum value, important as SysTick is a decrementing
+ *  counter.
  */
-#define JTEST_SYSTICK_INITIAL_VALUE       0xFFFFFF
+#define JTEST_SYSTICK_INITIAL_VALUE 0xFFFFFF
 
 /**
  *  Reset the SysTick, decrementing timer to it's maximum value and disable it.
@@ -68,10 +66,11 @@
 #define JTEST_SYSTICK_RESET(systick_ptr)                    \
     do                                                      \
     {                                                       \
-        (systick_ptr)->CTRL = SysTick_CTRL_CLKSOURCE_Msk;   \
-                                                            \
         (systick_ptr)->LOAD = JTEST_SYSTICK_INITIAL_VALUE;  \
-        (systick_ptr)->VAL  = JTEST_SYSTICK_INITIAL_VALUE;  \
+        (systick_ptr)->VAL = 1;                             \
+                                                            \
+        /* Disable the SysTick module. */                   \
+        (systick_ptr)->CTRL = UINT32_C(0x000000);           \
     } while (0)
 
 /**
@@ -82,13 +81,13 @@
     {                                                       \
         (systick_ptr)->CTRL =                               \
             SysTick_CTRL_ENABLE_Msk |                       \
-            SysTick_CTRL_CLKSOURCE_Msk;                     \
+            SysTick_CTRL_CLKSOURCE_Msk; /* Internal clk*/   \
     } while (0)
 
 /**
  *  Evaluate to the current value of the SysTick timer.
  */
-#define JTEST_SYSTICK_VALUE(systick_ptr)                    \
+#define JTEST_SYSTICK_VALUE(systick_ptr)        \
     ((systick_ptr)->VAL)
            
 #endif /* _JTEST_SYSTICK_H_ */

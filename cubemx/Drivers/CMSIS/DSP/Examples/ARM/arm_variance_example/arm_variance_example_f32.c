@@ -90,7 +90,6 @@
 
 /** \example arm_variance_example_f32.c
   */
-
 #include <math.h>
 #include "arm_math.h"
 
@@ -145,11 +144,6 @@ int32_t main(void)
 
   status = ARM_MATH_SUCCESS;
 
-#if defined(FILEIO)
-  printf("START\n");
-#endif
-
- 
   /* Calculation of mean value of input */
 
   /* x' = 1/blockSize * (x(0)* 1 + x(1) * 1 + ... + x(n-1) * 1) */
@@ -194,32 +188,17 @@ int32_t main(void)
   diff = fabsf(refVarianceOut - variance);
 
   /* Comparison of variance value with reference */
-  
   if (diff > DELTA)
   {
     status = ARM_MATH_TEST_FAILURE;
   }
 
-
-#if !defined(FILEIO)
   if ( status != ARM_MATH_SUCCESS)
   {
     while (1);
   }
 
-  while (1);                            /* main function does not return */
-#else
-  if (status == ARM_MATH_SUCCESS)
-  {
-     printf("SUCCESS\n");
-  }
-  else
-  {
-     printf("FAILURE\n");
-  }
-#endif
+  while (1);                             /* main function does not return */
 }
 
  /** \endlink */
-
-

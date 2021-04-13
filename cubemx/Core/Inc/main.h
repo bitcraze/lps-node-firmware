@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32l4xx_hal.h"
+#include "stm32f0xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -63,9 +63,9 @@ void Error_Handler(void);
 #define EXT_IO_3_Pin GPIO_PIN_14
 #define EXT_IO_3_GPIO_Port GPIOC
 #define LPS25H_INT_Pin GPIO_PIN_0
-#define LPS25H_INT_GPIO_Port GPIOH
+#define LPS25H_INT_GPIO_Port GPIOF
 #define LED_MODE_Pin GPIO_PIN_1
-#define LED_MODE_GPIO_Port GPIOH
+#define LED_MODE_GPIO_Port GPIOF
 #define BTN_Pin GPIO_PIN_0
 #define BTN_GPIO_Port GPIOA
 #define LED_RANGING_Pin GPIO_PIN_1
@@ -74,7 +74,7 @@ void Error_Handler(void);
 #define LED_SYNC_GPIO_Port GPIOA
 #define DW_IRQ_Pin GPIO_PIN_0
 #define DW_IRQ_GPIO_Port GPIOB
-#define DW_IRQ_EXTI_IRQn EXTI0_IRQn
+#define DW_IRQ_EXTI_IRQn EXTI0_1_IRQn
 #define EXT_IO_1_Pin GPIO_PIN_1
 #define EXT_IO_1_GPIO_Port GPIOB
 #define EXT_IO_0_Pin GPIO_PIN_2

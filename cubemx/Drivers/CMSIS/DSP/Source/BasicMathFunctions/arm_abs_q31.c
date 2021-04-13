@@ -3,13 +3,13 @@
  * Title:        arm_abs_q31.c
  * Description:  Q31 vector absolute value
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,104 +29,90 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupMath
+ * @ingroup groupMath
  */
 
 /**
-  @addtogroup BasicAbs
-  @{
+ * @addtogroup BasicAbs
+ * @{
  */
 
-/**
-  @brief         Q31 vector absolute value.
-  @param[in]     pSrc       points to the input vector
-  @param[out]    pDst       points to the output vector
-  @param[in]     blockSize  number of samples in each vector
-  @return        none
 
-  @par           Scaling and Overflow Behavior
-                   The function uses saturating arithmetic.
-                   The Q31 value -1 (0x80000000) will be saturated to the maximum allowable positive value 0x7FFFFFFF.
+/**
+ * @brief Q31 vector absolute value.
+ * @param[in]       *pSrc points to the input buffer
+ * @param[out]      *pDst points to the output buffer
+ * @param[in]       blockSize number of samples in each vector
+ * @return none.
+ *
+ * <b>Scaling and Overflow Behavior:</b>
+ * \par
+ * The function uses saturating arithmetic.
+ * The Q31 value -1 (0x80000000) will be saturated to the maximum allowable positive value 0x7FFFFFFF.
  */
 
 void arm_abs_q31(
-  const q31_t * pSrc,
-        q31_t * pDst,
-        uint32_t blockSize)
+  q31_t * pSrc,
+  q31_t * pDst,
+  uint32_t blockSize)
 {
-        uint32_t blkCnt;                               /* Loop counter */
-        q31_t in;                                      /* Temporary variable */
+  uint32_t blkCnt;                               /* loop counter */
+  q31_t in;                                      /* Input value */
 
-#if defined (ARM_MATH_LOOPUNROLL)
+#if defined (ARM_MATH_DSP)
 
-  /* Loop unrolling: Compute 4 outputs at a time */
+  /* Run the below code for Cortex-M4 and Cortex-M3 */
+  q31_t in1, in2, in3, in4;
+
+  /*loop Unrolling */
   blkCnt = blockSize >> 2U;
 
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = |A| */
+    /* Calculate absolute of input (if -1 then saturated to 0x7fffffff) and then store the results in the destination buffer. */
+    in1 = *pSrc++;
+    in2 = *pSrc++;
+    in3 = *pSrc++;
+    in4 = *pSrc++;
 
-    /* Calculate absolute of input (if -1 then saturated to 0x7fffffff) and store result in destination buffer. */
-    in = *pSrc++;
-#if defined (ARM_MATH_DSP)
-    *pDst++ = (in > 0) ? in : (q31_t)__QSUB(0, in);
-#else
-    *pDst++ = (in > 0) ? in : ((in == INT32_MIN) ? INT32_MAX : -in);
-#endif
+    *pDst++ = (in1 > 0) ? in1 : (q31_t)__QSUB(0, in1);
+    *pDst++ = (in2 > 0) ? in2 : (q31_t)__QSUB(0, in2);
+    *pDst++ = (in3 > 0) ? in3 : (q31_t)__QSUB(0, in3);
+    *pDst++ = (in4 > 0) ? in4 : (q31_t)__QSUB(0, in4);
 
-    in = *pSrc++;
-#if defined (ARM_MATH_DSP)
-    *pDst++ = (in > 0) ? in : (q31_t)__QSUB(0, in);
-#else
-    *pDst++ = (in > 0) ? in : ((in == INT32_MIN) ? INT32_MAX : -in);
-#endif
-
-    in = *pSrc++;
-#if defined (ARM_MATH_DSP)
-    *pDst++ = (in > 0) ? in : (q31_t)__QSUB(0, in);
-#else
-    *pDst++ = (in > 0) ? in : ((in == INT32_MIN) ? INT32_MAX : -in);
-#endif
-
-    in = *pSrc++;
-#if defined (ARM_MATH_DSP)
-    *pDst++ = (in > 0) ? in : (q31_t)__QSUB(0, in);
-#else
-    *pDst++ = (in > 0) ? in : ((in == INT32_MIN) ? INT32_MAX : -in);
-#endif
-
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Loop unrolling: Compute remaining outputs */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
 
 #else
 
+  /* Run the below code for Cortex-M0 */
+
   /* Initialize blkCnt with number of samples */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+#endif /*   #if defined (ARM_MATH_DSP)   */
 
   while (blkCnt > 0U)
   {
     /* C = |A| */
-
-    /* Calculate absolute of input (if -1 then saturated to 0x7fffffff) and store result in destination buffer. */
+    /* Calculate absolute value of the input (if -1 then saturated to 0x7fffffff) and then store the results in the destination buffer. */
     in = *pSrc++;
-#if defined (ARM_MATH_DSP)
-    *pDst++ = (in > 0) ? in : (q31_t)__QSUB(0, in);
-#else
     *pDst++ = (in > 0) ? in : ((in == INT32_MIN) ? INT32_MAX : -in);
-#endif
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
 }
 
 /**
-  @} end of BasicAbs group
+ * @} end of BasicAbs group
  */

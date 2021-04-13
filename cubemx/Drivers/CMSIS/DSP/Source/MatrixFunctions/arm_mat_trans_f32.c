@@ -3,8 +3,8 @@
  * Title:        arm_mat_trans_f32.c
  * Description:  Floating-point matrix transpose
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
@@ -26,36 +26,33 @@
  * limitations under the License.
  */
 
+/**
+ * @defgroup MatrixTrans Matrix Transpose
+ *
+ * Tranposes a matrix.
+ * Transposing an <code>M x N</code> matrix flips it around the center diagonal and results in an <code>N x M</code> matrix.
+ * \image html MatrixTranspose.gif "Transpose of a 3 x 3 matrix"
+ */
+
 #include "arm_math.h"
 
 /**
-  @ingroup groupMatrix
+ * @ingroup groupMatrix
  */
 
 /**
-  @defgroup MatrixTrans Matrix Transpose
-
-  Tranposes a matrix.
-
-  Transposing an <code>M x N</code> matrix flips it around the center diagonal and results in an <code>N x M</code> matrix.
-  \image html MatrixTranspose.gif "Transpose of a 3 x 3 matrix"
+ * @addtogroup MatrixTrans
+ * @{
  */
 
 /**
-  @addtogroup MatrixTrans
-  @{
- */
+  * @brief Floating-point matrix transpose.
+  * @param[in]  *pSrc points to the input matrix
+  * @param[out] *pDst points to the output matrix
+  * @return 	The function returns either  <code>ARM_MATH_SIZE_MISMATCH</code>
+  * or <code>ARM_MATH_SUCCESS</code> based on the outcome of size checking.
+  */
 
-/**
-  @brief         Floating-point matrix transpose.
-  @param[in]     pSrc      points to input matrix
-  @param[out]    pDst      points to output matrix
-  @return        execution status
-                   - \ref ARM_MATH_SUCCESS       : Operation successful
-                   - \ref ARM_MATH_SIZE_MISMATCH : Matrix size check failed
- */
-
-#if defined(ARM_MATH_NEON)
 
 arm_status arm_mat_trans_f32(
   const arm_matrix_instance_f32 * pSrc,
@@ -67,10 +64,16 @@ arm_status arm_mat_trans_f32(
   uint16_t nRows = pSrc->numRows;                /* number of rows */
   uint16_t nColumns = pSrc->numCols;             /* number of columns */
 
-  uint16_t blkCnt, rowCnt, i = 0U, row = nRows;          /* loop counters */
+#if defined (ARM_MATH_DSP)
+
+  /* Run the below code for Cortex-M4 and Cortex-M3 */
+
+  uint16_t blkCnt, i = 0U, row = nRows;          /* loop counters */
   arm_status status;                             /* status of matrix transpose  */
 
+
 #ifdef ARM_MATH_MATRIX_CHECK
+
 
   /* Check for matrix mismatch condition */
   if ((pSrc->numRows != pDst->numCols) || (pSrc->numCols != pDst->numRows))
@@ -83,44 +86,41 @@ arm_status arm_mat_trans_f32(
 
   {
     /* Matrix transpose by exchanging the rows with columns */
-    /* Row loop */
-    rowCnt = row >> 2;
-    while (rowCnt > 0U)
+    /* row loop     */
+    do
     {
-      float32x4_t row0V,row1V,row2V,row3V;
-      float32x4x2_t ra0,ra1,rb0,rb1;
-
+      /* Loop Unrolling */
       blkCnt = nColumns >> 2;
 
       /* The pointer px is set to starting address of the column being processed */
       px = pOut + i;
 
-      /* Compute 4 outputs at a time.
+      /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
        ** a second loop below computes the remaining 1 to 3 samples. */
-      while (blkCnt > 0U)        /* Column loop */
+      while (blkCnt > 0U)        /* column loop */
       {
-        row0V = vld1q_f32(pIn);
-        row1V = vld1q_f32(pIn + 1 * nColumns);
-        row2V = vld1q_f32(pIn + 2 * nColumns);
-        row3V = vld1q_f32(pIn + 3 * nColumns);
-        pIn += 4;
+        /* Read and store the input element in the destination */
+        *px = *pIn++;
 
-        ra0 = vzipq_f32(row0V,row2V);
-        ra1 = vzipq_f32(row1V,row3V);
-
-        rb0 = vzipq_f32(ra0.val[0],ra1.val[0]);
-        rb1 = vzipq_f32(ra0.val[1],ra1.val[1]);
-
-        vst1q_f32(px,rb0.val[0]);
+        /* Update the pointer px to point to the next row of the transposed matrix */
         px += nRows;
 
-        vst1q_f32(px,rb0.val[1]);
+        /* Read and store the input element in the destination */
+        *px = *pIn++;
+
+        /* Update the pointer px to point to the next row of the transposed matrix */
         px += nRows;
 
-        vst1q_f32(px,rb1.val[0]);
+        /* Read and store the input element in the destination */
+        *px = *pIn++;
+
+        /* Update the pointer px to point to the next row of the transposed matrix */
         px += nRows;
 
-        vst1q_f32(px,rb1.val[1]);
+        /* Read and store the input element in the destination */
+        *px = *pIn++;
+
+        /* Update the pointer px to point to the next row of the transposed matrix */
         px += nRows;
 
         /* Decrement the column loop counter */
@@ -133,36 +133,6 @@ arm_status arm_mat_trans_f32(
       while (blkCnt > 0U)
       {
         /* Read and store the input element in the destination */
-        *px++ = *pIn;
-        *px++ = *(pIn + 1 * nColumns);
-        *px++ = *(pIn + 2 * nColumns);
-        *px++ = *(pIn + 3 * nColumns);
-        
-        px += (nRows - 4);
-        pIn++;
-
-        /* Decrement the column loop counter */
-        blkCnt--;
-      }
-
-      i += 4;
-      pIn += 3 * nColumns;
-
-      /* Decrement the row loop counter */
-      rowCnt--;
-
-    }         /* Row loop end  */
-
-    rowCnt = row & 3;
-    while (rowCnt > 0U)
-    {
-      blkCnt = nColumns ;
-      /* The pointer px is set to starting address of the column being processed */
-      px = pOut + i;
-
-      while (blkCnt > 0U)
-      {
-        /* Read and store the input element in the destination */
         *px = *pIn++;
 
         /* Update the pointer px to point to the next row of the transposed matrix */
@@ -171,104 +141,57 @@ arm_status arm_mat_trans_f32(
         /* Decrement the column loop counter */
         blkCnt--;
       }
-      i++;
-      rowCnt -- ;
-    }
 
-    /* Set status as ARM_MATH_SUCCESS */
-    status = ARM_MATH_SUCCESS;
-  }
-
-  /* Return to application */
-  return (status);
-}
 #else
-arm_status arm_mat_trans_f32(
-  const arm_matrix_instance_f32 * pSrc,
-        arm_matrix_instance_f32 * pDst)
-{
-  float32_t *pIn = pSrc->pData;                  /* input data matrix pointer */
-  float32_t *pOut = pDst->pData;                 /* output data matrix pointer */
-  float32_t *px;                                 /* Temporary output data matrix pointer */
-  uint16_t nRows = pSrc->numRows;                /* number of rows */
-  uint16_t nCols = pSrc->numCols;                /* number of columns */
-  uint32_t col, row = nRows, i = 0U;             /* Loop counters */
-  arm_status status;                             /* status of matrix transpose */
+
+  /* Run the below code for Cortex-M0 */
+
+  uint16_t col, i = 0U, row = nRows;             /* loop counters */
+  arm_status status;                             /* status of matrix transpose  */
+
 
 #ifdef ARM_MATH_MATRIX_CHECK
 
   /* Check for matrix mismatch condition */
-  if ((pSrc->numRows != pDst->numCols) ||
-      (pSrc->numCols != pDst->numRows)   )
+  if ((pSrc->numRows != pDst->numCols) || (pSrc->numCols != pDst->numRows))
   {
     /* Set status as ARM_MATH_SIZE_MISMATCH */
     status = ARM_MATH_SIZE_MISMATCH;
   }
   else
-
-#endif /* #ifdef ARM_MATH_MATRIX_CHECK */
+#endif /*      #ifdef ARM_MATH_MATRIX_CHECK    */
 
   {
     /* Matrix transpose by exchanging the rows with columns */
-    /* row loop */
+    /* row loop     */
     do
     {
-      /* Pointer px is set to starting address of column being processed */
+      /* The pointer px is set to starting address of the column being processed */
       px = pOut + i;
 
-#if defined (ARM_MATH_LOOPUNROLL)
-
-      /* Loop unrolling: Compute 4 outputs at a time */
-      col = nCols >> 2U;
-
-      while (col > 0U)        /* column loop */
-      {
-        /* Read and store input element in destination */
-        *px = *pIn++;
-        /* Update pointer px to point to next row of transposed matrix */
-        px += nRows;
-
-        *px = *pIn++;
-        px += nRows;
-
-        *px = *pIn++;
-        px += nRows;
-
-        *px = *pIn++;
-        px += nRows;
-
-        /* Decrement column loop counter */
-        col--;
-      }
-
-      /* Loop unrolling: Compute remaining outputs */
-      col = nCols % 0x4U;
-
-#else
-
-      /* Initialize col with number of samples */
-      col = nCols;
-
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+      /* Initialize column loop counter */
+      col = nColumns;
 
       while (col > 0U)
       {
-        /* Read and store input element in destination */
+        /* Read and store the input element in the destination */
         *px = *pIn++;
 
-        /* Update pointer px to point to next row of transposed matrix */
+        /* Update the pointer px to point to the next row of the transposed matrix */
         px += nRows;
 
-        /* Decrement column loop counter */
+        /* Decrement the column loop counter */
         col--;
       }
 
+#endif /* #if defined (ARM_MATH_DSP) */
+
       i++;
 
-      /* Decrement row loop counter */
+      /* Decrement the row loop counter */
       row--;
 
-    } while (row > 0U);          /* row loop end */
+    } while (row > 0U);          /* row loop end  */
 
     /* Set status as ARM_MATH_SUCCESS */
     status = ARM_MATH_SUCCESS;
@@ -277,7 +200,6 @@ arm_status arm_mat_trans_f32(
   /* Return to application */
   return (status);
 }
-#endif /* #if defined(ARM_MATH_NEON) */
 
 /**
  * @} end of MatrixTrans group

@@ -3,13 +3,13 @@
  * Title:        arm_float_to_q7.c
  * Description:  Converts the elements of the floating-point vector to Q7 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,12 +29,12 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupSupport
+ * @ingroup groupSupport
  */
 
 /**
-  @addtogroup float_to_x
-  @{
+ * @addtogroup float_to_x
+ * @{
  */
 
 /**
@@ -59,89 +59,51 @@
  * defined in the preprocessor section of project options.
  */
 
-#if defined(ARM_MATH_NEON)
+
 void arm_float_to_q7(
-  const float32_t * pSrc,
+  float32_t * pSrc,
   q7_t * pDst,
   uint32_t blockSize)
 {
-  const float32_t *pIn = pSrc;                         /* Src pointer */
+  float32_t *pIn = pSrc;                         /* Src pointer */
   uint32_t blkCnt;                               /* loop counter */
 
-  float32_t in;
-  float32x4_t inV;
-  #ifdef ARM_MATH_ROUNDING
-  float32x4_t zeroV = vdupq_n_f32(0.0f);
-  float32x4_t pHalf = vdupq_n_f32(0.5f / 128.0f);
-  float32x4_t mHalf = vdupq_n_f32(-0.5f / 128.0f);
-  float32x4_t r;
-  uint32x4_t cmp;
-  #endif
-
-  int32x4_t cvt;
-  int16x4_t cvt1,cvt2;
-  int8x8_t outV;
-
-  blkCnt = blockSize >> 3U;
-
-  /* Compute 8 outputs at a time.
-   ** a second loop below computes the remaining 1 to 7 samples. */
-  while (blkCnt > 0U)
-  {
-
 #ifdef ARM_MATH_ROUNDING
-    /* C = A * 128 */
-    /* Convert from float to q7 and then store the results in the destination buffer */
-    inV = vld1q_f32(pIn);
-    cmp = vcgtq_f32(inV,zeroV);
-    r = vbslq_f32(cmp,pHalf,mHalf);
-    inV = vaddq_f32(inV, r);
-    cvt1 = vqmovn_s32(vcvtq_n_s32_f32(inV,7));
-    pIn += 4;
 
-    inV = vld1q_f32(pIn);
-    cmp = vcgtq_f32(inV,zeroV);
-    r = vbslq_f32(cmp,pHalf,mHalf);
-    inV = vaddq_f32(inV, r);
-    cvt2 = vqmovn_s32(vcvtq_n_s32_f32(inV,7));
-    pIn += 4;
-    
-    outV = vqmovn_s16(vcombine_s16(cvt1,cvt2));
-    vst1_s8(pDst, outV);
-    pDst += 8;
+  float32_t in;
 
-#else
-
-    /* C = A * 128 */
-    /* Convert from float to q7 and then store the results in the destination buffer */
-    inV = vld1q_f32(pIn);
-    cvt1 = vqmovn_s32(vcvtq_n_s32_f32(inV,7));
-    pIn += 4;
-
-    inV = vld1q_f32(pIn);
-    cvt2 = vqmovn_s32(vcvtq_n_s32_f32(inV,7));
-    pIn += 4;
-
-    outV = vqmovn_s16(vcombine_s16(cvt1,cvt2));
-
-    vst1_s8(pDst, outV);
-    pDst += 8;
 #endif /*      #ifdef ARM_MATH_ROUNDING        */
 
-    /* Decrement the loop counter */
-    blkCnt--;
-  }
+#if defined (ARM_MATH_DSP)
 
-  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
-   ** No loop unrolling is used. */
-  blkCnt = blockSize & 7;
+  /* Run the below code for Cortex-M4 and Cortex-M3 */
 
+  /*loop Unrolling */
+  blkCnt = blockSize >> 2U;
+
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
 
 #ifdef ARM_MATH_ROUNDING
     /* C = A * 128 */
-    /* Convert from float to q7 and then store the results in the destination buffer */
+    /* convert from float to q7 and then store the results in the destination buffer */
+    in = *pIn++;
+    in = (in * 128);
+    in += in > 0.0f ? 0.5f : -0.5f;
+    *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
+
+    in = *pIn++;
+    in = (in * 128);
+    in += in > 0.0f ? 0.5f : -0.5f;
+    *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
+
+    in = *pIn++;
+    in = (in * 128);
+    in += in > 0.0f ? 0.5f : -0.5f;
+    *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
+
     in = *pIn++;
     in = (in * 128);
     in += in > 0.0f ? 0.5f : -0.5f;
@@ -150,7 +112,10 @@ void arm_float_to_q7(
 #else
 
     /* C = A * 128 */
-    /* Convert from float to q7 and then store the results in the destination buffer */
+    /* convert from float to q7 and then store the results in the destination buffer */
+    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
+    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
+    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
     *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
 
 #endif /*      #ifdef ARM_MATH_ROUNDING        */
@@ -159,95 +124,68 @@ void arm_float_to_q7(
     blkCnt--;
   }
 
-}
-#else
-void arm_float_to_q7(
-  const float32_t * pSrc,
-        q7_t * pDst,
-        uint32_t blockSize)
-{
-        uint32_t blkCnt;                               /* Loop counter */
-  const float32_t *pIn = pSrc;                         /* Source pointer */
-
-#ifdef ARM_MATH_ROUNDING
-        float32_t in;
-#endif /* #ifdef ARM_MATH_ROUNDING */
-
-#if defined (ARM_MATH_LOOPUNROLL)
-
-  /* Loop unrolling: Compute 4 outputs at a time */
-  blkCnt = blockSize >> 2U;
-
-  while (blkCnt > 0U)
-  {
-    /* C = A * 128 */
-
-    /* Convert from float to q7 and store result in destination buffer */
-#ifdef ARM_MATH_ROUNDING
-
-    in = (*pIn++ * 128);
-    in += in > 0.0f ? 0.5f : -0.5f;
-    *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
-
-    in = (*pIn++ * 128);
-    in += in > 0.0f ? 0.5f : -0.5f;
-    *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
-
-    in = (*pIn++ * 128);
-    in += in > 0.0f ? 0.5f : -0.5f;
-    *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
-
-    in = (*pIn++ * 128);
-    in += in > 0.0f ? 0.5f : -0.5f;
-    *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
-
-#else
-
-    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
-    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
-    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
-    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
-
-#endif /* #ifdef ARM_MATH_ROUNDING */
-
-    /* Decrement loop counter */
-    blkCnt--;
-  }
-
-  /* Loop unrolling: Compute remaining outputs */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
 
-#else
-
-  /* Initialize blkCnt with number of samples */
-  blkCnt = blockSize;
-
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
-
   while (blkCnt > 0U)
   {
-    /* C = A * 128 */
 
-    /* Convert from float to q7 and store result in destination buffer */
 #ifdef ARM_MATH_ROUNDING
-
-    in = (*pIn++ * 128);
+    /* C = A * 128 */
+    /* convert from float to q7 and then store the results in the destination buffer */
+    in = *pIn++;
+    in = (in * 128);
     in += in > 0.0f ? 0.5f : -0.5f;
     *pDst++ = (q7_t) (__SSAT((q15_t) (in), 8));
 
 #else
 
-    *pDst++ = (q7_t) __SSAT((q31_t) (*pIn++ * 128.0f), 8);
+    /* C = A * 128 */
+    /* convert from float to q7 and then store the results in the destination buffer */
+    *pDst++ = __SSAT((q31_t) (*pIn++ * 128.0f), 8);
 
-#endif /* #ifdef ARM_MATH_ROUNDING */
+#endif /*      #ifdef ARM_MATH_ROUNDING        */
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
+
+#else
+
+  /* Run the below code for Cortex-M0 */
+
+
+  /* Loop over blockSize number of values */
+  blkCnt = blockSize;
+
+  while (blkCnt > 0U)
+  {
+#ifdef ARM_MATH_ROUNDING
+    /* C = A * 128 */
+    /* convert from float to q7 and then store the results in the destination buffer */
+    in = *pIn++;
+    in = (in * 128.0f);
+    in += in > 0 ? 0.5f : -0.5f;
+    *pDst++ = (q7_t) (__SSAT((q31_t) (in), 8));
+
+#else
+
+    /* C = A * 128 */
+    /* convert from float to q7 and then store the results in the destination buffer */
+    *pDst++ = (q7_t) __SSAT((q31_t) (*pIn++ * 128.0f), 8);
+
+#endif /*      #ifdef ARM_MATH_ROUNDING        */
+
+    /* Decrement the loop counter */
+    blkCnt--;
+  }
+
+#endif /* #if defined (ARM_MATH_DSP) */
+
 }
-#endif /* #if defined(ARM_MATH_NEON) */
 
 /**
-  @} end of float_to_x group
+ * @} end of float_to_x group
  */

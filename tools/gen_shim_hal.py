@@ -11,6 +11,16 @@ OUTFILE = 'hal/hal_shim.c'
 functions = list()
 
 
+blacklist = [
+    'HAL_I2C_MspInit',
+    'HAL_PCD_DataOutStageCallback',
+    'HAL_PCD_MspInit',
+    'HAL_SPI_MspInit',
+    'HAL_UART_MspInit',
+    'HAL_MspInit',
+    'HAL_GPIO_EXTI_Callback'
+]
+
 def parse_params(param_string):
     '''
     Convert a string representation of all parameters to a OrderedDict
@@ -33,11 +43,11 @@ class ShimFunction:
     '''Represent a shim function, important bit is the string representation'''
     def __init__(self, ret_type, name, params):
         self._ret = ret_type
-        self._name = name
+        self.name = name
         self._params = parse_params(params)
 
     def __str__(self):
-        fn_call = '%s(%s);' % (self._name, ', '.join(self._params.keys()))
+        fn_call = '%s(%s);' % (self.name, ', '.join(self._params.keys()))
         ret = 'return ' if self._ret != 'void' else ''
 
         body = ('\tif (l4)\n'
@@ -53,8 +63,8 @@ class ShimFunction:
             params += '%s %s' % (self._params[key], key)
             first = False
 
-        return '__weak %s %s(%s) {\n%s}\n\n' % (self._ret,
-                                                self._name,
+        return '%s %s(%s) {\n%s}\n\n' % (self._ret,
+                                                self.name,
                                                 params,
                                                 body)
 
@@ -91,7 +101,8 @@ def process_file(f):
         m = re.search(FN_REGEX, line)
         if m:
             fn = ShimFunction(m.group(1), m.group(2), m.group(3))
-            functions.append(fn)
+            if fn.name not in blacklist:
+                functions.append(fn)
 
 
 gdb.execute('set pagination off')
