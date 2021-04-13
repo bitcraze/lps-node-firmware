@@ -10,15 +10,30 @@ OUTFILE = 'hal/hal_shim.c'
 
 functions = list()
 
-
 blacklist = [
+    'HAL_MspInit',
+    'HAL_GPIO_EXTI_Callback',
     'HAL_I2C_MspInit',
+    'HAL_I2C_MspDeInit',
+    'HAL_UART_MspInit',
+    'HAL_UART_MspDeInit',
+    'HAL_SPI_MspInit',
+    'HAL_SPI_MspDeInit',
+    'HAL_PCD_ConnectCallback',
+    'HAL_PCD_DataInStageCallback',
+    'HAL_PCD_DisconnectCallback',
+    'HAL_PCD_ISOINIncompleteCallback',
+    'HAL_PCD_ISOOUTIncompleteCallback',
+    'HAL_PCD_MspDeInit',
+    'HAL_PCD_ResetCallback',
+    'HAL_PCD_ResumeCallback',
+    'HAL_PCD_SOFCallback',
+    'HAL_PCD_SetupStageCallback',
+    'HAL_PCD_SuspendCallback',
     'HAL_PCD_DataOutStageCallback',
     'HAL_PCD_MspInit',
-    'HAL_SPI_MspInit',
-    'HAL_UART_MspInit',
-    'HAL_MspInit',
-    'HAL_GPIO_EXTI_Callback'
+    'HAL_DMA_RegisterCallback',
+    'HAL_PCDEx_LPM_Callback'
 ]
 
 def parse_params(param_string):
