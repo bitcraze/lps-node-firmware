@@ -1,5 +1,5 @@
 #include <stm32f0xx_hal.h>
-static int l4 = 1;
+static int l4 = 0;
 HAL_StatusTypeDef HAL_I2CEx_ConfigAnalogFilter(I2C_HandleTypeDef * a,  uint32_t b) {
 	if (l4)
 		return l4_HAL_I2CEx_ConfigAnalogFilter(a, b);
@@ -42,11 +42,32 @@ HAL_StatusTypeDef HAL_I2CEx_EnableWakeUp(I2C_HandleTypeDef * a) {
 		return f0_HAL_I2CEx_EnableWakeUp(a);
 }
 
+void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_AbortCpltCallback(a);
+	else
+		f0_HAL_I2C_AbortCpltCallback(a);
+}
+
+void HAL_I2C_AddrCallback(I2C_HandleTypeDef * a,  uint8_t b,  uint16_t c) {
+	if (l4)
+		l4_HAL_I2C_AddrCallback(a, b, c);
+	else
+		f0_HAL_I2C_AddrCallback(a, b, c);
+}
+
 HAL_StatusTypeDef HAL_I2C_DeInit(I2C_HandleTypeDef * a) {
 	if (l4)
 		return l4_HAL_I2C_DeInit(a);
 	else
 		return f0_HAL_I2C_DeInit(a);
+}
+
+HAL_StatusTypeDef HAL_I2C_DisableListen_IT(I2C_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_I2C_DisableListen_IT(a);
+	else
+		return f0_HAL_I2C_DisableListen_IT(a);
 }
 
 void HAL_I2C_ER_IRQHandler(I2C_HandleTypeDef * a) {
@@ -63,11 +84,32 @@ void HAL_I2C_EV_IRQHandler(I2C_HandleTypeDef * a) {
 		f0_HAL_I2C_EV_IRQHandler(a);
 }
 
+HAL_StatusTypeDef HAL_I2C_EnableListen_IT(I2C_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_I2C_EnableListen_IT(a);
+	else
+		return f0_HAL_I2C_EnableListen_IT(a);
+}
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_ErrorCallback(a);
+	else
+		f0_HAL_I2C_ErrorCallback(a);
+}
+
 uint32_t HAL_I2C_GetError(I2C_HandleTypeDef * a) {
 	if (l4)
 		return l4_HAL_I2C_GetError(a);
 	else
 		return f0_HAL_I2C_GetError(a);
+}
+
+HAL_I2C_ModeTypeDef HAL_I2C_GetMode(I2C_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_I2C_GetMode(a);
+	else
+		return f0_HAL_I2C_GetMode(a);
 }
 
 HAL_I2C_StateTypeDef HAL_I2C_GetState(I2C_HandleTypeDef * a) {
@@ -91,6 +133,34 @@ HAL_StatusTypeDef HAL_I2C_IsDeviceReady(I2C_HandleTypeDef * a,  uint16_t b,  uin
 		return f0_HAL_I2C_IsDeviceReady(a, b, c, d);
 }
 
+void HAL_I2C_ListenCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_ListenCpltCallback(a);
+	else
+		f0_HAL_I2C_ListenCpltCallback(a);
+}
+
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_MasterRxCpltCallback(a);
+	else
+		f0_HAL_I2C_MasterRxCpltCallback(a);
+}
+
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_MasterTxCpltCallback(a);
+	else
+		f0_HAL_I2C_MasterTxCpltCallback(a);
+}
+
+HAL_StatusTypeDef HAL_I2C_Master_Abort_IT(I2C_HandleTypeDef * a,  uint16_t b) {
+	if (l4)
+		return l4_HAL_I2C_Master_Abort_IT(a, b);
+	else
+		return f0_HAL_I2C_Master_Abort_IT(a, b);
+}
+
 HAL_StatusTypeDef HAL_I2C_Master_Receive(I2C_HandleTypeDef * a,  uint16_t b,  uint8_t * c,  uint16_t d,  uint32_t e) {
 	if (l4)
 		return l4_HAL_I2C_Master_Receive(a, b, c, d, e);
@@ -112,6 +182,34 @@ HAL_StatusTypeDef HAL_I2C_Master_Receive_IT(I2C_HandleTypeDef * a,  uint16_t b, 
 		return f0_HAL_I2C_Master_Receive_IT(a, b, c, d);
 }
 
+HAL_StatusTypeDef HAL_I2C_Master_Seq_Receive_DMA(I2C_HandleTypeDef * a,  uint16_t b,  uint8_t * c,  uint16_t d,  uint32_t e) {
+	if (l4)
+		return l4_HAL_I2C_Master_Seq_Receive_DMA(a, b, c, d, e);
+	else
+		return f0_HAL_I2C_Master_Seq_Receive_DMA(a, b, c, d, e);
+}
+
+HAL_StatusTypeDef HAL_I2C_Master_Seq_Receive_IT(I2C_HandleTypeDef * a,  uint16_t b,  uint8_t * c,  uint16_t d,  uint32_t e) {
+	if (l4)
+		return l4_HAL_I2C_Master_Seq_Receive_IT(a, b, c, d, e);
+	else
+		return f0_HAL_I2C_Master_Seq_Receive_IT(a, b, c, d, e);
+}
+
+HAL_StatusTypeDef HAL_I2C_Master_Seq_Transmit_DMA(I2C_HandleTypeDef * a,  uint16_t b,  uint8_t * c,  uint16_t d,  uint32_t e) {
+	if (l4)
+		return l4_HAL_I2C_Master_Seq_Transmit_DMA(a, b, c, d, e);
+	else
+		return f0_HAL_I2C_Master_Seq_Transmit_DMA(a, b, c, d, e);
+}
+
+HAL_StatusTypeDef HAL_I2C_Master_Seq_Transmit_IT(I2C_HandleTypeDef * a,  uint16_t b,  uint8_t * c,  uint16_t d,  uint32_t e) {
+	if (l4)
+		return l4_HAL_I2C_Master_Seq_Transmit_IT(a, b, c, d, e);
+	else
+		return f0_HAL_I2C_Master_Seq_Transmit_IT(a, b, c, d, e);
+}
+
 HAL_StatusTypeDef HAL_I2C_Master_Transmit(I2C_HandleTypeDef * a,  uint16_t b,  uint8_t * c,  uint16_t d,  uint32_t e) {
 	if (l4)
 		return l4_HAL_I2C_Master_Transmit(a, b, c, d, e);
@@ -131,6 +229,20 @@ HAL_StatusTypeDef HAL_I2C_Master_Transmit_IT(I2C_HandleTypeDef * a,  uint16_t b,
 		return l4_HAL_I2C_Master_Transmit_IT(a, b, c, d);
 	else
 		return f0_HAL_I2C_Master_Transmit_IT(a, b, c, d);
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_MemRxCpltCallback(a);
+	else
+		f0_HAL_I2C_MemRxCpltCallback(a);
+}
+
+void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_MemTxCpltCallback(a);
+	else
+		f0_HAL_I2C_MemTxCpltCallback(a);
 }
 
 HAL_StatusTypeDef HAL_I2C_Mem_Read(I2C_HandleTypeDef * a,  uint16_t b,  uint16_t c,  uint16_t d,  uint8_t * e,  uint16_t f,  uint32_t g) {
@@ -175,6 +287,20 @@ HAL_StatusTypeDef HAL_I2C_Mem_Write_IT(I2C_HandleTypeDef * a,  uint16_t b,  uint
 		return f0_HAL_I2C_Mem_Write_IT(a, b, c, d, e, f);
 }
 
+void HAL_I2C_SlaveRxCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_SlaveRxCpltCallback(a);
+	else
+		f0_HAL_I2C_SlaveRxCpltCallback(a);
+}
+
+void HAL_I2C_SlaveTxCpltCallback(I2C_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_I2C_SlaveTxCpltCallback(a);
+	else
+		f0_HAL_I2C_SlaveTxCpltCallback(a);
+}
+
 HAL_StatusTypeDef HAL_I2C_Slave_Receive(I2C_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
 	if (l4)
 		return l4_HAL_I2C_Slave_Receive(a, b, c, d);
@@ -194,6 +320,34 @@ HAL_StatusTypeDef HAL_I2C_Slave_Receive_IT(I2C_HandleTypeDef * a,  uint8_t * b, 
 		return l4_HAL_I2C_Slave_Receive_IT(a, b, c);
 	else
 		return f0_HAL_I2C_Slave_Receive_IT(a, b, c);
+}
+
+HAL_StatusTypeDef HAL_I2C_Slave_Seq_Receive_DMA(I2C_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
+	if (l4)
+		return l4_HAL_I2C_Slave_Seq_Receive_DMA(a, b, c, d);
+	else
+		return f0_HAL_I2C_Slave_Seq_Receive_DMA(a, b, c, d);
+}
+
+HAL_StatusTypeDef HAL_I2C_Slave_Seq_Receive_IT(I2C_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
+	if (l4)
+		return l4_HAL_I2C_Slave_Seq_Receive_IT(a, b, c, d);
+	else
+		return f0_HAL_I2C_Slave_Seq_Receive_IT(a, b, c, d);
+}
+
+HAL_StatusTypeDef HAL_I2C_Slave_Seq_Transmit_DMA(I2C_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
+	if (l4)
+		return l4_HAL_I2C_Slave_Seq_Transmit_DMA(a, b, c, d);
+	else
+		return f0_HAL_I2C_Slave_Seq_Transmit_DMA(a, b, c, d);
+}
+
+HAL_StatusTypeDef HAL_I2C_Slave_Seq_Transmit_IT(I2C_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
+	if (l4)
+		return l4_HAL_I2C_Slave_Seq_Transmit_IT(a, b, c, d);
+	else
+		return f0_HAL_I2C_Slave_Seq_Transmit_IT(a, b, c, d);
 }
 
 HAL_StatusTypeDef HAL_I2C_Slave_Transmit(I2C_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
@@ -238,6 +392,20 @@ HAL_StatusTypeDef HAL_HalfDuplex_Init(UART_HandleTypeDef * a) {
 		return f0_HAL_HalfDuplex_Init(a);
 }
 
+HAL_StatusTypeDef HAL_LIN_Init(UART_HandleTypeDef * a,  uint32_t b) {
+	if (l4)
+		return l4_HAL_LIN_Init(a, b);
+	else
+		return f0_HAL_LIN_Init(a, b);
+}
+
+HAL_StatusTypeDef HAL_LIN_SendBreak(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_LIN_SendBreak(a);
+	else
+		return f0_HAL_LIN_SendBreak(a);
+}
+
 HAL_StatusTypeDef HAL_MultiProcessor_DisableMuteMode(UART_HandleTypeDef * a) {
 	if (l4)
 		return l4_HAL_MultiProcessor_DisableMuteMode(a);
@@ -264,6 +432,76 @@ HAL_StatusTypeDef HAL_MultiProcessor_Init(UART_HandleTypeDef * a,  uint8_t b,  u
 		return l4_HAL_MultiProcessor_Init(a, b, c);
 	else
 		return f0_HAL_MultiProcessor_Init(a, b, c);
+}
+
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef * a,  uint16_t b) {
+	if (l4)
+		l4_HAL_UARTEx_RxEventCallback(a, b);
+	else
+		f0_HAL_UARTEx_RxEventCallback(a, b);
+}
+
+HAL_StatusTypeDef HAL_UART_Abort(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_Abort(a);
+	else
+		return f0_HAL_UART_Abort(a);
+}
+
+void HAL_UART_AbortCpltCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_AbortCpltCallback(a);
+	else
+		f0_HAL_UART_AbortCpltCallback(a);
+}
+
+HAL_StatusTypeDef HAL_UART_AbortReceive(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_AbortReceive(a);
+	else
+		return f0_HAL_UART_AbortReceive(a);
+}
+
+void HAL_UART_AbortReceiveCpltCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_AbortReceiveCpltCallback(a);
+	else
+		f0_HAL_UART_AbortReceiveCpltCallback(a);
+}
+
+HAL_StatusTypeDef HAL_UART_AbortReceive_IT(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_AbortReceive_IT(a);
+	else
+		return f0_HAL_UART_AbortReceive_IT(a);
+}
+
+HAL_StatusTypeDef HAL_UART_AbortTransmit(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_AbortTransmit(a);
+	else
+		return f0_HAL_UART_AbortTransmit(a);
+}
+
+void HAL_UART_AbortTransmitCpltCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_AbortTransmitCpltCallback(a);
+	else
+		f0_HAL_UART_AbortTransmitCpltCallback(a);
+}
+
+HAL_StatusTypeDef HAL_UART_AbortTransmit_IT(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_AbortTransmit_IT(a);
+	else
+		return f0_HAL_UART_AbortTransmit_IT(a);
+}
+
+HAL_StatusTypeDef HAL_UART_Abort_IT(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_Abort_IT(a);
+	else
+		return f0_HAL_UART_Abort_IT(a);
 }
 
 HAL_StatusTypeDef HAL_UART_DMAPause(UART_HandleTypeDef * a) {
@@ -294,6 +532,27 @@ HAL_StatusTypeDef HAL_UART_DeInit(UART_HandleTypeDef * a) {
 		return f0_HAL_UART_DeInit(a);
 }
 
+HAL_StatusTypeDef HAL_UART_DisableReceiverTimeout(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_DisableReceiverTimeout(a);
+	else
+		return f0_HAL_UART_DisableReceiverTimeout(a);
+}
+
+HAL_StatusTypeDef HAL_UART_EnableReceiverTimeout(UART_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_UART_EnableReceiverTimeout(a);
+	else
+		return f0_HAL_UART_EnableReceiverTimeout(a);
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_ErrorCallback(a);
+	else
+		f0_HAL_UART_ErrorCallback(a);
+}
+
 uint32_t HAL_UART_GetError(UART_HandleTypeDef * a) {
 	if (l4)
 		return l4_HAL_UART_GetError(a);
@@ -306,6 +565,13 @@ HAL_UART_StateTypeDef HAL_UART_GetState(UART_HandleTypeDef * a) {
 		return l4_HAL_UART_GetState(a);
 	else
 		return f0_HAL_UART_GetState(a);
+}
+
+void HAL_UART_IRQHandler(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_IRQHandler(a);
+	else
+		f0_HAL_UART_IRQHandler(a);
 }
 
 HAL_StatusTypeDef HAL_UART_Init(UART_HandleTypeDef * a) {
@@ -336,6 +602,27 @@ HAL_StatusTypeDef HAL_UART_Receive_IT(UART_HandleTypeDef * a,  uint8_t * b,  uin
 		return f0_HAL_UART_Receive_IT(a, b, c);
 }
 
+void HAL_UART_ReceiverTimeout_Config(UART_HandleTypeDef * a,  uint32_t b) {
+	if (l4)
+		l4_HAL_UART_ReceiverTimeout_Config(a, b);
+	else
+		f0_HAL_UART_ReceiverTimeout_Config(a, b);
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_RxCpltCallback(a);
+	else
+		f0_HAL_UART_RxCpltCallback(a);
+}
+
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_RxHalfCpltCallback(a);
+	else
+		f0_HAL_UART_RxHalfCpltCallback(a);
+}
+
 HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
 	if (l4)
 		return l4_HAL_UART_Transmit(a, b, c, d);
@@ -357,6 +644,20 @@ HAL_StatusTypeDef HAL_UART_Transmit_IT(UART_HandleTypeDef * a,  uint8_t * b,  ui
 		return f0_HAL_UART_Transmit_IT(a, b, c);
 }
 
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_TxCpltCallback(a);
+	else
+		f0_HAL_UART_TxCpltCallback(a);
+}
+
+void HAL_UART_TxHalfCpltCallback(UART_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_UART_TxHalfCpltCallback(a);
+	else
+		f0_HAL_UART_TxHalfCpltCallback(a);
+}
+
 void UART_AdvFeatureConfig(UART_HandleTypeDef * a) {
 	if (l4)
 		l4_UART_AdvFeatureConfig(a);
@@ -371,20 +672,6 @@ HAL_StatusTypeDef UART_CheckIdleState(UART_HandleTypeDef * a) {
 		return f0_UART_CheckIdleState(a);
 }
 
-HAL_StatusTypeDef UART_EndTransmit_IT(UART_HandleTypeDef * a) {
-	if (l4)
-		return l4_UART_EndTransmit_IT(a);
-	else
-		return f0_UART_EndTransmit_IT(a);
-}
-
-HAL_StatusTypeDef UART_Receive_IT(UART_HandleTypeDef * a) {
-	if (l4)
-		return l4_UART_Receive_IT(a);
-	else
-		return f0_UART_Receive_IT(a);
-}
-
 HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef * a) {
 	if (l4)
 		return l4_UART_SetConfig(a);
@@ -392,18 +679,46 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef * a) {
 		return f0_UART_SetConfig(a);
 }
 
-HAL_StatusTypeDef UART_Transmit_IT(UART_HandleTypeDef * a) {
+HAL_StatusTypeDef UART_Start_Receive_DMA(UART_HandleTypeDef * a,  uint8_t * b,  uint16_t c) {
 	if (l4)
-		return l4_UART_Transmit_IT(a);
+		return l4_UART_Start_Receive_DMA(a, b, c);
 	else
-		return f0_UART_Transmit_IT(a);
+		return f0_UART_Start_Receive_DMA(a, b, c);
 }
 
-HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef * a,  uint32_t b,  FlagStatus c,  uint32_t d) {
+HAL_StatusTypeDef UART_Start_Receive_IT(UART_HandleTypeDef * a,  uint8_t * b,  uint16_t c) {
 	if (l4)
-		return l4_UART_WaitOnFlagUntilTimeout(a, b, c, d);
+		return l4_UART_Start_Receive_IT(a, b, c);
 	else
-		return f0_UART_WaitOnFlagUntilTimeout(a, b, c, d);
+		return f0_UART_Start_Receive_IT(a, b, c);
+}
+
+HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef * a,  uint32_t b,  FlagStatus c,  uint32_t d,  uint32_t e) {
+	if (l4)
+		return l4_UART_WaitOnFlagUntilTimeout(a, b, c, d, e);
+	else
+		return f0_UART_WaitOnFlagUntilTimeout(a, b, c, d, e);
+}
+
+HAL_StatusTypeDef HAL_SPI_Abort(SPI_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_SPI_Abort(a);
+	else
+		return f0_HAL_SPI_Abort(a);
+}
+
+void HAL_SPI_AbortCpltCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_AbortCpltCallback(a);
+	else
+		f0_HAL_SPI_AbortCpltCallback(a);
+}
+
+HAL_StatusTypeDef HAL_SPI_Abort_IT(SPI_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_SPI_Abort_IT(a);
+	else
+		return f0_HAL_SPI_Abort_IT(a);
 }
 
 HAL_StatusTypeDef HAL_SPI_DMAPause(SPI_HandleTypeDef * a) {
@@ -432,6 +747,13 @@ HAL_StatusTypeDef HAL_SPI_DeInit(SPI_HandleTypeDef * a) {
 		return l4_HAL_SPI_DeInit(a);
 	else
 		return f0_HAL_SPI_DeInit(a);
+}
+
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_ErrorCallback(a);
+	else
+		f0_HAL_SPI_ErrorCallback(a);
 }
 
 uint32_t HAL_SPI_GetError(SPI_HandleTypeDef * a) {
@@ -483,6 +805,20 @@ HAL_StatusTypeDef HAL_SPI_Receive_IT(SPI_HandleTypeDef * a,  uint8_t * b,  uint1
 		return f0_HAL_SPI_Receive_IT(a, b, c);
 }
 
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_RxCpltCallback(a);
+	else
+		f0_HAL_SPI_RxCpltCallback(a);
+}
+
+void HAL_SPI_RxHalfCpltCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_RxHalfCpltCallback(a);
+	else
+		f0_HAL_SPI_RxHalfCpltCallback(a);
+}
+
 HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef * a,  uint8_t * b,  uint16_t c,  uint32_t d) {
 	if (l4)
 		return l4_HAL_SPI_Transmit(a, b, c, d);
@@ -525,6 +861,34 @@ HAL_StatusTypeDef HAL_SPI_Transmit_IT(SPI_HandleTypeDef * a,  uint8_t * b,  uint
 		return f0_HAL_SPI_Transmit_IT(a, b, c);
 }
 
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_TxCpltCallback(a);
+	else
+		f0_HAL_SPI_TxCpltCallback(a);
+}
+
+void HAL_SPI_TxHalfCpltCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_TxHalfCpltCallback(a);
+	else
+		f0_HAL_SPI_TxHalfCpltCallback(a);
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_TxRxCpltCallback(a);
+	else
+		f0_HAL_SPI_TxRxCpltCallback(a);
+}
+
+void HAL_SPI_TxRxHalfCpltCallback(SPI_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_SPI_TxRxHalfCpltCallback(a);
+	else
+		f0_HAL_SPI_TxRxHalfCpltCallback(a);
+}
+
 void HAL_RCC_CSSCallback() {
 	if (l4)
 		l4_HAL_RCC_CSSCallback();
@@ -539,11 +903,11 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef * a,  uint32_t b) {
 		return f0_HAL_RCC_ClockConfig(a, b);
 }
 
-void HAL_RCC_DeInit() {
+HAL_StatusTypeDef HAL_RCC_DeInit() {
 	if (l4)
-		l4_HAL_RCC_DeInit();
+		return l4_HAL_RCC_DeInit();
 	else
-		f0_HAL_RCC_DeInit();
+		return f0_HAL_RCC_DeInit();
 }
 
 void HAL_RCC_DisableCSS() {
@@ -616,6 +980,48 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef * a) {
 		return f0_HAL_RCC_OscConfig(a);
 }
 
+HAL_StatusTypeDef HAL_PCDEx_ActivateBCD(PCD_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_PCDEx_ActivateBCD(a);
+	else
+		return f0_HAL_PCDEx_ActivateBCD(a);
+}
+
+HAL_StatusTypeDef HAL_PCDEx_ActivateLPM(PCD_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_PCDEx_ActivateLPM(a);
+	else
+		return f0_HAL_PCDEx_ActivateLPM(a);
+}
+
+void HAL_PCDEx_BCD_Callback(PCD_HandleTypeDef * a,  PCD_BCD_MsgTypeDef b) {
+	if (l4)
+		l4_HAL_PCDEx_BCD_Callback(a, b);
+	else
+		f0_HAL_PCDEx_BCD_Callback(a, b);
+}
+
+void HAL_PCDEx_BCD_VBUSDetect(PCD_HandleTypeDef * a) {
+	if (l4)
+		l4_HAL_PCDEx_BCD_VBUSDetect(a);
+	else
+		f0_HAL_PCDEx_BCD_VBUSDetect(a);
+}
+
+HAL_StatusTypeDef HAL_PCDEx_DeActivateBCD(PCD_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_PCDEx_DeActivateBCD(a);
+	else
+		return f0_HAL_PCDEx_DeActivateBCD(a);
+}
+
+HAL_StatusTypeDef HAL_PCDEx_DeActivateLPM(PCD_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_PCDEx_DeActivateLPM(a);
+	else
+		return f0_HAL_PCDEx_DeActivateLPM(a);
+}
+
 HAL_StatusTypeDef HAL_PCDEx_PMAConfig(PCD_HandleTypeDef * a,  uint16_t b,  uint16_t c,  uint32_t d) {
 	if (l4)
 		return l4_HAL_PCDEx_PMAConfig(a, b, c, d);
@@ -658,7 +1064,7 @@ HAL_StatusTypeDef HAL_DeInit() {
 		return f0_HAL_DeInit();
 }
 
-void HAL_Delay(volatile uint32_t a) {
+void HAL_Delay(uint32_t a) {
 	if (l4)
 		l4_HAL_Delay(a);
 	else
@@ -693,6 +1099,41 @@ uint32_t HAL_GetTick() {
 		return f0_HAL_GetTick();
 }
 
+HAL_TickFreqTypeDef HAL_GetTickFreq() {
+	if (l4)
+		return l4_HAL_GetTickFreq();
+	else
+		return f0_HAL_GetTickFreq();
+}
+
+uint32_t HAL_GetTickPrio() {
+	if (l4)
+		return l4_HAL_GetTickPrio();
+	else
+		return f0_HAL_GetTickPrio();
+}
+
+uint32_t HAL_GetUIDw0() {
+	if (l4)
+		return l4_HAL_GetUIDw0();
+	else
+		return f0_HAL_GetUIDw0();
+}
+
+uint32_t HAL_GetUIDw1() {
+	if (l4)
+		return l4_HAL_GetUIDw1();
+	else
+		return f0_HAL_GetUIDw1();
+}
+
+uint32_t HAL_GetUIDw2() {
+	if (l4)
+		return l4_HAL_GetUIDw2();
+	else
+		return f0_HAL_GetUIDw2();
+}
+
 void HAL_IncTick() {
 	if (l4)
 		l4_HAL_IncTick();
@@ -714,11 +1155,25 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t a) {
 		return f0_HAL_InitTick(a);
 }
 
+void HAL_MspDeInit() {
+	if (l4)
+		l4_HAL_MspDeInit();
+	else
+		f0_HAL_MspDeInit();
+}
+
 void HAL_ResumeTick() {
 	if (l4)
 		l4_HAL_ResumeTick();
 	else
 		f0_HAL_ResumeTick();
+}
+
+HAL_StatusTypeDef HAL_SetTickFreq(HAL_TickFreqTypeDef a) {
+	if (l4)
+		return l4_HAL_SetTickFreq(a);
+	else
+		return f0_HAL_SetTickFreq(a);
 }
 
 void HAL_SuspendTick() {
@@ -840,6 +1295,41 @@ uint32_t HAL_RCCEx_CRSWaitSynchronization(uint32_t a) {
 		return f0_HAL_RCCEx_CRSWaitSynchronization(a);
 }
 
+void HAL_RCCEx_CRS_ErrorCallback(uint32_t a) {
+	if (l4)
+		l4_HAL_RCCEx_CRS_ErrorCallback(a);
+	else
+		f0_HAL_RCCEx_CRS_ErrorCallback(a);
+}
+
+void HAL_RCCEx_CRS_ExpectedSyncCallback() {
+	if (l4)
+		l4_HAL_RCCEx_CRS_ExpectedSyncCallback();
+	else
+		f0_HAL_RCCEx_CRS_ExpectedSyncCallback();
+}
+
+void HAL_RCCEx_CRS_IRQHandler() {
+	if (l4)
+		l4_HAL_RCCEx_CRS_IRQHandler();
+	else
+		f0_HAL_RCCEx_CRS_IRQHandler();
+}
+
+void HAL_RCCEx_CRS_SyncOkCallback() {
+	if (l4)
+		l4_HAL_RCCEx_CRS_SyncOkCallback();
+	else
+		f0_HAL_RCCEx_CRS_SyncOkCallback();
+}
+
+void HAL_RCCEx_CRS_SyncWarnCallback() {
+	if (l4)
+		l4_HAL_RCCEx_CRS_SyncWarnCallback();
+	else
+		f0_HAL_RCCEx_CRS_SyncWarnCallback();
+}
+
 void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef * a) {
 	if (l4)
 		l4_HAL_RCCEx_GetPeriphCLKConfig(a);
@@ -917,7 +1407,7 @@ HAL_StatusTypeDef HAL_PCD_EP_Flush(PCD_HandleTypeDef * a,  uint8_t b) {
 		return f0_HAL_PCD_EP_Flush(a, b);
 }
 
-uint16_t HAL_PCD_EP_GetRxCount(PCD_HandleTypeDef * a,  uint8_t b) {
+uint32_t HAL_PCD_EP_GetRxCount(PCD_HandleTypeDef * a,  uint8_t b) {
 	if (l4)
 		return l4_HAL_PCD_EP_GetRxCount(a, b);
 	else
@@ -992,20 +1482,6 @@ HAL_StatusTypeDef HAL_PCD_Stop(PCD_HandleTypeDef * a) {
 		return l4_HAL_PCD_Stop(a);
 	else
 		return f0_HAL_PCD_Stop(a);
-}
-
-void PCD_ReadPMA(USB_TypeDef * a,  uint8_t * b,  uint16_t c,  uint16_t d) {
-	if (l4)
-		l4_PCD_ReadPMA(a, b, c, d);
-	else
-		f0_PCD_ReadPMA(a, b, c, d);
-}
-
-void PCD_WritePMA(USB_TypeDef * a,  uint8_t * b,  uint16_t c,  uint16_t d) {
-	if (l4)
-		l4_PCD_WritePMA(a, b, c, d);
-	else
-		f0_PCD_WritePMA(a, b, c, d);
 }
 
 void HAL_NVIC_ClearPendingIRQ(IRQn_Type a) {
@@ -1106,6 +1582,13 @@ void HAL_PWREx_EnableVddio2Monitor() {
 		f0_HAL_PWREx_EnableVddio2Monitor();
 }
 
+void HAL_PWREx_Vddio2MonitorCallback() {
+	if (l4)
+		l4_HAL_PWREx_Vddio2MonitorCallback();
+	else
+		f0_HAL_PWREx_Vddio2MonitorCallback();
+}
+
 void HAL_PWREx_Vddio2Monitor_IRQHandler() {
 	if (l4)
 		l4_HAL_PWREx_Vddio2Monitor_IRQHandler();
@@ -1204,6 +1687,13 @@ HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef * a) {
 		return f0_HAL_DMA_Abort(a);
 }
 
+HAL_StatusTypeDef HAL_DMA_Abort_IT(DMA_HandleTypeDef * a) {
+	if (l4)
+		return l4_HAL_DMA_Abort_IT(a);
+	else
+		return f0_HAL_DMA_Abort_IT(a);
+}
+
 HAL_StatusTypeDef HAL_DMA_DeInit(DMA_HandleTypeDef * a) {
 	if (l4)
 		return l4_HAL_DMA_DeInit(a);
@@ -1258,5 +1748,12 @@ HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef * a,  uint32_t b,  uint32_t
 		return l4_HAL_DMA_Start_IT(a, b, c, d);
 	else
 		return f0_HAL_DMA_Start_IT(a, b, c, d);
+}
+
+HAL_StatusTypeDef HAL_DMA_UnRegisterCallback(DMA_HandleTypeDef * a,  HAL_DMA_CallbackIDTypeDef b) {
+	if (l4)
+		return l4_HAL_DMA_UnRegisterCallback(a, b);
+	else
+		return f0_HAL_DMA_UnRegisterCallback(a, b);
 }
 
