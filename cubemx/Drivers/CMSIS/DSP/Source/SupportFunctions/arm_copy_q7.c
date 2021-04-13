@@ -3,13 +3,13 @@
  * Title:        arm_copy_q7.c
  * Description:  Copies the elements of a Q7 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,67 +29,75 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupSupport
+ * @ingroup groupSupport
  */
 
 /**
-  @addtogroup copy
-  @{
+ * @addtogroup copy
+ * @{
  */
 
 /**
-  @brief         Copies the elements of a Q7 vector.
-  @param[in]     pSrc       points to input vector
-  @param[out]    pDst       points to output vector
-  @param[in]     blockSize  number of samples in each vector
-  @return        none
+ * @brief Copies the elements of a Q7 vector.
+ * @param[in]       *pSrc points to input vector
+ * @param[out]      *pDst points to output vector
+ * @param[in]       blockSize length of the input vector
+ * @return none.
+ *
  */
 
 void arm_copy_q7(
-  const q7_t * pSrc,
-        q7_t * pDst,
-        uint32_t blockSize)
+  q7_t * pSrc,
+  q7_t * pDst,
+  uint32_t blockSize)
 {
-  uint32_t blkCnt;                               /* Loop counter */
+  uint32_t blkCnt;                               /* loop counter */
 
-#if defined (ARM_MATH_LOOPUNROLL)
+#if defined (ARM_MATH_DSP)
 
-  /* Loop unrolling: Compute 4 outputs at a time */
+  /* Run the below code for Cortex-M4 and Cortex-M3 */
+
+  /*loop Unrolling */
   blkCnt = blockSize >> 2U;
 
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
   while (blkCnt > 0U)
   {
     /* C = A */
+    /* Copy and then store the results in the destination buffer */
+    /* 4 samples are copied and stored at a time using SIMD */
+    *__SIMD32(pDst)++ = *__SIMD32(pSrc)++;
 
-    /* read 4 samples at a time */
-    write_q7x4_ia (&pDst, read_q7x4_ia ((q7_t **) &pSrc));
-
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Loop unrolling: Compute remaining outputs */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Initialize blkCnt with number of samples */
+  /* Run the below code for Cortex-M0 */
+
+  /* Loop over blockSize number of values */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+#endif /* #if defined (ARM_MATH_DSP) */
+
 
   while (blkCnt > 0U)
   {
     /* C = A */
-
-    /* Copy and store result in destination buffer */
+    /* Copy and then store the results in the destination buffer */
     *pDst++ = *pSrc++;
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 }
 
 /**
-  @} end of BasicCopy group
+ * @} end of BasicCopy group
  */

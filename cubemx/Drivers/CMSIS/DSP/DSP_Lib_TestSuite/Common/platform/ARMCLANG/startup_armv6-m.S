@@ -42,7 +42,39 @@
 /* .eabi_attribute Tag_ABI_align8_preserved,1    www.support.code-red-tech.com/CodeRedWiki/Preserve8 */
 .eabi_attribute 25, 1   /* Tag_ABI_align_preserved */
 
-    .global    Image$$ARM_LIB_STACK$$ZI$$Limit
+
+/*
+  ;<h> Stack Configuration
+  ;  <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
+  ;</h>
+*/
+    .equ    Stack_Size, 0x00000400
+
+    .section STACK, "w"
+    .align  3
+    .globl  __StackTop
+    .globl  __StackLimit
+__StackLimit:
+    .space  Stack_Size
+__StackTop:   /* formerly known as __initial_sp */
+
+
+/*
+  ;<h> Heap Configuration
+  ;  <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
+  ;</h>
+*/
+    .equ    Heap_Size, 0x00000C00
+
+    .section HEAP, "w"
+    .align  3
+    .globl  __HeapBase
+    .globl  __HeapLimit
+__HeapBase:
+    .if Heap_Size
+    .space  Heap_Size
+    .endif
+__HeapLimit:
 
 
     .section RESET, "x"
@@ -51,7 +83,7 @@
     .globl  __Vectors_End
     .globl  __Vectors_Size
 __Vectors:
-    .long   Image$$ARM_LIB_STACK$$ZI$$Limit            /* Top of Stack */
+    .long   __StackTop            /* Top of Stack */
     .long   Reset_Handler         /* Reset Handler */
     .long   NMI_Handler           /* NMI Handler */
     .long   HardFault_Handler     /* Hard Fault Handler */
@@ -123,5 +155,49 @@ PendSV_Handler:
 SysTick_Handler:
     bkpt    #0
     b       .
+
+
+    .global __use_two_region_memory
+
+/*
+  __user_setup_stackheap() returns the:
+     - heap base in r0 (if the program uses the heap)
+     - stack base in sp
+     - heap limit in r2 (if the program uses the heap and uses two-region memory).
+ */
+    .globl  __user_setup_stackheap
+    .type   __user_setup_stackheap, %function
+    .thumb_func
+__user_setup_stackheap:
+    ldr     r0, =__StackTop
+    mov     sp, r0
+    .if Heap_Size
+    ldr     r0, =__HeapBase
+    ldr     r2, =__HeapLimit
+    .else
+    mov     r0, #0
+    mov     r2, #0
+    .endif
+    bx      lr
+
+
+/*
+__user_initial_stackheap() returns the:
+   - heap base in r0
+   - stack base in r1, that is, the highest address in the stack region
+   - heap limit in r2
+   - stack limit in r3, that is, the lowest address in the stack region.
+ */
+/* DEPRICATED
+    .globl  __user_initial_stackheap
+    .type   __user_initial_stackheap, %function
+    .thumb_func
+__user_initial_stackheap:
+    ldr     r0, = __HeapBase
+    ldr     r1, = __StackTop
+    ldr     r2, = __HeapLimit
+    ldr     r3, = __StackLimit
+    bx      lr
+*/
 
     .end

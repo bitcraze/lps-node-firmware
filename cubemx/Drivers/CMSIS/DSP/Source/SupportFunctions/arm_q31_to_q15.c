@@ -3,13 +3,13 @@
  * Title:        arm_q31_to_q15.c
  * Description:  Converts the elements of the Q31 vector to Q15 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,53 +29,55 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupSupport
+ * @ingroup groupSupport
  */
 
 /**
-  @addtogroup q31_to_x
-  @{
+ * @addtogroup q31_to_x
+ * @{
  */
 
 /**
-  @brief         Converts the elements of the Q31 vector to Q15 vector.
-  @param[in]     pSrc       points to the Q31 input vector
-  @param[out]    pDst       points to the Q15 output vector
-  @param[in]     blockSize  number of samples in each vector
-  @return        none
-
-  @par           Details
-                   The equation used for the conversion process is:
-  <pre>
-      pDst[n] = (q15_t) pSrc[n] >> 16;   0 <= n < blockSize.
-  </pre>
+ * @brief Converts the elements of the Q31 vector to Q15 vector.
+ * @param[in]       *pSrc points to the Q31 input vector
+ * @param[out]      *pDst points to the Q15 output vector
+ * @param[in]       blockSize length of the input vector
+ * @return none.
+ *
+ * \par Description:
+ *
+ * The equation used for the conversion process is:
+ *
+ * <pre>
+ * 	pDst[n] = (q15_t) pSrc[n] >> 16;   0 <= n < blockSize.
+ * </pre>
+ *
  */
+
 
 void arm_q31_to_q15(
-  const q31_t * pSrc,
-        q15_t * pDst,
-        uint32_t blockSize)
+  q31_t * pSrc,
+  q15_t * pDst,
+  uint32_t blockSize)
 {
-        uint32_t blkCnt;                               /* Loop counter */
-  const q31_t *pIn = pSrc;                             /* Source pointer */
+  q31_t *pIn = pSrc;                             /* Src pointer */
+  uint32_t blkCnt;                               /* loop counter */
 
-#if defined (ARM_MATH_LOOPUNROLL) && defined (ARM_MATH_DSP)
-        q31_t in1, in2, in3, in4;
-        q31_t out1, out2;
-#endif
-
-#if defined (ARM_MATH_LOOPUNROLL)
-
-  /* Loop unrolling: Compute 4 outputs at a time */
-  blkCnt = blockSize >> 2U;
-
-  while (blkCnt > 0U)
-  {
-    /* C = (q15_t) (A >> 16) */
-
-    /* Convert from q31 to q15 and store result in destination buffer */
 #if defined (ARM_MATH_DSP)
 
+  /* Run the below code for Cortex-M4 and Cortex-M3 */
+  q31_t in1, in2, in3, in4;
+  q31_t out1, out2;
+
+  /*loop Unrolling */
+  blkCnt = blockSize >> 2U;
+
+  /* First part of the processing with loop unrolling.  Compute 4 outputs at a time.
+   ** a second loop below computes the remaining 1 to 3 samples. */
+  while (blkCnt > 0U)
+  {
+    /* C = (q15_t) A >> 16 */
+    /* convert from q31 to q15 and then store the results in the destination buffer */
     in1 = *pIn++;
     in2 = *pIn++;
     in3 = *pIn++;
@@ -83,52 +85,49 @@ void arm_q31_to_q15(
 
     /* pack two higher 16-bit values from two 32-bit values */
 #ifndef ARM_MATH_BIG_ENDIAN
+
     out1 = __PKHTB(in2, in1, 16);
     out2 = __PKHTB(in4, in3, 16);
+
 #else
+
     out1 = __PKHTB(in1, in2, 16);
     out2 = __PKHTB(in3, in4, 16);
-#endif /* #ifdef ARM_MATH_BIG_ENDIAN */
 
-    write_q15x2_ia (&pDst, out1);
-    write_q15x2_ia (&pDst, out2);
+#endif //      #ifdef ARM_MATH_BIG_ENDIAN
 
-#else
+    *__SIMD32(pDst)++ = out1;
+    *__SIMD32(pDst)++ = out2;
 
-    *pDst++ = (q15_t) (*pIn++ >> 16);
-    *pDst++ = (q15_t) (*pIn++ >> 16);
-    *pDst++ = (q15_t) (*pIn++ >> 16);
-    *pDst++ = (q15_t) (*pIn++ >> 16);
-
-#endif /* #if defined (ARM_MATH_DSP) */
-
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Loop unrolling: Compute remaining outputs */
+  /* If the blockSize is not a multiple of 4, compute any remaining output samples here.
+   ** No loop unrolling is used. */
   blkCnt = blockSize % 0x4U;
 
 #else
 
-  /* Initialize blkCnt with number of samples */
+  /* Run the below code for Cortex-M0 */
+
+  /* Loop over blockSize number of values */
   blkCnt = blockSize;
 
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+#endif /* #if defined (ARM_MATH_DSP) */
 
   while (blkCnt > 0U)
   {
-    /* C = (q15_t) (A >> 16) */
-
-    /* Convert from q31 to q15 and store result in destination buffer */
+    /* C = (q15_t) A >> 16 */
+    /* convert from q31 to q15 and then store the results in the destination buffer */
     *pDst++ = (q15_t) (*pIn++ >> 16);
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
 }
 
 /**
-  @} end of q31_to_x group
+ * @} end of q31_to_x group
  */

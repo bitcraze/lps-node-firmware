@@ -30,7 +30,7 @@ hal/libstm32l4xx_hal.a: $(HAL_OBJS_L4)
 	$(OBJCOPY) --redefine-syms=hal/functions.txt temp.a $@
 	rm -f temp.a
 
-hal/hal_shim.c: $(HAL_OBJS_L4) tools/gen_shim_hal.py
+hal/hal_shim.c: $(HAL_OBJS_L4) $(HAL_OBJS_F0) tools/gen_shim_hal.py
 	$(GDB) -q -x tools/gen_shim_hal.py
 
 hal/hal_shim.o: hal/hal_shim.c

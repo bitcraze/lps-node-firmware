@@ -3,13 +3,13 @@
  * Title:        arm_min_q7.c
  * Description:  Minimum value of a Q7 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        27. January 2017
+ * $Revision:    V.1.5.1
  *
  * Target Processor: Cortex-M cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -29,113 +29,127 @@
 #include "arm_math.h"
 
 /**
-  @ingroup groupStats
+ * @ingroup groupStats
  */
 
 
 /**
-  @addtogroup Min
-  @{
+ * @addtogroup Min
+ * @{
  */
 
+
 /**
-  @brief         Minimum value of a Q7 vector.
-  @param[in]     pSrc       points to the input vector
-  @param[in]     blockSize  number of samples in input vector
-  @param[out]    pResult    minimum value returned here
-  @param[out]    pIndex     index of minimum value returned here
-  @return        none
+ * @brief Minimum value of a Q7 vector.
+ * @param[in]       *pSrc points to the input vector
+ * @param[in]       blockSize length of the input vector
+ * @param[out]      *pResult minimum value returned here
+ * @param[out]      *pIndex index of minimum value returned here
+ * @return none.
  */
 
 void arm_min_q7(
-  const q7_t * pSrc,
-        uint32_t blockSize,
-        q7_t * pResult,
-        uint32_t * pIndex)
+  q7_t * pSrc,
+  uint32_t blockSize,
+  q7_t * pResult,
+  uint32_t * pIndex)
 {
-        q7_t minVal, out;                              /* Temporary variables to store the output value. */
-        uint32_t blkCnt, outIndex;                     /* Loop counter */
+#if defined (ARM_MATH_DSP)
+  /* Run the below code for Cortex-M4 and Cortex-M3 */
 
-#if defined (ARM_MATH_LOOPUNROLL)
-        uint32_t index;                                /* index of maximum value */
-#endif
+  q7_t minVal1, minVal2, out;                    /* Temporary variables to store the output value. */
+  uint32_t blkCnt, outIndex, count;              /* loop counter */
 
-  /* Initialise index value to zero. */
+  /* Initialise the count value. */
+  count = 0U;
+  /* Initialise the index value to zero. */
   outIndex = 0U;
   /* Load first input value that act as reference value for comparision */
   out = *pSrc++;
 
-#if defined (ARM_MATH_LOOPUNROLL)
-  /* Initialise index of maximum value. */
-  index = 0U;
-
-  /* Loop unrolling: Compute 4 outputs at a time */
+  /* Loop unrolling */
   blkCnt = (blockSize - 1U) >> 2U;
 
   while (blkCnt > 0U)
   {
-    /* Initialize minVal to next consecutive values one by one */
-    minVal = *pSrc++;
+    /* Initialize minVal to the next consecutive values one by one */
+    minVal1 = *pSrc++;
+    minVal2 = *pSrc++;
 
     /* compare for the minimum value */
-    if (out > minVal)
+    if (out > minVal1)
     {
-      /* Update the minimum value and it's index */
-      out = minVal;
-      outIndex = index + 1U;
+      /* Update the minimum value and its index */
+      out = minVal1;
+      outIndex = count + 1U;
     }
 
-    minVal = *pSrc++;
-    if (out > minVal)
+    /* compare for the minimum value */
+    if (out > minVal2)
     {
-      out = minVal;
-      outIndex = index + 2U;
+      /* Update the minimum value and its index */
+      out = minVal2;
+      outIndex = count + 2U;
     }
 
-    minVal = *pSrc++;
-    if (out > minVal)
+    /* Initialize minVal to the next consecutive values one by one */
+    minVal1 = *pSrc++;
+    minVal2 = *pSrc++;
+
+    /* compare for the minimum value */
+    if (out > minVal1)
     {
-      out = minVal;
-      outIndex = index + 3U;
+      /* Update the minimum value and its index */
+      out = minVal1;
+      outIndex = count + 3U;
     }
 
-    minVal = *pSrc++;
-    if (out > minVal)
+    /* compare for the minimum value */
+    if (out > minVal2)
     {
-      out = minVal;
-      outIndex = index + 4U;
+      /* Update the minimum value and its index */
+      out = minVal2;
+      outIndex = count + 4U;
     }
 
-    index += 4U;
+    count += 4U;
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
-  /* Loop unrolling: Compute remaining outputs */
+  /* if (blockSize - 1U) is not multiple of 4 */
   blkCnt = (blockSize - 1U) % 4U;
 
 #else
+  /* Run the below code for Cortex-M0 */
 
-  /* Initialize blkCnt with number of samples */
+  q7_t minVal1, out;                             /* Temporary variables to store the output value. */
+  uint32_t blkCnt, outIndex;                     /* loop counter */
+
+  /* Initialise the index value to zero. */
+  outIndex = 0U;
+  /* Load first input value that act as reference value for comparision */
+  out = *pSrc++;
+
   blkCnt = (blockSize - 1U);
 
-#endif /* #if defined (ARM_MATH_LOOPUNROLL) */
+#endif /* #if defined (ARM_MATH_DSP) */
 
   while (blkCnt > 0U)
   {
     /* Initialize minVal to the next consecutive values one by one */
-    minVal = *pSrc++;
+    minVal1 = *pSrc++;
 
     /* compare for the minimum value */
-    if (out > minVal)
+    if (out > minVal1)
     {
       /* Update the minimum value and it's index */
-      out = minVal;
+      out = minVal1;
       outIndex = blockSize - blkCnt;
     }
 
-    /* Decrement loop counter */
+    /* Decrement the loop counter */
     blkCnt--;
   }
 
@@ -145,5 +159,5 @@ void arm_min_q7(
 }
 
 /**
-  @} end of Min group
+ * @} end of Min group
  */

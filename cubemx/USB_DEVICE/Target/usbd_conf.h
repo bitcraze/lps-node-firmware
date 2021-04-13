@@ -32,15 +32,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
-#include "stm32l4xx.h"
-#include "stm32l4xx_hal.h"
+#include "stm32f0xx.h"
+#include "stm32f0xx_hal.h"
 
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
 
 /** @addtogroup USBD_OTG_DRIVER
-  * @brief Driver for Usb device.
   * @{
   */
 
@@ -64,17 +63,17 @@
   */
 
 /*---------- -----------*/
-#define USBD_MAX_NUM_INTERFACES     1U
+#define USBD_MAX_NUM_INTERFACES     1
 /*---------- -----------*/
-#define USBD_MAX_NUM_CONFIGURATION     1U
+#define USBD_MAX_NUM_CONFIGURATION     1
 /*---------- -----------*/
-#define USBD_MAX_STR_DESC_SIZ     512U
+#define USBD_MAX_STR_DESC_SIZ     512
 /*---------- -----------*/
-#define USBD_DEBUG_LEVEL     0U
+#define USBD_DEBUG_LEVEL     0
 /*---------- -----------*/
-#define USBD_LPM_ENABLED     1U
+#define USBD_SELF_POWERED     1
 /*---------- -----------*/
-#define USBD_SELF_POWERED     1U
+#define MAX_STATIC_ALLOC_SIZE     512
 
 /****************************************/
 /* #define for FS and HS identification */
@@ -91,19 +90,17 @@
 
 /* Memory management macros */
 
-/* Memory management macros make sure to use static memory allocation */
-
 /** Alias for memory allocation. */
-#define USBD_malloc         (void *)USBD_static_malloc
+#define USBD_malloc         (uint32_t *)USBD_static_malloc
 
 /** Alias for memory release. */
-#define USBD_free          USBD_static_free
+#define USBD_free           USBD_static_free
 
 /** Alias for memory set. */
-#define USBD_memset         memset
+#define USBD_memset         /* Not used */
 
 /** Alias for memory copy. */
-#define USBD_memcpy         memcpy
+#define USBD_memcpy         /* Not used */
 
 /** Alias for delay. */
 #define USBD_Delay          HAL_Delay
@@ -155,7 +152,6 @@
 /* Exported functions -------------------------------------------------------*/
 void *USBD_static_malloc(uint32_t size);
 void USBD_static_free(void *p);
-
 /**
   * @}
   */
