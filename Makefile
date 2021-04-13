@@ -19,14 +19,14 @@ else ifeq ($(strip $(REV)),C)
 HAL_ROOT=hal/stm32l4xx
 FREERTOS_PORT=lib/freertos/ARM_CM0
 CPU=l4
-PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32L422xx
+PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32F072xB -DSTM32L422xx
 #PROCESSOR=-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -DSTM32L422xx
 OPENOCD_TARGET    ?= target/stm32l4x.cfg
 else
 $(error Rev.$(REV) unknown)
 endif
 
-INCLUDES=-Iinc -Iinc/$(CPU) -I$(HAL_ROOT)/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc
+INCLUDES=-Iinc -Iinc/$(CPU)  -I./hal/stm32l4xx/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc
 
 # FreeRTOS
 OBJS+= $(FREERTOS_PORT)/port.o
@@ -53,10 +53,6 @@ OBJS+=src/cfg.o src/usbcomm.o src/test_support.o src/production_test.o
 OBJS+=src/uwb.o src/uwb_twr_anchor.o src/uwb_sniffer.o src/uwb_twr_tag.o
 OBJS+=src/lpp.o src/uwb_tdoa_anchor2.o src/uwb_tdoa_anchor3.o
 
-HALS+=gpio rcc cortex i2c i2c_ex pcd dma pcd_ex rcc_ex spi uart pwr pwr_ex
-OBJS+=$(foreach mod, $(HALS), $(HAL_ROOT)/Src/stm32$(CPU)xx_hal_$(mod).o)
-OBJS+=$(HAL_ROOT)/Src/stm32$(CPU)xx_hal.o
-
 USB_CORES=core ctlreq ioreq
 USB_CDC=cdc
 OBJS+=$(foreach mod, $(USB_CORES), Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_$(mod).o)
@@ -69,7 +65,7 @@ OBJS+=vendor/libdw1000/src/libdw1000.o vendor/libdw1000/src/libdw1000Spi.o
 OBJS+=src/dwOps.o
 
 CFLAGS+=$(PROCESSOR) $(INCLUDES) -O3 -g3 -Wall -Wno-pointer-sign -std=gnu11
-LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -lm -lc -u _printf_float
+LDFLAGS+=$(PROCESSOR) -Lhal/ --specs=nano.specs --specs=nosys.specs -lm -lc -u _printf_float
 
 ifeq ($(strip $(BOOTLOAD)),0)
 LDFLAGS+=-Ttools/make/stm32f072.ld
@@ -89,12 +85,16 @@ PREFIX=arm-none-eabi-
 CC=$(PREFIX)gcc
 LD=$(PREFIX)gcc
 AS=$(PREFIX)as
+AR=$(PREFIX)ar
+GDB=$(PREFIX)gdb-py
 OBJCOPY=$(PREFIX)objcopy
 SIZE=$(PREFIX)size
 
 all: check_submodules bin/lps-node-firmware.elf bin/lps-node-firmware.dfu
 
-bin/lps-node-firmware.elf: $(OBJS)
+-include hal/hal.mk
+
+bin/lps-node-firmware.elf: $(OBJS) $(LIBS)
 	$(LD) -o $@ $^ $(LDFLAGS)
 	$(SIZE) $@
 	@echo BOOTLOADER Support: $(BOOTLOAD)
