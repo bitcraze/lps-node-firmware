@@ -104,7 +104,7 @@ bin/lps-node-firmware.elf: $(OBJS) $(LIBS)
 
 
 clean:
-	rm -f bin/lps-node-firmware.elf bin/lps-node-firmware.dfu bin/.map $(OBJS) $(LIBS)
+	rm -f bin/lps-node-firmware.elf bin/lps-node-firmware.dfu bin/.map $(OBJS) $(LIBS) $(HAL_OBJS)
 
 flash:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
