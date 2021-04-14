@@ -5,6 +5,8 @@ HAL_OBJS_F0 += hal/stm32f0xx/Src/stm32f0xx_hal.o
 HAL_OBJS_L4 = $(foreach mod,$(HAL_MODULES),hal/stm32l4xx/Src/stm32l4xx_hal_$(mod).o)
 HAL_OBJS_L4 += hal/stm32l4xx/Src/stm32l4xx_hal.o hal/stm32l4xx/Src/stm32l4xx_ll_usb.o
 
+HAL_OBJS = $(HAL_OBJS_F0) $(HAL_OBJS_L4)
+
 #
 # Create a rule for each HAL obj file to build.
 # $(1): path to object file
@@ -23,7 +25,7 @@ hal/libstm32f0xx_hal.a: $(HAL_OBJS_F0)
 	$(GDB) -q -ex 'py prefix="f0"' -x tools/gen_function_sym_pairs.py
 	$(OBJCOPY) --redefine-syms=hal/f0.symbols $@ $@
 
-hal/libstm32l4xx_hal.a: $(HAL_OBJS_L4)
+hal/libstm32l4xx_hal.a: $(HAL_OBJS_L4) | $(HAL_OBJS_F0)
 	$(AR) rcs $@ $^
 	$(GDB) -q -ex 'py prefix="l4"' -x tools/gen_function_sym_pairs.py
 	$(OBJCOPY) --redefine-syms=hal/l4.symbols $@ $@
