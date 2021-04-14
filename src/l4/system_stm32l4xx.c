@@ -123,7 +123,7 @@
 /*!< Uncomment the following line if you need to relocate your vector Table in
      Internal SRAM. */
 /* #define VECT_TAB_SRAM */
-#define VECT_TAB_OFFSET  0x00 /*!< Vector Table base offset field.
+#define VECT_TAB_OFFSET  0x200 /*!< Vector Table base offset field.
                                    This value must be a multiple of 0x200. */
 /******************************************************************************/
 /**
@@ -171,12 +171,15 @@
   * @{
   */
 
+/* For the possibility to run same FW on stm32f072 and stm32l422*/
+#define isL422_MCU_ID_CODE()  (((*((volatile unsigned long *) 0xE0042000)) & 0x00000FFFU) == 0x464)
+int isL4 = 0;
+
 /**
   * @brief  Setup the microcontroller system.
   * @param  None
   * @retval None
   */
-
 void SystemInit(void)
 {
   /* FPU settings ------------------------------------------------------------*/
@@ -203,12 +206,17 @@ void SystemInit(void)
   /* Disable all interrupts */
   RCC->CIER = 0x00000000U;
 
-  /* Configure the Vector Table location add offset address ------------------*/
+  /* Check if we are running stm32l4xx to set shim layer variable*/
+  if (isL422_MCU_ID_CODE())
+  {
+    isL4 = 1;
+    /* Configure the Vector Table location add offset address ------------------*/
 #ifdef VECT_TAB_SRAM
-  SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
+    SCB->VTOR = SRAM_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal SRAM */
 #else
-  SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
+    SCB->VTOR = FLASH_BASE | VECT_TAB_OFFSET; /* Vector Table Relocation in Internal FLASH */
 #endif
+  }
 }
 
 /**

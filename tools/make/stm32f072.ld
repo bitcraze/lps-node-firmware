@@ -44,6 +44,13 @@ SECTIONS
         ASSERT(. != __isr_vector_start__, "The .isr_vector section is empty");
     } >flash
 
+    .l4_isr_vector :
+    {
+        . = ALIGN(0x200);
+        __l4_isr_vector_start__ = .;
+        KEEP(*(.l4_isr_vector)) /* without 'KEEP' the garbage collector discards this section */
+        ASSERT(. != __l4_isr_vector_start__, "The .isr_vector section is empty");
+    } >flash
 
     /* Text section (code and read-only data) */
     .text :
