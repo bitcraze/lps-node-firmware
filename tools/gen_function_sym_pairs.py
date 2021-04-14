@@ -4,7 +4,7 @@ import os
 
 FN_REGEX = r'[0-9]+:\s+\w+\s(\w+)\((?:\([^()]*\)|.)*\)'
 DIRECTORY = 'hal/stm32f0xx/Src'
-OUTFILE = 'hal/functions.txt'
+OUTFILE = 'hal/%s.symbols' % prefix  # noqa: F821
 
 blacklist = [
     'HAL_MspInit',
