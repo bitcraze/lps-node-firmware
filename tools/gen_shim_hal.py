@@ -65,7 +65,7 @@ class ShimFunction:
         fn_call = '%s(%s);' % (self.name, ', '.join(self._params.keys()))
         ret = 'return ' if self._ret != 'void' else ''
 
-        body = ('\tif (l4)\n'
+        body = ('\tif (isL4)\n'
                 '\t\t{0}l4_{1}\n'
                 '\telse\n'
                 '\t\t{0}f0_{1}\n').format(ret, fn_call)
@@ -91,7 +91,7 @@ def write_shim():
     Example:
         HAL_Tick_Init() { ... } turns into:
         HAL_Tick_Init() {
-            if (l4)
+            if (isL4)
                 l4_Hal_Tick_Init();
             else
                 f0_Hal_Tick_Init();
@@ -99,7 +99,7 @@ def write_shim():
     '''
     with open(OUTFILE, 'w') as f:
         f.write('#include <stm32f0xx_hal.h>\n')
-        f.write('static int l4 = 0;\n')
+        f.write('int isL4;\n')
 
         for fn in functions:
             f.write(str(fn))

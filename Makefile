@@ -43,7 +43,7 @@ INCLUDES+=-I$(FREERTOS_PORT)
 #OBJS+=src/f0/usbd_conf.o src/eeprom.o src/bootmode.o
 #HALS+=i2c_ex
 
-OBJS+=src/l4/startup_stm32l422xx.o src/l4/system_stm32l4xx.o src/l4/stm32l4xx_it.o src/l4/stm32l4xx_hal_msp.o
+OBJS+=src/startup_stm32f072_stm32l422.o src/l4/system_stm32l4xx.o src/stm32f0xx_stm32l4xx_it.o src/l4/stm32l4xx_hal_msp.o
 OBJS+=src/l4/gpio.o src/l4/i2c.o src/l4/spi.o src/l4/usart.o src/l4/system.o
 OBJS+=src/l4/usbd_conf.o hal/stm32l4xx/Src/stm32l4xx_ll_usb.o
 OBJS+=src/l4/usb_device.o src/l4/usbd_cdc_if.o src/l4/usbd_desc.o 
