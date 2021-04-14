@@ -19,16 +19,14 @@ $(foreach obj,$(HAL_OBJS_F0),$(eval $(call create-hal-obj-rule,$(obj),f0)))
 $(foreach obj,$(HAL_OBJS_L4),$(eval $(call create-hal-obj-rule,$(obj),l4)))
 
 hal/libstm32f0xx_hal.a: $(HAL_OBJS_F0)
-	$(AR) rcs temp.a $^
+	$(AR) rcs $@ $^
 	$(GDB) -q -ex 'py prefix="f0"' -x tools/gen_function_sym_pairs.py
-	$(OBJCOPY) --redefine-syms=hal/functions.txt temp.a $@
-	rm -f temp.a
+	$(OBJCOPY) --redefine-syms=hal/f0.symbols $@ $@
 
 hal/libstm32l4xx_hal.a: $(HAL_OBJS_L4)
-	$(AR) rcs temp.a $^
+	$(AR) rcs $@ $^
 	$(GDB) -q -ex 'py prefix="l4"' -x tools/gen_function_sym_pairs.py
-	$(OBJCOPY) --redefine-syms=hal/functions.txt temp.a $@
-	rm -f temp.a
+	$(OBJCOPY) --redefine-syms=hal/l4.symbols $@ $@
 
 hal/hal_shim.c: $(HAL_OBJS_L4) $(HAL_OBJS_F0) tools/gen_shim_hal.py
 	$(GDB) -q -x tools/gen_shim_hal.py
