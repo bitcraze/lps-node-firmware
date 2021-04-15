@@ -32,7 +32,7 @@ index ae4b4d8..b51d4c4 100644
 +        fn_call = '%s(%s);' % (self.name, ', '.join(self._params.keys()))
          ret = 'return ' if self._ret != 'void' else ''
  
-         body = ('\tif (l4)\n'
+         body = ('\tif (isL4)\n'
 @@ -53,8 +63,8 @@ class ShimFunction:
              params += '%s %s' % (self._params[key], key)
              first = False

@@ -18,7 +18,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "gpio.h"
+#include "gpio_f0.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -38,7 +38,7 @@
         * EVENT_OUT
         * EXTI
 */
-void MX_GPIO_Init(void)
+void MX_GPIO_Init_f0(void)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};

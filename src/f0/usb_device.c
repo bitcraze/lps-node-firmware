@@ -34,17 +34,17 @@
 
 /* Includes ------------------------------------------------------------------*/
 
-#include "usb_device.h"
+#include "usb_device_f0.h"
 #include "usbd_core.h"
-#include "usbd_desc.h"
+#include "usbd_desc_f0.h"
 #include "usbd_cdc.h"
-#include "usbd_cdc_if.h"
+#include "usbd_cdc_if_f0.h"
 
 /* USB Device Core handle declaration */
 USBD_HandleTypeDef hUsbDeviceFS;
 
 /* init function */				        
-void MX_USB_DEVICE_Init(void)
+void MX_USB_DEVICE_Init_f0(void)
 {
   /* Init Device Library,Add Supported Class and Start the library*/
   USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS);

@@ -173,7 +173,7 @@
 
 /* For the possibility to run same FW on stm32f072 and stm32l422*/
 #define isL422_MCU_ID_CODE()  (((*((volatile unsigned long *) 0xE0042000)) & 0x00000FFFU) == 0x464)
-int isL4 = 0;
+static int isL4 = L4_ENABLED;
 
 /**
   * @brief  Setup the microcontroller system.

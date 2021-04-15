@@ -258,7 +258,7 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   * @param  Len: Number of data to be sent (in bytes)
   * @retval USBD_OK if all operations are OK else USBD_FAIL or USBD_BUSY
   */
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
+uint8_t CDC_Transmit_FS_l4(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
   uint32_t timeout = 100;
@@ -280,12 +280,12 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   return result;
 }
 
-bool CDC_IsUsbInit(void)
+bool CDC_IsUsbInit_l4(void)
 {
   return usbInit;
 }
 
-int CDC_Write(char* buffer, int len)
+int CDC_Write_l4(char* buffer, int len)
 {
   int i;
 
@@ -297,7 +297,7 @@ int CDC_Write(char* buffer, int len)
   return i;
 }
 
-int CDC_Read(char *buffer, int len) {
+int CDC_Read_l4(char *buffer, int len) {
   int i = 0;
 
   if (!usbInit)

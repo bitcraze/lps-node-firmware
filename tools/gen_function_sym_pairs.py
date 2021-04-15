@@ -28,8 +28,13 @@ blacklist = [
     'HAL_PCD_SuspendCallback',
     'HAL_PCD_DataOutStageCallback',
     'HAL_PCD_MspInit',
-    'HAL_DMA_RegisterCallback',
     'HAL_PCDEx_LPM_Callback'
+]
+
+extra = [
+    'uwTick',
+    'uwTickPrio',
+    'uwTickFreq',
 ]
 
 def process_file(f, out):
@@ -54,5 +59,8 @@ with open(OUTFILE, 'w') as out:
     for f in os.listdir(DIRECTORY):
         if f.endswith('.o'):
             process_file(os.path.join(DIRECTORY, f), out)
+    
+    for e in extra:
+        out.write('{0} {1}_{0}\n'.format(e, prefix))  # noqa: F821
 
 gdb.execute('quit')

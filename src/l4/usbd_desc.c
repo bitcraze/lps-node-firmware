@@ -251,7 +251,7 @@ __ALIGN_BEGIN uint8_t USBD_StrDesc[USBD_MAX_STR_DESC_SIZ] __ALIGN_END;
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_DeviceDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_DeviceDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   UNUSED(speed);
   *length = sizeof(USBD_FS_DeviceDesc);
@@ -264,7 +264,7 @@ uint8_t * USBD_FS_DeviceDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_LangIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_LangIDStrDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   UNUSED(speed);
   *length = sizeof(USBD_LangIDDesc);
@@ -277,7 +277,7 @@ uint8_t * USBD_FS_LangIDStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_ProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_ProductStrDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   if(speed == 0)
   {
@@ -296,7 +296,7 @@ uint8_t * USBD_FS_ProductStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_ManufacturerStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_ManufacturerStrDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   UNUSED(speed);
   USBD_GetString((uint8_t *)USBD_MANUFACTURER_STRING, USBD_StrDesc, length);
@@ -309,7 +309,7 @@ uint8_t * USBD_FS_ManufacturerStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *l
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_SerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_SerialStrDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   static const char bin2hex[] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -337,7 +337,7 @@ uint8_t * USBD_FS_SerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_ConfigStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_ConfigStrDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   if(speed == USBD_SPEED_HIGH)
   {
@@ -356,7 +356,7 @@ uint8_t * USBD_FS_ConfigStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_InterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_InterfaceStrDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   if(speed == 0)
   {
@@ -376,7 +376,7 @@ uint8_t * USBD_FS_InterfaceStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *leng
   * @param  length : Pointer to data length variable
   * @retval Pointer to descriptor buffer
   */
-uint8_t * USBD_FS_USR_BOSDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
+uint8_t * USBD_FS_USR_BOSDescriptor_l4(USBD_SpeedTypeDef speed, uint16_t *length)
 {
   UNUSED(speed);
   *length = sizeof(USBD_FS_BOSDesc);

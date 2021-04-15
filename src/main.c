@@ -23,7 +23,7 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 //#include <stm32f0xx_hal.h>
-#include <stm32l4xx_hal.h>
+#include <stm32f0xx_hal.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -31,7 +31,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "system.h"
 #include "spi.h"
 #include "i2c.h"
 #include "usart.h"
@@ -54,7 +53,7 @@
 
 #define POWER_LEVELS 10
 
-const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
+static int isL4 = L4_ENABLED;
 
 static void restConfig();
 static void changeAddress(uint8_t addr);
@@ -90,7 +89,7 @@ static void main_task(void *pvParameters) {
   MX_SPI1_Init();
   // Init USB queues before he USB device
   usbcommInit();
-  MX_USB_DEVICE_Init();
+  //MX_USB_DEVICE_Init();
 
   // Light up all LEDs to test
   ledOn(ledRanging);
@@ -99,6 +98,13 @@ static void main_task(void *pvParameters) {
   buttonInit(buttonIdle);
 
   printf("\r\n\r\n====================\r\n");
+
+  const uint8_t *uid = NULL;
+  if (isL4) {
+    uid = (char*) 0x1FFF7590;
+  } else {
+    uid = (char*) 0x1FFFF7AC;
+  }
 
   printf("SYSTEM\t: CPU-ID: ");
   for (i=0; i<12; i++) {
@@ -273,7 +279,7 @@ static void handleMenuMain(char ch, MenuState* menuState) {
       menuState->configChanged = false;
       break;
     case '#':
-      productionTestsRun();
+      //productionTestsRun();
       printf("System halted, reset to continue\r\n");
       while(true){}
       break;

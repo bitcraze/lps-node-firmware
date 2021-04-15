@@ -4,6 +4,8 @@
 #include "usart.h"
 #include "test_support.h"
 
+#include <stm32f0xx_hal.h>
+
 static void initUart(UART_HandleTypeDef* huart, USART_TypeDef* instance);
 static void initPins(UART_HandleTypeDef* huart);
 

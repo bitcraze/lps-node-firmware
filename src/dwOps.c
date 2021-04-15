@@ -26,15 +26,16 @@
 
 #include <string.h>
 
-//#include <stm32f0xx_hal.h>
-#include <stm32l4xx_hal.h>
+#include <stm32f0xx_hal.h>
 #include "spi.h"
 
 extern SPI_HandleTypeDef hspi1;
 
 // #define DEBUG_SPI
 
-#define DWM_IRQn EXTI0_IRQn
+static int isL4 = L4_ENABLED;
+
+#define DWM_IRQn (isL4 ? 6 : 5)
 
 static dwDevice_t *dev;
 

@@ -31,7 +31,7 @@
 */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usbd_cdc_if.h"
+#include "usbd_cdc_if_l4.h"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -115,6 +115,8 @@ static int8_t CDC_Control_FS  (uint8_t cmd, uint8_t* pbuf, uint16_t length);
 static int8_t CDC_Receive_FS  (uint8_t* pbuf, uint32_t *Len);
 static void CDC_TransmitDone_FS(void);
 static void CDC_SOF_FS(void);
+
+#define TX_Q_SIZE 512
 
 USBD_CDC_ItfTypeDef USBD_Interface_fops_FS =
 {
@@ -268,7 +270,7 @@ static int8_t CDC_Receive_FS (uint8_t* Buf, uint32_t *Len)
   * @param  Len: Number of data to be send (in bytes)
   * @retval Result of the operation: USBD_OK if all operations are OK else USBD_FAIL or USBD_BUSY
   */
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
+uint8_t CDC_Transmit_FS_f0(uint8_t* Buf, uint16_t Len)
 {
   uint8_t result = USBD_OK;
 
@@ -320,7 +322,7 @@ static void CDC_SOF_FS(void) {
   SetupTransfer(true);
 }
 
-int CDC_Write(char* buffer, int len)
+int CDC_Write_f0(char* buffer, int len)
 {
   int i;
 
@@ -334,7 +336,7 @@ int CDC_Write(char* buffer, int len)
   return i;
 }
 
-int CDC_Read(char *buffer, int len) {
+int CDC_Read_f0(char *buffer, int len) {
   int i = 0;
 
   if (!usbInit)

@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : SPI.h
+  * File Name          : I2C.h
   * Description        : This file provides code for the configuration
-  *                      of the SPI instances.
+  *                      of the I2C instances.
   ******************************************************************************
   *
   * COPYRIGHT(c) 2015 STMicroelectronics
@@ -32,8 +32,8 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __spi_H
-#define __spi_H
+#ifndef __i2c_f0_H
+#define __i2c_f0_H
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -41,15 +41,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal.h"
 
-extern SPI_HandleTypeDef hspi1;
-
-void MX_SPI1_Init(void);
-void MX_SPI1_Init_Fast(void);
+void MX_I2C1_Init_f0(void);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ spi_H */
+#endif /*__ i2c_H */
 
 /**
   * @}

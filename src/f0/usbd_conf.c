@@ -33,10 +33,8 @@
 */
 /* Includes ------------------------------------------------------------------*/
 // TODO
-//#include "stm32f0xx.h"
-//#include "stm32f0xx_hal.h"
-#include "stm32l4xx.h"
-#include "stm32l4xx_hal.h"
+#include "stm32f0xx.h"
+#include "stm32f0xx_hal.h"
 #include "usbd_def.h"
 #include "usbd_core.h"
 #include "usbd_cdc.h"
@@ -64,7 +62,7 @@ extern void SystemClock_Config(void);
 *******************************************************************************/
 /* MSP Init */
 
-void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
+void HAL_PCD_MspInit_f0(PCD_HandleTypeDef* hpcd)
 {
   if(hpcd->Instance==USB)
   {
@@ -83,7 +81,7 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef* hpcd)
   }
 }
 
-void HAL_PCD_MspDeInit(PCD_HandleTypeDef* hpcd)
+void HAL_PCD_MspDeInit_f0(PCD_HandleTypeDef* hpcd)
 {
   if(hpcd->Instance==USB)
   {
@@ -109,7 +107,7 @@ static bool serialConnected = false;
   * @param  hpcd: PCD handle
   * @retval None
   */
-void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_SetupStageCallback_f0(PCD_HandleTypeDef *hpcd)
 {
   uint8_t *setupData = (uint8_t *)hpcd->Setup;
   // Preemptivly intercept setLineState setup
@@ -126,7 +124,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
   USBD_LL_SetupStage(hpcd->pData, (uint8_t *)hpcd->Setup);
 }
 
-bool USBD_IsSerialConnected()
+bool USBD_IsSerialConnected_f0()
 {
   return serialConnected;
 }
@@ -137,7 +135,7 @@ bool USBD_IsSerialConnected()
   * @param  epnum: Endpoint Number
   * @retval None
   */
-void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+void HAL_PCD_DataOutStageCallback_f0(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
   USBD_LL_DataOutStage(hpcd->pData, epnum, hpcd->OUT_ep[epnum].xfer_buff);
 }
@@ -148,7 +146,7 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
   * @param  epnum: Endpoint Number
   * @retval None
   */
-void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+void HAL_PCD_DataInStageCallback_f0(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
   USBD_LL_DataInStage(hpcd->pData, epnum, hpcd->IN_ep[epnum].xfer_buff);
 }
@@ -158,7 +156,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
   * @param  hpcd: PCD handle
   * @retval None
   */
-void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_SOFCallback_f0(PCD_HandleTypeDef *hpcd)
 {
   USBD_LL_SOF(hpcd->pData);
 }
@@ -168,7 +166,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
   * @param  hpcd: PCD handle
   * @retval None
   */
-void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_ResetCallback_f0(PCD_HandleTypeDef *hpcd)
 {
   USBD_SpeedTypeDef speed = USBD_SPEED_FULL;
 
@@ -195,7 +193,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
   * @param  hpcd: PCD handle
   * @retval None
   */
-void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_SuspendCallback_f0(PCD_HandleTypeDef *hpcd)
 {
   /* Inform USB library that core enters in suspend Mode */
   USBD_LL_Suspend(hpcd->pData);
@@ -215,7 +213,7 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
   * @param  hpcd: PCD handle
   * @retval None
   */
-void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_ResumeCallback_f0(PCD_HandleTypeDef *hpcd)
 {
   /* USER CODE BEGIN 3 */
   if (hpcd->Init.low_power_enable)
@@ -235,7 +233,7 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
   * @param  epnum: Endpoint Number
   * @retval None
   */
-void HAL_PCD_ISOOUTIncompleteCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+void HAL_PCD_ISOOUTIncompleteCallback_f0(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
   USBD_LL_IsoOUTIncomplete(hpcd->pData, epnum);
 }
@@ -246,7 +244,7 @@ void HAL_PCD_ISOOUTIncompleteCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
   * @param  epnum: Endpoint Number
   * @retval None
   */
-void HAL_PCD_ISOINIncompleteCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+void HAL_PCD_ISOINIncompleteCallback_f0(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 {
   USBD_LL_IsoINIncomplete(hpcd->pData, epnum);
 }
@@ -256,7 +254,7 @@ void HAL_PCD_ISOINIncompleteCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
   * @param  hpcd: PCD handle
   * @retval None
   */
-void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_ConnectCallback_f0(PCD_HandleTypeDef *hpcd)
 {
   USBD_LL_DevConnected(hpcd->pData);
 }
@@ -266,7 +264,7 @@ void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
   * @param  hpcd: PCD handle
   * @retval None
   */
-void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_DisconnectCallback_f0(PCD_HandleTypeDef *hpcd)
 {
   USBD_LL_DevDisconnected(hpcd->pData);
 }
@@ -279,7 +277,7 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
   * @param  pdev: Device handle
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_Init (USBD_HandleTypeDef *pdev)
+USBD_StatusTypeDef  USBD_LL_Init_f0 (USBD_HandleTypeDef *pdev)
 {
   /* Init USB_IP */
   /* Link The driver to the stack */
@@ -289,7 +287,6 @@ USBD_StatusTypeDef  USBD_LL_Init (USBD_HandleTypeDef *pdev)
   hpcd_USB_FS.Instance = USB;
   hpcd_USB_FS.Init.dev_endpoints = 5;
   hpcd_USB_FS.Init.speed = PCD_SPEED_FULL;
-  hpcd_USB_FS.Init.ep0_mps = DEP0CTL_MPS_8;
   hpcd_USB_FS.Init.phy_itface = PCD_PHY_EMBEDDED;
   hpcd_USB_FS.Init.low_power_enable = DISABLE;
   hpcd_USB_FS.Init.battery_charging_enable = DISABLE;
@@ -308,7 +305,7 @@ USBD_StatusTypeDef  USBD_LL_Init (USBD_HandleTypeDef *pdev)
   * @param  pdev: Device handle
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_DeInit (USBD_HandleTypeDef *pdev)
+USBD_StatusTypeDef  USBD_LL_DeInit_f0 (USBD_HandleTypeDef *pdev)
 {
   HAL_PCD_DeInit(pdev->pData);
   return USBD_OK;
@@ -319,7 +316,7 @@ USBD_StatusTypeDef  USBD_LL_DeInit (USBD_HandleTypeDef *pdev)
   * @param  pdev: Device handle
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_Start(USBD_HandleTypeDef *pdev)
+USBD_StatusTypeDef  USBD_LL_Start_f0(USBD_HandleTypeDef *pdev)
 {
   HAL_PCD_Start(pdev->pData);
   return USBD_OK;
@@ -330,7 +327,7 @@ USBD_StatusTypeDef  USBD_LL_Start(USBD_HandleTypeDef *pdev)
   * @param  pdev: Device handle
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_Stop (USBD_HandleTypeDef *pdev)
+USBD_StatusTypeDef  USBD_LL_Stop_f0 (USBD_HandleTypeDef *pdev)
 {
   HAL_PCD_Stop(pdev->pData);
   return USBD_OK;
@@ -344,7 +341,7 @@ USBD_StatusTypeDef  USBD_LL_Stop (USBD_HandleTypeDef *pdev)
   * @param  ep_mps: Endpoint Max Packet Size
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_OpenEP  (USBD_HandleTypeDef *pdev,
+USBD_StatusTypeDef  USBD_LL_OpenEP_f0  (USBD_HandleTypeDef *pdev,
                                       uint8_t  ep_addr,
                                       uint8_t  ep_type,
                                       uint16_t ep_mps)
@@ -364,7 +361,7 @@ USBD_StatusTypeDef  USBD_LL_OpenEP  (USBD_HandleTypeDef *pdev,
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_CloseEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
+USBD_StatusTypeDef  USBD_LL_CloseEP_f0 (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
 
   HAL_PCD_EP_Close(pdev->pData, ep_addr);
@@ -377,7 +374,7 @@ USBD_StatusTypeDef  USBD_LL_CloseEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_FlushEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
+USBD_StatusTypeDef  USBD_LL_FlushEP_f0 (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
 
   HAL_PCD_EP_Flush(pdev->pData, ep_addr);
@@ -390,7 +387,7 @@ USBD_StatusTypeDef  USBD_LL_FlushEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_StallEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
+USBD_StatusTypeDef  USBD_LL_StallEP_f0 (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
 
   HAL_PCD_EP_SetStall(pdev->pData, ep_addr);
@@ -403,7 +400,7 @@ USBD_StatusTypeDef  USBD_LL_StallEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_ClearStallEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
+USBD_StatusTypeDef  USBD_LL_ClearStallEP_f0 (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
 
   HAL_PCD_EP_ClrStall(pdev->pData, ep_addr);
@@ -416,7 +413,7 @@ USBD_StatusTypeDef  USBD_LL_ClearStallEP (USBD_HandleTypeDef *pdev, uint8_t ep_a
   * @param  ep_addr: Endpoint Number
   * @retval Stall (1: Yes, 0: No)
   */
-uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
+uint8_t USBD_LL_IsStallEP_f0 (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
   PCD_HandleTypeDef *hpcd = pdev->pData;
 
@@ -435,7 +432,7 @@ uint8_t USBD_LL_IsStallEP (USBD_HandleTypeDef *pdev, uint8_t ep_addr)
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_SetUSBAddress (USBD_HandleTypeDef *pdev, uint8_t dev_addr)
+USBD_StatusTypeDef  USBD_LL_SetUSBAddress_f0 (USBD_HandleTypeDef *pdev, uint8_t dev_addr)
 {
 
   HAL_PCD_SetAddress(pdev->pData, dev_addr);
@@ -450,7 +447,7 @@ USBD_StatusTypeDef  USBD_LL_SetUSBAddress (USBD_HandleTypeDef *pdev, uint8_t dev
   * @param  size: Data size
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_Transmit (USBD_HandleTypeDef *pdev,
+USBD_StatusTypeDef  USBD_LL_Transmit_f0 (USBD_HandleTypeDef *pdev,
                                       uint8_t  ep_addr,
                                       uint8_t  *pbuf,
                                       uint16_t  size)
@@ -468,7 +465,7 @@ USBD_StatusTypeDef  USBD_LL_Transmit (USBD_HandleTypeDef *pdev,
   * @param  size: Data size
   * @retval USBD Status
   */
-USBD_StatusTypeDef  USBD_LL_PrepareReceive(USBD_HandleTypeDef *pdev,
+USBD_StatusTypeDef  USBD_LL_PrepareReceive_f0(USBD_HandleTypeDef *pdev,
                                            uint8_t  ep_addr,
                                            uint8_t  *pbuf,
                                            uint16_t  size)
@@ -484,7 +481,7 @@ USBD_StatusTypeDef  USBD_LL_PrepareReceive(USBD_HandleTypeDef *pdev,
   * @param  ep_addr: Endpoint Number
   * @retval Recived Data Size
   */
-uint32_t USBD_LL_GetRxDataSize  (USBD_HandleTypeDef *pdev, uint8_t  ep_addr)
+uint32_t USBD_LL_GetRxDataSize_f0  (USBD_HandleTypeDef *pdev, uint8_t  ep_addr)
 {
   return HAL_PCD_EP_GetRxCount(pdev->pData, ep_addr);
 }
@@ -494,7 +491,7 @@ uint32_t USBD_LL_GetRxDataSize  (USBD_HandleTypeDef *pdev, uint8_t  ep_addr)
   * @param  Delay: Delay in ms
   * @retval None
   */
-void  USBD_LL_Delay (uint32_t Delay)
+void  USBD_LL_Delay_f0 (uint32_t Delay)
 {
   HAL_Delay(Delay);
 }
@@ -504,7 +501,7 @@ void  USBD_LL_Delay (uint32_t Delay)
   * @param  size: size of allocated memory
   * @retval None
   */
-void *USBD_static_malloc(uint32_t size)
+void *USBD_static_malloc_f0(uint32_t size)
 {
   static uint8_t mem[sizeof(USBD_CDC_HandleTypeDef)];
   return mem;
@@ -515,7 +512,7 @@ void *USBD_static_malloc(uint32_t size)
   * @param  *p pointer to allocated  memory address
   * @retval None
   */
-void USBD_static_free(void *p)
+void USBD_static_free_f0(void *p)
 {
 
 }
@@ -539,7 +536,7 @@ static void SystemClockConfig_Resume(void)
 * @param state: connection state (0 : disconnected / 1: connected)
 * @retval None
 */
-void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
+void HAL_PCDEx_SetConnectionState_f0(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
 /* USER CODE BEGIN 6 */
   if (state == 1)

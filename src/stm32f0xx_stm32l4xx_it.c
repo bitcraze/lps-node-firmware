@@ -19,7 +19,7 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include "system.h"
+#include "system_l4.h"
 #include "stm32l4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -275,7 +275,7 @@ void USB_IRQHandler(void)
   /* USER CODE BEGIN USB_IRQn 0 */
 
   /* USER CODE END USB_IRQn 0 */
-  HAL_PCD_IRQHandler(&hpcd_USB_FS);
+  //HAL_PCD_IRQHandler(&hpcd_USB_FS);
   /* USER CODE BEGIN USB_IRQn 1 */
 
   /* USER CODE END USB_IRQn 1 */

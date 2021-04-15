@@ -1,8 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : gpio.h
-  * Description        : This file contains all the functions prototypes for 
-  *                      the gpio  
+  * File Name          : SPI.h
+  * Description        : This file provides code for the configuration
+  *                      of the SPI instances.
   ******************************************************************************
   *
   * COPYRIGHT(c) 2015 STMicroelectronics
@@ -31,21 +31,25 @@
   *
   ******************************************************************************
   */
-
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __gpio_H
-#define __gpio_H
+#ifndef __spi_f0_H
+#define __spi_f0_H
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal.h"
-void MX_GPIO_Init(void);
+
+extern SPI_HandleTypeDef hspi1;
+
+void MX_SPI1_Init_f0(void);
+void MX_SPI1_Init_Fast_f0(void);
+
 #ifdef __cplusplus
 }
 #endif
-#endif /*__ pinoutConfig_H */
+#endif /*__ spi_H */
 
 /**
   * @}

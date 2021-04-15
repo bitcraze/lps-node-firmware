@@ -1,9 +1,9 @@
-#include <system.h>
+#include <system_l4.h>
 /**
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
+void SystemClock_Config_l4(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
