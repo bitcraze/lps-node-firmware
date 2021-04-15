@@ -28,6 +28,9 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include  "usbd_ioreq.h"
 
+#define __IO volatile
+
+
 /** @addtogroup STM32_USB_DEVICE_LIBRARY
   * @{
   */

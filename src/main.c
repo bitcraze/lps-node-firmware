@@ -23,7 +23,7 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 //#include <stm32f0xx_hal.h>
-#include <stm32l4xx_hal.h>
+#include <stm32f0xx_hal.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -31,7 +31,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-#include "system.h"
 #include "spi.h"
 #include "i2c.h"
 #include "usart.h"
@@ -54,7 +53,7 @@
 
 #define POWER_LEVELS 10
 
-const uint8_t *uid = (uint8_t*)MCU_ID_ADDRESS;
+int isL4 = 0;
 
 static void restConfig();
 static void changeAddress(uint8_t addr);
@@ -99,6 +98,13 @@ static void main_task(void *pvParameters) {
   buttonInit(buttonIdle);
 
   printf("\r\n\r\n====================\r\n");
+
+  const uint8_t *uid = NULL;
+  if (isL4) {
+    uid = (char*) 0x1FFF7590;
+  } else {
+    uid = (char*) 0x1FFFF7AC;
+  }
 
   printf("SYSTEM\t: CPU-ID: ");
   for (i=0; i<12; i++) {
@@ -273,7 +279,7 @@ static void handleMenuMain(char ch, MenuState* menuState) {
       menuState->configChanged = false;
       break;
     case '#':
-      productionTestsRun();
+      //productionTestsRun();
       printf("System halted, reset to continue\r\n");
       while(true){}
       break;
@@ -612,6 +618,16 @@ static StaticTask_t xMainTask;
 static StackType_t ucMainStack[configMINIMAL_STACK_SIZE];
 
 int main() {
+  //
+  // Is this L4 or F0? The devid is found in the DBGMCU_IDCODE register.
+  //
+  uint32_t revid = DBGMCU->IDCODE & 0xFFF;
+  if (revid == 0x448) {  // STM32F07x id
+    isL4 = 0;
+  } else {
+    isL4 = 1;
+  }
+
   // Reset of all peripherals, Initializes the Flash interface and the Systick.
   HAL_Init();
 

@@ -18,18 +18,15 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "usart.h"
+#include "usart_f0.h"
 
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
 
-UART_HandleTypeDef huart1;
-UART_HandleTypeDef huart3;
-
 /* USART1 init function */
 
-void MX_USART1_UART_Init(void)
+void MX_USART1_UART_Init_f0(void)
 {
 
   /* USER CODE BEGIN USART1_Init 0 */
@@ -60,7 +57,7 @@ void MX_USART1_UART_Init(void)
 }
 /* USART3 init function */
 
-void MX_USART3_UART_Init(void)
+void MX_USART3_UART_Init_f0(void)
 {
 
   /* USER CODE BEGIN USART3_Init 0 */
@@ -90,7 +87,7 @@ void MX_USART3_UART_Init(void)
 
 }
 
-void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
+void HAL_UART_MspInit_f0(UART_HandleTypeDef* uartHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -144,7 +141,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
   }
 }
 
-void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
+void HAL_UART_MspDeInit_f0(UART_HandleTypeDef* uartHandle)
 {
 
   if(uartHandle->Instance==USART1)

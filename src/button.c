@@ -25,6 +25,8 @@
 #include "gpio.h"
 #include "button.h"
 
+#include <stm32f0xx_hal.h>
+
 static ButtonEvent state;
 
 static bool buttonRead(void)

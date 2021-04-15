@@ -24,6 +24,10 @@
 #include "usbd_desc.h"
 #include "usbd_conf.h"
 
+#include "stm32f0xx_hal.h"
+
+extern int isL4;
+
 /* USER CODE BEGIN INCLUDE */
 
 /* USER CODE END INCLUDE */
@@ -315,7 +319,14 @@ uint8_t * USBD_FS_SerialStrDescriptor(USBD_SpeedTypeDef speed, uint16_t *length)
                                  '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
   char serial_nr[25];
-  char *chip_id = (char*)MCU_ID_ADDRESS;
+  char *chip_id = NULL;
+
+  if (isL4) {
+    chip_id = 0x1FFF7590;
+  } else {
+    chip_id = 0x1FFFF7AC;
+  }
+
   int i;
 
   serial_nr[24] = 0;

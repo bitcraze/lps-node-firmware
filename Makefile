@@ -23,12 +23,15 @@ FREERTOS_PORT=lib/freertos/ARM_CM0
 CPU=l4
 PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32F072xB -DSTM32L422xx
 #PROCESSOR=-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard -DSTM32L422xx
-OPENOCD_TARGET    ?= target/stm32l4x.cfg
+OPENOCD_TARGET    ?= target/stm32f0x.cfg
 else
 $(error Rev.$(REV) unknown)
 endif
 
-INCLUDES=-Iinc -Iinc/$(CPU)  -I./hal/stm32l4xx/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc -IMiddlewares/ST/STM32_USB_Device_Library/Core/Inc
+INCLUDES=-Iinc -Iinc/f0 -Iinc/l4 -I./hal/stm32f0xx/Inc -I./hal/stm32l4xx/Inc \
+		 -Iinc/configuration \
+         -Icubemx/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc \
+		 -Icubemx/Middlewares/ST/STM32_USB_Device_Library/Core/Inc -Icubemx/Core/Inc
 
 # FreeRTOS
 OBJS+= $(FREERTOS_PORT)/port.o
@@ -38,27 +41,37 @@ INCLUDES+=-Ilib/freertos/inc
 INCLUDES+=-I$(FREERTOS_PORT)
 
 # Platform specific files
-#OBJS+=src/f0/startup_stm32f072xb.o src/f0/system_stm32f0xx.o src/f0/stm32f0xx_it.o src/f0/stm32f0xx_hal_msp.o
-#OBJS+=src/f0/gpio.o src/f0/i2c.o src/f0/spi.o src/f0/system.o src/f0/usart.o
-#OBJS+=src/f0/usbd_conf.o src/eeprom.o src/bootmode.o
-#HALS+=i2c_ex
 
-OBJS+=src/startup_stm32f072_stm32l422.o src/l4/system_stm32l4xx.o src/stm32f0xx_stm32l4xx_it.o src/l4/stm32l4xx_hal_msp.o
-OBJS+=src/l4/gpio.o src/l4/i2c.o src/l4/spi.o src/l4/usart.o src/l4/system.o
-OBJS+=src/l4/usbd_conf.o hal/stm32l4xx/Src/stm32l4xx_ll_usb.o
-OBJS+=src/l4/usb_device.o src/l4/usbd_cdc_if.o src/l4/usbd_desc.o 
+# stm32f072xb
+OBJS+=src/f0/gpio.o src/f0/i2c.o src/f0/spi.o src/f0/system.o src/f0/usart.o
+#OBJS+=src/f0/usbd_conf.o src/f0/usb_device.o src/f0/usbd_cdc_if.o src/f0/usbd_desc.o
+
+# stm32l422xx
+OBJS+=src/l4/gpio.o src/l4/i2c.o src/l4/spi.o src/l4/system.o src/l4/usart.o
+#OBJS+=src/l4/usbd_conf.o src/l4/usb_device.o src/l4/usbd_cdc_if.o src/l4/usbd_desc.o
+
+# common
+OBJS+=src/configuration/gpio.o src/configuration/i2c.o src/configuration/spi.o
+OBJS+=src/configuration/usart.o src/configuration/system.o
+
+OBJS+=src/startup_stm32f072_stm32l422.o  src/l4/stm32l4xx_hal_msp.o
+OBJS+=src/stm32f0xx_stm32l4xx_it.o
+
+OBJS+=src/configuration/usbd_conf.o
+OBJS+=src/configuration/usb_device.o src/configuration/usbd_cdc_if.o
+OBJS+=src/configuration/usbd_desc.o 
 
 OBJS+=src/main.o
 OBJS+=src/eeprom.o src/bootmode.o
-OBJS+=src/lps25h.o src/led.o src/button.o
-OBJS+=src/cfg.o src/usbcomm.o src/test_support.o src/production_test.o
+OBJS+=src/lps25h.o src/led.o src/led_l4.o src/led_f0.o src/button.o
+OBJS+=src/cfg.o src/usbcomm.o src/test_support.o # src/production_test.o
 OBJS+=src/uwb.o src/uwb_twr_anchor.o src/uwb_sniffer.o src/uwb_twr_tag.o
 OBJS+=src/lpp.o src/uwb_tdoa_anchor2.o src/uwb_tdoa_anchor3.o
 
 USB_CORES=core ctlreq ioreq
 USB_CDC=cdc
-OBJS+=$(foreach mod, $(USB_CORES), Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_$(mod).o)
-OBJS+=$(foreach mod, $(USB_CDC), Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_$(mod).o)
+OBJS+=$(foreach mod, $(USB_CORES), cubemx/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_$(mod).o)
+OBJS+=$(foreach mod, $(USB_CDC), cubemx/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Src/usbd_$(mod).o)
 
 #libdw1000
 INCLUDES+=-Ivendor/libdw1000/inc
@@ -66,7 +79,9 @@ OBJS+=vendor/libdw1000/src/libdw1000.o vendor/libdw1000/src/libdw1000Spi.o
 
 OBJS+=src/dwOps.o
 
-CFLAGS+=$(PROCESSOR) $(INCLUDES) -O3 -g3 -Wall -Wno-pointer-sign -std=gnu11
+L4_ENABLED ?= 1
+
+CFLAGS+=$(PROCESSOR) $(INCLUDES) -O3 -g3 -Wall -Wno-pointer-sign -std=gnu11 -DL4_ENABLED=$(L4_ENABLED)
 LDFLAGS+=$(PROCESSOR) -Lhal/ --specs=nano.specs --specs=nosys.specs -lm -lc -u _printf_float
 
 ifeq ($(strip $(BOOTLOAD)),0)
@@ -79,7 +94,7 @@ endif
 
 # Remove un-used functions and global variables from output file
 CFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS+=-Wl,-Map=bin/$(PROG).map,--cref,--gc-sections
+LDFLAGS+=-Wl,-Map=bin/$(PROG).map,--cref,--gc-sections -uUSB_DevInit
 
 
 PREFIX=arm-none-eabi-
@@ -109,6 +124,7 @@ clean:
 flash:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
 	           -c "flash write_image erase bin/lps-node-firmware.elf" -c "verify_image bin/lps-node-firmware.elf" -c "reset run" -c shutdown
+
 erase:
 	$(OPENOCD) -d2 -f $(OPENOCD_INTERFACE) $(OPENOCD_CMDS) -f $(OPENOCD_TARGET) -c init -c targets -c "reset halt" \
 	           -c "stm32f1x mass_erase 0" -c shutdown

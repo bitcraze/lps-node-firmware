@@ -36,6 +36,8 @@
 #include <semphr.h>
 #include <task.h>
 
+extern int isL4;
+
 // Implemented UWB algoritm. The dummy one is at the end of this file.
 static uwbAlgorithm_t dummyAlgorithm;
 extern uwbAlgorithm_t uwbTwrAnchorAlgorithm;
@@ -249,8 +251,7 @@ struct uwbConfig_s * uwbGetConfig()
 }
 
 /**** DWM1000 interrupt handling *****/
-//#define DWM_IRQn EXTI0_1_IRQn
-#define DWM_IRQn EXTI0_IRQn
+#define DWM_IRQn (isL4 ? 6 : 5)
 #define DWM_IRQ_PIN GPIO_PIN_0
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

@@ -22,23 +22,20 @@
  * You should have received a copy of the GNU General Public License
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
-//#include <stm32f0xx_hal.h>
-//#include <stm32f0xx_hal_gpio.h>
-#include <stm32l4xx_hal.h>
-#include <stm32l4xx_hal_gpio.h>
+#include <stm32f0xx_hal.h>
+#include <stm32f0xx_hal_gpio.h>
 
 #include "led.h"
+
+extern int isL4;
 
 typedef struct {
   uint32_t pin;
   GPIO_TypeDef * port;
 } led_t;
 
-static const led_t leds_revd[] = {
-    [ledRanging] = {.pin = GPIO_PIN_1, .port = GPIOH},
-    [ledSync] = {.pin = GPIO_PIN_1, .port = GPIOA},
-    [ledMode] = {.pin = GPIO_PIN_2, .port = GPIOA}
-};
+extern const led_t leds_revd_l4[];
+extern const led_t leds_revd_f0[];
 
 static const led_t leds_revc[] = {
     [ledRanging] = {.pin = GPIO_PIN_13, .port = GPIOC},
@@ -55,7 +52,11 @@ void ledInit(void) {
 
 static inline void setLed(led_e led, bool value)
 {
-  HAL_GPIO_WritePin(leds_revd[led].port, leds_revd[led].pin, value?GPIO_PIN_SET:GPIO_PIN_RESET);
+  if (isL4) {
+    HAL_GPIO_WritePin(leds_revd_l4[led].port, leds_revd_l4[led].pin, value?GPIO_PIN_SET:GPIO_PIN_RESET);
+  } else {
+    HAL_GPIO_WritePin(leds_revd_f0[led].port, leds_revd_f0[led].pin, value?GPIO_PIN_SET:GPIO_PIN_RESET);
+  }
   HAL_GPIO_WritePin(leds_revc[led].port, leds_revc[led].pin, value?GPIO_PIN_SET:GPIO_PIN_RESET);
 }
 

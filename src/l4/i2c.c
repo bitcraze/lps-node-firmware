@@ -18,7 +18,7 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "i2c.h"
+#include "i2c_l4.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -27,7 +27,7 @@
 I2C_HandleTypeDef hi2c1;
 
 /* I2C1 init function */
-void MX_I2C1_Init(void)
+void MX_I2C1_Init_l4(void)
 {
 
   hi2c1.Instance = I2C1;
