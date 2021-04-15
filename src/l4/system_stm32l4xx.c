@@ -149,7 +149,7 @@
                is no need to call the 2 first functions listed above, since SystemCoreClock
                variable is updated automatically.
   */
-  uint32_t SystemCoreClock = 4000000U;
+  uint32_t SystemCoreClock_l4 = 4000000U;
 
   const uint8_t  AHBPrescTable[16] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U, 6U, 7U, 8U, 9U};
   const uint8_t  APBPrescTable[8] =  {0U, 0U, 0U, 0U, 1U, 2U, 3U, 4U};
@@ -173,7 +173,7 @@
 
 /* For the possibility to run same FW on stm32f072 and stm32l422*/
 #define isL422_MCU_ID_CODE()  (((*((volatile unsigned long *) 0xE0042000)) & 0x00000FFFU) == 0x464)
-int isL4 = 0;
+extern int isL4;
 
 /**
   * @brief  Setup the microcontroller system.

@@ -31,8 +31,8 @@
   ******************************************************************************
 */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBD_CONF__H__
-#define __USBD_CONF__H__
+#ifndef __USBD_CONF__f0_H__
+#define __USBD_CONF__f0_H__
 #ifdef __cplusplus
  extern "C" {
 #endif

@@ -18,14 +18,14 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __gpio_H
-#define __gpio_H
+#ifndef __gpio_l4_H
+#define __gpio_l4_H
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "system.h"
+#include "system_l4.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -35,7 +35,7 @@
 
 /* USER CODE END Private defines */
 
-void MX_GPIO_Init(void);
+void MX_GPIO_Init_l4(void);
 
 /* USER CODE BEGIN Prototypes */
 

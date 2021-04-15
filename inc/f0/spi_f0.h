@@ -1,21 +1,22 @@
 /**
   ******************************************************************************
-  * @file           : usbd_desc.h
-  * @version        : v1.0_Cube
-  * @brief          : Header for usbd_desc file.
+  * File Name          : SPI.h
+  * Description        : This file provides code for the configuration
+  *                      of the SPI instances.
   ******************************************************************************
+  *
   * COPYRIGHT(c) 2015 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
-  * 1. Redistributions of source code must retain the above copyright notice,
-  * this list of conditions and the following disclaimer.
-  * 2. Redistributions in binary form must reproduce the above copyright notice,
-  * this list of conditions and the following disclaimer in the documentation
-  * and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of its contributors
-  * may be used to endorse or promote products derived from this software
-  * without specific prior written permission.
+  *   1. Redistributions of source code must retain the above copyright notice,
+  *      this list of conditions and the following disclaimer.
+  *   2. Redistributions in binary form must reproduce the above copyright notice,
+  *      this list of conditions and the following disclaimer in the documentation
+  *      and/or other materials provided with the distribution.
+  *   3. Neither the name of STMicroelectronics nor the names of its contributors
+  *      may be used to endorse or promote products derived from this software
+  *      without specific prior written permission.
   *
   * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
   * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -29,75 +30,33 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-*/
-
+  */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBD_DESC__H__
-#define __USBD_DESC__H__
-
+#ifndef __spi_f0_H
+#define __spi_f0_H
 #ifdef __cplusplus
  extern "C" {
 #endif
+
 /* Includes ------------------------------------------------------------------*/
-#include "usbd_def.h"
+#include "stm32f0xx_hal.h"
 
-/** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
-  * @{
-  */
-  
-/** @defgroup USB_DESC
-  * @brief general defines for the usb device library file
-  * @{
-  */ 
+extern SPI_HandleTypeDef hspi1;
 
-/** @defgroup USB_DESC_Exported_Defines
-  * @{
-  */
+void MX_SPI1_Init_f0(void);
+void MX_SPI1_Init_Fast_f0(void);
 
-/**
-  * @}
-  */ 
-
-/** @defgroup USBD_DESC_Exported_TypesDefinitions
-  * @{
-  */
-/**
-  * @}
-  */ 
-
-/** @defgroup USBD_DESC_Exported_Macros
-  * @{
-  */ 
-/**
-  * @}
-  */ 
-
-/** @defgroup USBD_DESC_Exported_Variables
-  * @{
-  */ 
-extern USBD_DescriptorsTypeDef FS_Desc;
-/**
-  * @}
-  */ 
-
-/** @defgroup USBD_DESC_Exported_FunctionsPrototype
-  * @{
-  */ 
-  
-/**
-  * @}
-  */ 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __USBD_DESC_H */
+#endif /*__ spi_H */
 
 /**
   * @}
-  */ 
+  */
 
 /**
-* @}
-*/ 
+  * @}
+  */
+
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -18,16 +18,14 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "spi.h"
+#include "spi_l4.h"
 
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
 
-SPI_HandleTypeDef hspi1;
-
 /* SPI1 init function */
-void MX_SPI1_Init(void)
+void MX_SPI1_Init_l4(void)
 {
 
   hspi1.Instance = SPI1;
@@ -51,7 +49,7 @@ void MX_SPI1_Init(void)
 
 }
 
-void MX_SPI1_Init_Fast(void)
+void MX_SPI1_Init_Fast_l4(void)
 {
 
   hspi1.Instance = SPI1;
@@ -75,7 +73,7 @@ void MX_SPI1_Init_Fast(void)
 
 }
 
-void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
+void HAL_SPI_MspInit_l4(SPI_HandleTypeDef* spiHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -107,7 +105,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
   }
 }
 
-void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
+void HAL_SPI_MspDeInit_l4(SPI_HandleTypeDef* spiHandle)
 {
 
   if(spiHandle->Instance==SPI1)

@@ -20,8 +20,8 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USB_DEVICE__H__
-#define __USB_DEVICE__H__
+#ifndef __USB_DEVICE__l4_H__
+#define __USB_DEVICE__l4_H__
 
 #ifdef __cplusplus
  extern "C" {

@@ -20,8 +20,8 @@
 /* USER CODE END Header */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __SYSTEM_H__
-#define __SYSTEM_H__
+#ifndef __SYSTEM_l4_H__
+#define __SYSTEM_l4_H__
 
 #ifdef __cplusplus
 extern "C" {

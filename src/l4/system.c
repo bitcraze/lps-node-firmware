@@ -1,9 +1,44 @@
-#include <system.h>
+#include <system_l4.h>
+
+uint32_t SystemCoreClock_l4 = 4000000U;
+
+void SystemInit_l4(void)
+{
+#if defined(USER_VECT_TAB_ADDRESS)
+  /* Configure the Vector Table location -------------------------------------*/
+  SCB->VTOR = VECT_TAB_BASE_ADDRESS | VECT_TAB_OFFSET;
+#endif
+
+  /* FPU settings ------------------------------------------------------------*/
+#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+  SCB->CPACR |= ((3UL << 20U)|(3UL << 22U));  /* set CP10 and CP11 Full Access */
+#endif
+
+  /* Reset the RCC clock configuration to the default reset state ------------*/
+  /* Set MSION bit */
+  RCC->CR |= RCC_CR_MSION;
+
+  /* Reset CFGR register */
+  RCC->CFGR = 0x00000000U;
+
+  /* Reset HSEON, CSSON , HSION, and PLLON bits */
+  RCC->CR &= 0xEAF6FFFFU;
+
+  /* Reset PLLCFGR register */
+  RCC->PLLCFGR = 0x00001000U;
+
+  /* Reset HSEBYP bit */
+  RCC->CR &= 0xFFFBFFFFU;
+
+  /* Disable all interrupts */
+  RCC->CIER = 0x00000000U;
+}
+
 /**
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void)
+void SystemClock_Config_l4(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};

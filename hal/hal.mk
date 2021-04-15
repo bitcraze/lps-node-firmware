@@ -1,6 +1,7 @@
-HAL_MODULES = gpio rcc cortex i2c i2c_ex pcd dma pcd_ex rcc_ex spi uart pwr pwr_ex
+HAL_MODULES =  gpio rcc cortex i2c i2c_ex pcd dma pcd_ex
+HAL_MODULES += rcc_ex spi uart pwr pwr_ex
 HAL_OBJS_F0 = $(foreach mod,$(HAL_MODULES),hal/stm32f0xx/Src/stm32f0xx_hal_$(mod).o)
-HAL_OBJS_F0 += hal/stm32f0xx/Src/stm32f0xx_hal.o
+HAL_OBJS_F0 += hal/stm32f0xx/Src/stm32f0xx_hal.o hal/stm32f0xx/Src/stm32f0xx_ll_usb.o
 
 HAL_OBJS_L4 = $(foreach mod,$(HAL_MODULES),hal/stm32l4xx/Src/stm32l4xx_hal_$(mod).o)
 HAL_OBJS_L4 += hal/stm32l4xx/Src/stm32l4xx_hal.o hal/stm32l4xx/Src/stm32l4xx_ll_usb.o

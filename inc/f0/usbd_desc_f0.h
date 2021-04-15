@@ -1,7 +1,8 @@
 /**
   ******************************************************************************
-  * @file           : usbd_cdc_if.h
-  * @brief          : Header for usbd_cdc_if file.
+  * @file           : usbd_desc.h
+  * @version        : v1.0_Cube
+  * @brief          : Header for usbd_desc file.
   ******************************************************************************
   * COPYRIGHT(c) 2015 STMicroelectronics
   *
@@ -31,34 +32,72 @@
 */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __USBD_CDC_IF_H
-#define __USBD_CDC_IF_H
+#ifndef __USBD_DESC__f0_H__
+#define __USBD_DESC__f0_H__
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 /* Includes ------------------------------------------------------------------*/
-#include "usbd_cdc.h"
+#include "usbd_def.h"
 
-/* Exported types ------------------------------------------------------------*/
-/* Exported constants --------------------------------------------------------*/
-/* Exported cariables --------------------------------------------------------*/
-extern USBD_CDC_ItfTypeDef  USBD_Interface_fops_FS;
+/** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
+  * @{
+  */
+  
+/** @defgroup USB_DESC
+  * @brief general defines for the usb device library file
+  * @{
+  */ 
 
-/* Exported macro ------------------------------------------------------------*/
-/* Exported functions ------------------------------------------------------- */
-uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
+/** @defgroup USB_DESC_Exported_Defines
+  * @{
+  */
 
-// User functions
-bool CDC_IsUsbInit(void);
-int CDC_Write(char* buffer, int len);
-int CDC_WriteBlocking(char *buffer, int len);
-int CDC_Read(char *buffer, int len);
+/**
+  * @}
+  */ 
 
+/** @defgroup USBD_DESC_Exported_TypesDefinitions
+  * @{
+  */
+/**
+  * @}
+  */ 
+
+/** @defgroup USBD_DESC_Exported_Macros
+  * @{
+  */ 
+/**
+  * @}
+  */ 
+
+/** @defgroup USBD_DESC_Exported_Variables
+  * @{
+  */ 
+extern USBD_DescriptorsTypeDef FS_Desc;
+/**
+  * @}
+  */ 
+
+/** @defgroup USBD_DESC_Exported_FunctionsPrototype
+  * @{
+  */ 
+  
+/**
+  * @}
+  */ 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __USBD_CDC_IF_H */
+#endif /* __USBD_DESC_H */
 
+/**
+  * @}
+  */ 
+
+/**
+* @}
+*/ 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

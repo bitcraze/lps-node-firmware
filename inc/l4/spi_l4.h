@@ -17,14 +17,14 @@
   ******************************************************************************
   */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __spi_H
-#define __spi_H
+#ifndef __spi_l4_H
+#define __spi_l4_H
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "system.h"
+#include "system_l4.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -36,8 +36,8 @@ extern SPI_HandleTypeDef hspi1;
 
 /* USER CODE END Private defines */
 
-void MX_SPI1_Init(void);
-void MX_SPI1_Init_Fast(void);
+void MX_SPI1_Init_l4(void);
+void MX_SPI1_Init_Fast_l4(void);
 
 /* USER CODE BEGIN Prototypes */
 

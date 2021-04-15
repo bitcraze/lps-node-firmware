@@ -20,6 +20,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_core.h"
 
+#define UNUSED(X) (void)X
+
 /** @addtogroup STM32_USBD_DEVICE_LIBRARY
 * @{
 */

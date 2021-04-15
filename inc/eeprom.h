@@ -1,8 +1,7 @@
 #ifndef __EEPROM_H__
 #define __EEPROM_H__
 
-//#include <stm32f0xx_hal.h>
-#include <stm32l4xx_hal.h>
+#include <stm32f0xx_hal.h>
 
 #include <stdbool.h>
 
