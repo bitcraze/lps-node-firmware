@@ -2,7 +2,7 @@ OPENOCD           ?= openocd
 OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
 OPENOCD_CMDS      ?=
 REV               ?= B
-PYTHON2           ?= python2
+PYTHON           ?= python3
 # CFLAGS          += -fdiagnostics-color=auto
 # CFLAGS += -DUSE_FTDI_UART
 
@@ -109,7 +109,7 @@ reset_and_dfu:
 	$(OBJCOPY) $^ -O binary $@
 
 %.dfu: %.bin
-	$(PYTHON2) tools/make/dfu-convert.py -b $(LOAD_ADDRESS):$^ $@
+	$(PYTHON) tools/make/dfu-convert.py -b $(LOAD_ADDRESS):$^ $@
 
 check_submodules:
-	$(PYTHON2) tools/make/check-for-submodules.py
+	$(PYTHON) tools/make/check-for-submodules.py
