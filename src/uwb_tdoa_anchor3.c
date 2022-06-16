@@ -7,7 +7,7 @@
  *
  * LPS node firmware.
  *
- * Copyright 2018, Bitcraze AB
+ * Copyright 2018-2022, Bitcraze AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -85,12 +85,19 @@ The implementation must handle
 #define ID_WITHOUT_CONTEXT 0xff
 #define ID_INVALID 0xff
 
-#define SYSTEM_TX_FREQ 400.0
+// The system TX frequency is chosen to be at a level where the packet collisions are kept at an
+// acceptable level
+#define SYSTEM_TX_FREQ_HIGH_BITRATE 400.0
+#define SYSTEM_TX_FREQ_LOW_BITRATE 200.0
+
 #define ANCHOR_MAX_TX_FREQ 50.0
 // We need a lower limit of minimum tx rate. The TX timestamp in the protocol is
 // only 32 bits (equal to 67 ms) and we want to avoid double wraps of the TX counter.
 // To have some margin set the lowest tx frequency to 20 Hz (= 50 ms)
 #define ANCHOR_MIN_TX_FREQ 20.0
+
+// The interval (in ms) that the delay is randomized in, around the target frequency
+#define DELAY_RANDOM_INTERVAL 10
 
 
 #define ANTENNA_OFFSET 154.6   // In meters
@@ -148,6 +155,9 @@ static struct ctx_s {
   uint8_t anchorCtxLookup[ID_COUNT];
   anchorContext_t anchorCtx[ANCHOR_STORAGE_COUNT];
   uint8_t anchorRxCount[ID_COUNT];
+
+  // The maximum system tx frequency
+  float systemTxFreq;
 } ctx;
 
 // Packet formats
@@ -319,8 +329,7 @@ static void updateAnchorLists() {
   clearAnchorRxCount();
 
   // Set the TX rate based on the number of transmitting anchors around us
-  // Aim for 400 messages/s. Up to 8 anchors: 50 Hz / anchor
-  float freq = SYSTEM_TX_FREQ / (availableCount + 1);
+  float freq = ctx.systemTxFreq / (availableCount + 1);
   if (freq > ANCHOR_MAX_TX_FREQ) {
     freq = ANCHOR_MAX_TX_FREQ;
   }
@@ -349,13 +358,6 @@ static dwTime_t findTransmitTimeAsSoonAsPossible(dwDevice_t *dev)
 
   // And some extra
   transmitTime.full += TDMA_EXTRA_LENGTH;
-
-  // TODO krri Adding randomization on this level adds a long delay, is it worth it?
-  // The randomization on OS level is quantized to 1 ms (tick time of the system)
-  // Add a high res random to smooth it out
-  // uint32_t r = rand();
-  // uint32_t delay = r % TDMA_HIGH_RES_RAND;
-  // transmitTime.full += delay;
 
   // DW1000 can only schedule time with 9 LSB at 0, adjust for it
   adjustTxRxTime(&transmitTime);
@@ -617,7 +619,7 @@ static void setupTx(dwDevice_t *dev)
 
 static uint32_t randomizeDelayToNextTx()
 {
-  const uint32_t interval = 10;
+  const uint32_t interval = DELAY_RANDOM_INTERVAL;
 
   uint32_t r = rand();
   uint32_t delay = ctx.averageTxDelay + r % interval - interval / 2;
@@ -642,14 +644,20 @@ static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
 }
 
 
-// Initialize/reset the agorithm
+// Initialize/reset the algorithm
 static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
 {
+  float systemTxFreq = SYSTEM_TX_FREQ_HIGH_BITRATE;
+  if (config->lowBitrate) {
+    systemTxFreq = SYSTEM_TX_FREQ_LOW_BITRATE;
+  }
+
   ctx.anchorId = config->address[0];
   ctx.seqNr = 0;
   ctx.txTime = 0;
   ctx.nextTxTick = 0;
-  ctx.averageTxDelay = 1000.0 / ANCHOR_MAX_TX_FREQ;
+  ctx.systemTxFreq = systemTxFreq;
+  ctx.averageTxDelay = 1000.0 / ANCHOR_MIN_TX_FREQ;
   ctx.remoteTxIdCount = 0;
   ctx.nextAnchorListUpdate = 0;
 
