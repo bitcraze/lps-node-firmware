@@ -60,7 +60,7 @@ cf = Crazyflie(rw_cache='./cache')
 with SyncCrazyflie(uri, cf=cf) as scf:
     print("Setting positions")
 
-    for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
+    for packet in yaml.load_all(sys.stdin, Loader=yaml.Loader):
         if not packet:
             continue
 

@@ -27,7 +27,7 @@ if len(sys.argv) > 1:
             sys.exit(1)
 
 
-for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
+for packet in yaml.load_all(sys.stdin, Loader=yaml.Loader):
     if not packet:
         continue
 
@@ -43,4 +43,4 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
                 data['tof'][remote_id] = tof * M_PER_TICK - ANTENNA_OFFSET
 
     print("---")
-    print(yaml.dump(data, Dumper=yaml.CDumper))
+    print(yaml.dump(data, Dumper=yaml.Dumper))

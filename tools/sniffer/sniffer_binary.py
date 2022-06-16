@@ -51,7 +51,7 @@ while True:
                 print("---")
                 print(yaml.dump({'ts': ts, 'from': addrFrom,
                                  'to': addrTo, 'data': data, 'rxSys': now},
-                                Dumper=yaml.CDumper))
+                                Dumper=yaml.Dumper))
             else:
                 sys.stderr.write("Error: Uknown output format: {}\n".format(
                                  outputFormat))
