@@ -7,6 +7,7 @@
 import sys
 import yaml
 import struct
+import time
 
 id_filter = None
 if len(sys.argv) > 1:
@@ -42,7 +43,7 @@ if len(sys.argv) > 1:
 # uint32_t rxTimeStamp;
 # } __attribute__((packed)) remoteAnchorDataShort_t;
 
-for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
+for packet in yaml.load_all(sys.stdin, Loader=yaml.Loader):
     if not packet:
         continue
 
@@ -110,4 +111,4 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
                     packet["lpp_data"] = packet["data"][anchor_data_index:]
 
         print("---")
-        print(yaml.dump(packet, Dumper=yaml.CDumper))
+        print(yaml.dump(packet, Dumper=yaml.Dumper))

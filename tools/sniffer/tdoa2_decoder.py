@@ -17,7 +17,7 @@ import struct
 #   uint16_t distances[NSLOTS];
 # } __attribute__((packed)) rangePacket_t;
 
-for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
+for packet in yaml.load_all(sys.stdin, Loader=yaml.Loader):
     if not packet:
         continue
 
@@ -34,4 +34,4 @@ for packet in yaml.load_all(sys.stdin, Loader=yaml.CLoader):
             packet["lpp_data"] = packet["data"][57:]
 
     print("---")
-    print(yaml.dump(packet, Dumper=yaml.CDumper))
+    print(yaml.dump(packet, Dumper=yaml.Dumper))
