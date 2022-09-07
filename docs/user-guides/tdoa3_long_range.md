@@ -25,8 +25,9 @@ TDoA3 Long Range is supported from version 2022.09.
 
 Long Range only works with TDoA3
 
-For good 3D position estimation the ratio between the length|width in relation to the height should not be larger than 3.
-Another way of putting it is if the system is very "flat", the estimate in Z will not be good, the reason is simple
-geometry. When using Long Range mode this can become a problem if the size of the system is increased without moving the
+If the system is very "flat", the estimate in Z will not be good, the reason is simple geometry.
+For good 3D position estimation we recommend that the ratio between the length|width in relation to the height should
+not be larger than 3. This is not an absolute requirement but we think it is a good guideline.
+When using Long Range mode this can become a problem if the size of the system is increased without moving the
 upper anchors higher. One solution is to add more anchors to the system in the ceiling and/or on the ground to create
 smaller "cells" with a good ratio between width and height.
