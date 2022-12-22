@@ -15,7 +15,7 @@ position a bit compared to "normal" TDoA3.
 ## How to configure
 
 Both the anchors and the Crazyflie must be configured in the Long Range mode. You can read about [how to configure the
-Crazyflie here](https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/userguides/configuration/tdoa3-long-range-config).
+Crazyflie here](https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/userguides/configuration/tdoa3_long_range_config).
 
 The anchors must be configured with the radio mode: `low bitrate, normal preamble`, [see the low level configuration section](/docs/development/anchor-low-level-config)
 
