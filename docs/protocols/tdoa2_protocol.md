@@ -45,19 +45,16 @@ typedef struct rangePacket_s {
 
 Assuming the current anchors is of ID **anchor\_id**
 
--   **type** is 0x22
--   **seqs\[i\]**
-
-<!-- -->
-
-       * **If i == anchor_id** Sequence number of the current packet
-       * **If i != anchor_id** Sequence number of the latest receive packet from anchor **i**
-    * **timestamps[i]**
-       * **If i == anchor_id** Transmit time of the current packet expressed in current anchor clock
-       * **If i != anchor_id** Receive time of the latest receive packet from anchor **i** expressed in current anchor clock
-    * **distances[i]**
-       * **If i == anchor_id** Reserved for future use
-       * **If i != anchor_id** Time of flight between current anchor and anchor **i** in radio timer tick expressed in current anchor clock
+* **type** is 0x22
+* **seqs\[i\]**
+   * **If i == anchor_id** Sequence number of the current packet
+   * **If i != anchor_id** Sequence number of the latest receive packet from anchor **i**
+* **timestamps[i]**
+   * **If i == anchor_id** Transmit time of the current packet expressed in current anchor clock
+   * **If i != anchor_id** Receive time of the latest receive packet from anchor **i** expressed in current anchor clock
+* **distances[i]**
+   * **If i == anchor_id** Reserved for future use
+   * **If i != anchor_id** Time of flight between current anchor and anchor **i** in radio timer tick expressed in current anchor clock
 
 Tag implementation
 ------------------
