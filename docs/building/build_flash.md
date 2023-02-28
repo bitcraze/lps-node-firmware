@@ -12,12 +12,12 @@ Frameworks for unit testing are pulled in as git submodules. To get them when cl
 ```bash
 git clone --recursive https://github.com/bitcraze/lps-node-firmware.git
 ```
-        
+
 or if you already have a cloned repo and want the submodules
- 
+
 ```bash
-git submodule init        
-git submodule update        
+git submodule init
+git submodule update
 ```
 
 ### OS X
@@ -66,11 +66,11 @@ sudo pacman -S community/arm-none-eabi-gcc community/arm-none-eabi-gdb community
 
 `make`
 
-or 
+or
 
 `docker run --rm -v ${PWD}:/module bitcraze/builder ./tools/build/compile`
 
-or 
+or
 
 `tools/do compile`
 
@@ -78,10 +78,10 @@ or
 
 > `TODO: Please share!`
 
-# Make targets:
+## Make targets:
 ```
 all        : Shortcut for build
 flash      : Flash throgh jtag
 openocd    : Launch OpenOCD
-dfu        : Flash throgh DFU 
+dfu        : Flash throgh DFU
 ```
