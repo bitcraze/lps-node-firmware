@@ -9,7 +9,7 @@ This reference system can be used to position in Two-way ranging mode
 (TWR). In this reference setup we have placed 3 anchors above and 3
 anchors bellow the flight area, shaped in inverse triangles. This allows
 to get good accuracy in X, Y and Z. There are [measurements of accuracy
-and precision](https://wiki.bitcraze.io/misc:investigations:lps-max-range) for this reference
+and precision](https://bitcraze.io/documentation/system/positioning/max-range-loco/) for this reference
 system.
 
 ![LPS reference 6](/docs/images/loco_ref_system_6_anchors.png){:width="1200"}
