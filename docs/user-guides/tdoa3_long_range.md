@@ -14,10 +14,16 @@ position a bit compared to "normal" TDoA3.
 
 ## How to configure
 
-Both the anchors and the Crazyflie must be configured in the Long Range mode. You can read about [how to configure the
-Crazyflie here](https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/userguides/configuration/tdoa3_long_range_config).
+Both the anchors and the Crazyflie must be configured in the Long Range mode. You can read about
+[how to configure the Crazyflie here](https://www.bitcraze.io/documentation/repository/crazyflie-firmware/master/userguides/configuration/tdoa3_long_range_config).
 
 The anchors must be configured with the radio mode: `low bitrate, normal preamble`, [see the low level configuration section](/docs/development/anchor-low-level-config)
+
+The key sequence to use in the configuration is:
+1. `r` - the UWB radio settings menu
+2. `1` - low bitrate, normal preamble
+
+You might also want to [increase the TX power](../configure-tx-power).
 
 ## Limitations
 
