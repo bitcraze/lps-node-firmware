@@ -1,5 +1,5 @@
 OPENOCD           ?= openocd
-OPENOCD_INTERFACE ?= interface/stlink-v2.cfg
+OPENOCD_INTERFACE ?= interface/stlink.cfg
 OPENOCD_CMDS      ?=
 REV               ?= B
 PYTHON           ?= python3
@@ -14,7 +14,7 @@ else ifeq ($(strip $(REV)),B)
 HAL_ROOT=hal/stm32f0xx
 CPU=f0
 PROCESSOR=-mthumb -mcpu=cortex-m0 -DHSI48_VALUE="((uint32_t)48000000)" -DSTM32F072xB
-OPENOCD_TARGET    ?= target/stm32f0x_stlink.cfg
+OPENOCD_TARGET    ?= target/stm32f0x.cfg
 else
 $(error Rev.$(REV) unknown)
 endif
