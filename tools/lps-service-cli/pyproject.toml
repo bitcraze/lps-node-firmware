@@ -1,0 +1,26 @@
+[project]
+name = "lps-service-cli"
+version = "0.1.0"
+description = "CLI for LPS node service-message settings over the serial service shell"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "pyserial>=3.5",
+  "PyYAML>=6.0.2",
+]
+
+[project.scripts]
+lps-service = "lps_service_cli.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.0,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
