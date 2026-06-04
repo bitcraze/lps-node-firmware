@@ -48,6 +48,7 @@ The implementation must handle
 #include <string.h>
 #include <stdlib.h>
 
+#include "stm32f0xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "uwb.h"
@@ -56,6 +57,9 @@ The implementation must handle
 
 #include "cfg.h"
 #include "lpp.h"
+#include "service_config.h"
+#include "service_dispatch.h"
+#include "service_protocol.h"
 
 #define debug(...) printf(__VA_ARGS__)
 
@@ -193,6 +197,10 @@ typedef struct {
 #define LPP_TYPE (LPP_HEADER + 1)
 #define LPP_PAYLOAD (LPP_HEADER + 2)
 
+#define SERVICE_REPLY_DUPLICATE_WINDOW_MS 1000
+#define SERVICE_REPLY_TX_TIMEOUT_MS 10
+
+static packet_t txPacket;
 
 static anchorContext_t* getContext(uint8_t anchorId) {
   uint8_t slot = ctx.anchorCtxLookup[anchorId];
@@ -490,7 +498,49 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
   }
 }
 
-static void handleRxPacket(dwDevice_t *dev)
+static void sendServiceReply(dwDevice_t *dev, const packet_t *requestPacket, const uint8_t *reply, size_t replyLength)
+{
+  MAC80215_PACKET_INIT(txPacket, MAC802154_TYPE_DATA);
+
+  memcpy(txPacket.sourceAddress, base_address, 8);
+  txPacket.sourceAddress[0] = ctx.anchorId;
+  memcpy(txPacket.destAddress, base_address, 8);
+  txPacket.destAddress[0] = requestPacket->sourceAddress[0];
+  memcpy(txPacket.payload, reply, replyLength);
+
+  dwNewTransmit(dev);
+  dwSetDefaults(dev);
+  dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + replyLength);
+  dwStartTransmit(dev);
+}
+
+static bool handleServiceRequest(dwDevice_t *dev, const packet_t *rxPacket, int dataLength)
+{
+  uint8_t reply[128];
+  bool resetRequired = false;
+  serviceDispatchConfig_t dispatchConfig;
+  serviceConfigInitDispatchConfig(&dispatchConfig);
+
+  if (dataLength < MAC802154_HEADER_LENGTH + SERVICE_REQUEST_HEADER_SIZE) {
+    return false;
+  }
+
+  size_t payloadLength = dataLength - MAC802154_HEADER_LENGTH;
+  size_t replyLength = serviceDispatchHandleRequest(&dispatchConfig, rxPacket->payload, payloadLength, reply, sizeof(reply), &resetRequired);
+
+  if (replyLength > 0) {
+    sendServiceReply(dev, rxPacket, reply, replyLength);
+  }
+
+  if (resetRequired) {
+    HAL_Delay(SERVICE_REPLY_DUPLICATE_WINDOW_MS);
+    NVIC_SystemReset();
+  }
+
+  return replyLength > 0 && !resetRequired;
+}
+
+static bool handleRxPacket(dwDevice_t *dev)
 {
   static packet_t rxPacket;
   dwTime_t rxTime = { .full = 0 };
@@ -499,12 +549,12 @@ static void handleRxPacket(dwDevice_t *dev)
   dwCorrectTimestamp(dev, &rxTime);
 
   int dataLength = dwGetDataLength(dev);
+  if (dataLength <= 0 || dataLength > sizeof(rxPacket)) {
+    return false;
+  }
+
   rxPacket.payload[0] = 0;
   dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
-
-  if (dataLength == 0) {
-    return;
-  }
 
   switch(rxPacket.payload[0]) {
   case PACKET_TYPE_TDOA3:
@@ -515,10 +565,17 @@ static void handleRxPacket(dwDevice_t *dev)
       lppHandleShortPacket(&rxPacket.payload[1], dataLength - MAC802154_HEADER_LENGTH - 1);
     }
     break;
+  case SERVICE_PACKET_REQUEST:
+    if (rxPacket.destAddress[0] == ctx.anchorId) {
+      return handleServiceRequest(dev, &rxPacket, dataLength);
+    }
+    break;
   default:
     // Do nothing
     break;
   }
+
+  return false;
 }
 
 static void setupRx(dwDevice_t *dev)
@@ -566,22 +623,16 @@ static int populateTxData(rangePacket3_t *rangePacket)
 // Set TX data in the radio TX buffer
 static void setTxData(dwDevice_t *dev)
 {
-  static packet_t txPacket;
-  static bool firstEntry = true;
-  static int lppLength = 0;
+  int lppLength = 0;
 
-  if (firstEntry) {
-    MAC80215_PACKET_INIT(txPacket, MAC802154_TYPE_DATA);
+  MAC80215_PACKET_INIT(txPacket, MAC802154_TYPE_DATA);
 
-    memcpy(txPacket.sourceAddress, base_address, 8);
-    txPacket.sourceAddress[0] = ctx.anchorId;
-    memcpy(txPacket.destAddress, base_address, 8);
-    txPacket.destAddress[0] = 0xff;
+  memcpy(txPacket.sourceAddress, base_address, 8);
+  txPacket.sourceAddress[0] = ctx.anchorId;
+  memcpy(txPacket.destAddress, base_address, 8);
+  txPacket.destAddress[0] = 0xff;
 
-    txPacket.payload[0] = PACKET_TYPE_TDOA3;
-
-    firstEntry = false;
-  }
+  txPacket.payload[0] = PACKET_TYPE_TDOA3;
 
   uwbConfig_t *uwbConfig = uwbGetConfig();
 
@@ -676,7 +727,9 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 {
   switch (event) {
     case eventPacketReceived: {
-        handleRxPacket(dev);
+        if (handleRxPacket(dev)) {
+          return SERVICE_REPLY_TX_TIMEOUT_MS;
+        }
       }
       break;
     default:

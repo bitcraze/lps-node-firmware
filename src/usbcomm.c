@@ -6,7 +6,7 @@
 #include "usbd_conf.h"
 #include "usbd_cdc_if.h"
 
-#define INITBUFFER_LEN 1024
+#define INITBUFFER_LEN 128
 
 static char initBuffer[INITBUFFER_LEN];
 static int initPtr = 0;

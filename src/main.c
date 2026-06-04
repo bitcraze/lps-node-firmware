@@ -49,6 +49,8 @@
 #include "production_test.h"
 
 #include "uwb.h"
+#include "service_shell.h"
+#include "main_task_config.h"
 
 
 #define POWER_LEVELS 10
@@ -66,9 +68,12 @@ static void printModeList();
 static void printRadioModeList();
 static void printMode();
 static void printRadioMode();
+static void printStableStatus(void);
 static void printPowerHelp();
 static void help();
 static void bootload(void);
+static void serviceShellWrite(const char *text);
+static void serviceShellFlush(void);
 
 typedef enum {mainMenu, modeMenu, idMenu, radioMenu, powerMenu} Menu_t;
 typedef struct {
@@ -224,6 +229,25 @@ int _write (int fd, const void *buf, size_t count)
   return count;
 }
 
+static void serviceShellWrite(const char *text) {
+  printf("%s", text);
+}
+
+static void serviceShellFlush(void) {
+  fflush(stdout);
+}
+
+static void enterServiceShell(MenuState *menuState, bool humanFriendly) {
+  if (humanFriendly) {
+    serviceShellEnterHuman(uwbGetConfig()->mode == MODE_SERVICE_CONTROLLER, serviceShellWrite, serviceShellFlush);
+  } else {
+    serviceShellEnter(uwbGetConfig()->mode == MODE_SERVICE_CONTROLLER, serviceShellWrite);
+  }
+  menuState->currentMenu = mainMenu;
+  menuState->configChanged = false;
+  menuState->tempId = 0;
+}
+
 static void handleMenuMain(char ch, MenuState* menuState) {
   switch (ch) {
     case '0':
@@ -261,6 +285,13 @@ static void handleMenuMain(char ch, MenuState* menuState) {
       menuState->configChanged = false;
       break;
     case 'd': restConfig(); break;
+    case '?':
+      printStableStatus();
+      menuState->configChanged = false;
+      break;
+    case 'c':
+      enterServiceShell(menuState, true);
+      break;
     case 'h':
       help();
       menuState->configChanged = false;
@@ -397,11 +428,28 @@ static void handleMenuPower(char ch, MenuState* menuState) {
 }
 
 static void handleSerialInput(char ch) {
+  static const char serviceEscape[] = "\x1bsvc\n";
+  static unsigned int serviceEscapePos = 0;
   static MenuState menuState = {
     .configChanged = true,
     .currentMenu = mainMenu,
     .tempId = 0,
   };
+
+  if (serviceShellIsActive()) {
+    serviceShellProcessChar(ch);
+    return;
+  }
+
+  if (ch == serviceEscape[serviceEscapePos]) {
+    serviceEscapePos++;
+    if (serviceEscape[serviceEscapePos] == '\0') {
+      enterServiceShell(&menuState, false);
+      serviceEscapePos = 0;
+    }
+    return;
+  }
+  serviceEscapePos = 0;
 
   menuState.configChanged = true;
 
@@ -557,6 +605,18 @@ static void printRadioMode() {
   printf("\r\n");
 }
 
+static void printStableStatus(void) {
+  uwbConfig_t *uwbConfig = uwbGetConfig();
+  uint8_t radioMode = (uwbConfig->lowBitrate ? 1 : 0) | (uwbConfig->longPreamble ? 2 : 0);
+  printf("STATUS id=%u mode=%u mode_name=\"%s\" radio=%u low_bitrate=%u long_preamble=%u\r\n",
+         uwbConfig->address[0],
+         uwbConfig->mode,
+         uwbAlgorithmName(uwbConfig->mode),
+         radioMode,
+         uwbConfig->lowBitrate ? 1 : 0,
+         uwbConfig->longPreamble ? 1 : 0);
+}
+
 static void printRadioModeList()
 {
   uint8_t lowBitrate;
@@ -600,13 +660,15 @@ static void help() {
   printf("p   - change power mode\r\n");
   printf("d   - reset configuration\r\n");
   printf("u   - enter BSL (DFU mode)\r\n");
+  printf("?   - print stable status\r\n");
+  printf("c   - enter service shell (service controller mode only)\r\n");
   printf("h   - This help\r\n");
   printf("---- For machine only\r\n");
   printf("b   - Switch to binary mode (sniffer only)\r\n");
 }
 
 static StaticTask_t xMainTask;
-static StackType_t ucMainStack[configMINIMAL_STACK_SIZE];
+static StackType_t ucMainStack[MAIN_TASK_STACK_SIZE];
 
 int main() {
   // Reset of all peripherals, Initializes the Flash interface and the Systick.
@@ -616,7 +678,7 @@ int main() {
   SystemClock_Config();
 
   // Setup main task
-  xTaskCreateStatic( main_task, "main", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 2, ucMainStack, &xMainTask );
+  xTaskCreateStatic( main_task, "main", MAIN_TASK_STACK_SIZE, NULL, configMAX_PRIORITIES - 2, ucMainStack, &xMainTask );
 
   // Start the FreeRTOS scheduler
   vTaskStartScheduler();
