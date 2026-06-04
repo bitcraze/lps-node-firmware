@@ -97,7 +97,7 @@ USBD_HandleTypeDef  *hUsbDevice_0;
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
-#define RX_Q_SIZE 10
+#define RX_Q_SIZE 96
 #define TX_Q_SIZE 512
 #define Q_ITEM_SIZE (sizeof(uint8_t))
 
