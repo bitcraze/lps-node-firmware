@@ -49,6 +49,12 @@ def _validate_radio(value: int) -> int:
     return value
 
 
+def _validate_channel(value: int) -> int:
+    if value not in {1, 2, 3, 4, 5, 7}:
+        raise ValueError("channel must be one of 1,2,3,4,5,7")
+    return value
+
+
 def _validate_power_db(value: float) -> float:
     if value < 0.5 or value > 33.5:
         raise ValueError("power-db must be in range 0.5..33.5")
@@ -100,6 +106,9 @@ def _set_command_for_node(args: argparse.Namespace, node_id: int) -> str:
     if args.radio is not None:
         radio = _validate_radio(args.radio)
         return f"set radio {node_id} {radio}"
+    if args.channel is not None:
+        channel = _validate_channel(args.channel)
+        return f"set channel {node_id} {channel}"
     if args.power is not None:
         return f"set power {node_id} default"
     if args.power_db is not None:
@@ -294,6 +303,9 @@ Radio mode values:
   2=normal bitrate + long preamble
   3=low bitrate + long preamble
 
+Channel values:
+  --channel N           UWB channel, one of 1,2,3,4,5,7
+
 Power values:
   --power default       enable default/smart power
   --power-db DB         force TX power, 0.5..33.5 dB in 0.5 dB steps
@@ -313,6 +325,9 @@ Position values:
         help="finite coordinates in meters",
     )
     setting_group.add_argument("--radio", type=int, metavar="N", help="radio mode 0..3")
+    setting_group.add_argument(
+        "--channel", type=int, metavar="N", help="UWB channel, one of 1,2,3,4,5,7"
+    )
     setting_group.add_argument("--power", choices=["default"], help="default/smart power")
     setting_group.add_argument(
         "--power-db",

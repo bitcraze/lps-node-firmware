@@ -23,6 +23,7 @@ def sample_get_values() -> dict[str, object]:
         "force_tx_power": False,
         "tx_power": "0x07274767",
         "radio": 1,
+        "channel": 5,
         "low_bitrate": True,
         "long_preamble": False,
         "version": 1,
@@ -37,6 +38,7 @@ def test_get_values_map_to_settings_and_status_without_duplication() -> None:
         "settings": {
             "position": {"enabled": True, "x": 1.25, "y": 2.5, "z": 3.75},
             "radio": 1,
+            "channel": 5,
             "power": "default",
         },
         "status": {
@@ -92,6 +94,7 @@ def test_apply_uses_settings_only_and_ignores_status() -> None:
         "settings": {
             "position": {"enabled": True, "x": 1.0, "y": 2.0, "z": 3.0},
             "radio": 2,
+            "channel": 7,
             "power_db": 10.5,
         },
         "status": {"mode": 4, "radio": 0, "power": "ignored"},
@@ -100,6 +103,7 @@ def test_apply_uses_settings_only_and_ignores_status() -> None:
     assert apply_commands_for_node(record) == [
         "set pos 7 1.0 2.0 3.0",
         "set radio 7 2",
+        "set channel 7 7",
         "set power 7 10.5",
     ]
 
@@ -143,4 +147,15 @@ def test_apply_rejects_raw_power_fields() -> None:
     }
 
     with pytest.raises(ModelError):
+        apply_commands_for_node(record)
+
+
+@pytest.mark.parametrize("channel", [0, 6, 8])
+def test_apply_rejects_invalid_channel(channel: int) -> None:
+    record = {
+        "id": 7,
+        "settings": {"channel": channel},
+    }
+
+    with pytest.raises(ModelError, match="channel"):
         apply_commands_for_node(record)

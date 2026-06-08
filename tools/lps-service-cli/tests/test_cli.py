@@ -24,6 +24,7 @@ def sample_get_values(node_id: int) -> dict[str, object]:
         "force_tx_power": False,
         "tx_power": "0x07274767",
         "radio": 1,
+        "channel": 5,
         "low_bitrate": True,
         "long_preamble": False,
         "version": 1,
@@ -191,6 +192,19 @@ def test_set_range_power_db_sends_command_for_each_node(capsys: Any) -> None:
         "set power 3 10.5",
     ]
     assert capsys.readouterr().out.count("OK") == 3
+
+
+def test_set_range_channel_sends_command_for_each_node(capsys: Any) -> None:
+    factory = FakeFactory()
+
+    exit_code = cli.run(
+        ["--port", "/dev/fake", "set", "1..2", "--channel", "7"],
+        client_factory=factory,
+    )
+
+    assert exit_code == 0
+    assert factory.client.commands == ["set channel 1 7", "set channel 2 7"]
+    assert capsys.readouterr().out.count("OK") == 2
 
 
 def test_dump_range_writes_yaml_file(tmp_path: Path) -> None:
@@ -429,6 +443,19 @@ def test_invalid_radio_returns_error_without_opening_serial(capsys: Any) -> None
     assert exit_code == 1
     assert factory.clients == []
     assert "ERROR" in capsys.readouterr().err
+
+
+def test_set_rejects_invalid_channel_without_opening_serial(capsys: Any) -> None:
+    factory = FakeFactory()
+
+    exit_code = cli.run(
+        ["--port", "/dev/fake", "set", "1", "--channel", "6"],
+        client_factory=factory,
+    )
+
+    assert exit_code == 1
+    assert factory.clients == []
+    assert "channel" in capsys.readouterr().err
 
 
 def test_invalid_dump_selector_returns_error_without_opening_serial(capsys: Any) -> None:

@@ -70,6 +70,7 @@ def node_record_from_get_values(requested_id: int, values: Mapping[str, object])
             "z": _required_float(values, "z"),
         },
         "radio": _required_int(values, "radio"),
+        "channel": _validate_channel(_required_int(values, "channel")),
     }
 
     smart_power = _required_bool(values, "smart_power")
@@ -130,6 +131,14 @@ def _validate_radio(value: object) -> int:
         raise ModelError("expected integer for radio")
     if value < 0 or value > 3:
         raise ModelError("radio outside valid range 0..3")
+    return value
+
+
+def _validate_channel(value: object) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ModelError("expected integer for channel")
+    if value not in {1, 2, 3, 4, 5, 7}:
+        raise ModelError("channel must be one of 1,2,3,4,5,7")
     return value
 
 
@@ -195,6 +204,10 @@ def apply_commands_for_node(record: Mapping[str, object]) -> list[str]:
     if "radio" in settings:
         radio = _validate_radio(settings["radio"])
         commands.append(f"set radio {node_id} {radio}")
+
+    if "channel" in settings:
+        channel = _validate_channel(settings["channel"])
+        commands.append(f"set channel {node_id} {channel}")
 
     power_command = _power_command(node_id, settings)
     if power_command is not None:

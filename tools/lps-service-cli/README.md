@@ -73,6 +73,12 @@ Set radio:
 uv run lps-service --port /dev/ttyACM0 set 1 --radio 2
 ```
 
+Set UWB channel. Valid channel values are `1`, `2`, `3`, `4`, `5`, and `7`:
+
+```bash
+uv run lps-service --port /dev/ttyACM0 set 1 --channel 5
+```
+
 Set default power handling:
 
 ```bash
@@ -139,6 +145,7 @@ nodes:
         y: 2.0
         z: 0.5
       radio: 2
+      channel: 5
       power: default
     status:
       mode: 1
@@ -153,6 +160,7 @@ nodes:
         y: 2.0
         z: 0.5
       radio: 2
+      channel: 5
       power_db: 12.5
     status:
       mode: 1
