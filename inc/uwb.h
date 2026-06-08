@@ -48,6 +48,7 @@ typedef struct uwbConfig_s {
 
   bool lowBitrate;
   bool longPreamble;
+  uint8_t channel;
 } uwbConfig_t;
 
 #define MODE_ANCHOR 0

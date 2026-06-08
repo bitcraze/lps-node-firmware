@@ -27,5 +27,6 @@ bool serviceConfigReadSnapshot(serviceConfigPayload_t *snapshot);
 bool serviceConfigWritePosition(const float position[3]);
 bool serviceConfigWriteRadioMode(uint8_t radioMode);
 bool serviceConfigWriteTxPower(const serviceSetTxPowerPayload_t *payload);
+bool serviceConfigWriteUwbChannel(uint8_t channel);
 
 #endif // __SERVICE_CONFIG_H__

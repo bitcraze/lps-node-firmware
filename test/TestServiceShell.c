@@ -78,6 +78,7 @@ serviceControllerResult_t serviceControllerTransaction(uint8_t targetId, uint8_t
       .txPower = 0x07274767UL,
       .lowBitrate = 1,
       .longPreamble = 0,
+      .channel = 5,
       .serviceProtocolVersion = SERVICE_PROTOCOL_VERSION,
     };
     memcpy(replyPayload, &reply, sizeof(reply));
@@ -217,6 +218,32 @@ void test_serviceShellShouldSendSetRadioTransaction(void) {
   TEST_ASSERT_EQUAL_STRING("SVC READY version=1\r\nsvc> OK req=4660 target=3 status=active reset=0\r\nsvc> ", output);
 }
 
+void test_serviceShellShouldSendSetChannelTransaction(void) {
+  serviceSetUwbChannelPayload_t payload;
+
+  TEST_ASSERT_TRUE(serviceShellEnter(true, writeOutput));
+
+  sendLine("set channel 3 7");
+
+  TEST_ASSERT_TRUE(transactionCalled);
+  TEST_ASSERT_EQUAL_UINT8(3, recordedTargetId);
+  TEST_ASSERT_EQUAL_UINT8(SERVICE_COMMAND_SET_UWB_CHANNEL, recordedCommandId);
+  TEST_ASSERT_EQUAL_UINT8(sizeof(serviceSetUwbChannelPayload_t), recordedPayloadLength);
+  memcpy(&payload, recordedPayload, sizeof(payload));
+  TEST_ASSERT_EQUAL_UINT8(7, payload.channel);
+  TEST_ASSERT_EQUAL_STRING("SVC READY version=1\r\nsvc> OK req=4660 target=3 status=active reset=0\r\nsvc> ", output);
+}
+
+void test_serviceShellShouldRejectInvalidChannel(void) {
+  TEST_ASSERT_TRUE(serviceShellEnter(true, writeOutput));
+
+  sendLine("set channel 3 6");
+
+  TEST_ASSERT_FALSE(transactionCalled);
+  TEST_ASSERT_TRUE(serviceShellIsActive());
+  TEST_ASSERT_EQUAL_STRING("SVC READY version=1\r\nsvc> ERR code=bad_value field=channel\r\nsvc> ", output);
+}
+
 void test_serviceShellShouldSendGetTransactionWithReplyCapacity(void) {
   TEST_ASSERT_TRUE(serviceShellEnter(true, writeOutput));
 
@@ -229,7 +256,7 @@ void test_serviceShellShouldSendGetTransactionWithReplyCapacity(void) {
   TEST_ASSERT_TRUE(recordedReplyPayloadPresent);
   TEST_ASSERT_TRUE(recordedReplyPayloadLengthPresent);
   TEST_ASSERT_EQUAL_UINT8(sizeof(serviceConfigPayload_t), recordedReplyPayloadCapacity);
-  TEST_ASSERT_EQUAL_STRING("SVC READY version=1\r\nsvc> OK req=4660 target=5 node=5 mode=4 pos_enabled=1 x=1.250 y=2.500 z=3.750 smart_power=1 force_tx_power=0 tx_power=0x07274767 radio=1 low_bitrate=1 long_preamble=0 version=1\r\nsvc> ", output);
+  TEST_ASSERT_EQUAL_STRING("SVC READY version=1\r\nsvc> OK req=4660 target=5 node=5 mode=4 pos_enabled=1 x=1.250 y=2.500 z=3.750 smart_power=1 force_tx_power=0 tx_power=0x07274767 radio=1 low_bitrate=1 long_preamble=0 channel=5 version=1\r\nsvc> ", output);
 }
 
 void test_serviceShellShouldRejectNulInsideLineWithoutExiting(void) {

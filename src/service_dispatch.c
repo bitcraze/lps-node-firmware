@@ -8,6 +8,7 @@ static bool isKnownCommand(uint8_t commandId) {
     case SERVICE_COMMAND_SET_POSITION:
     case SERVICE_COMMAND_SET_RADIO_MODE:
     case SERVICE_COMMAND_SET_TX_POWER:
+    case SERVICE_COMMAND_SET_UWB_CHANNEL:
       return true;
     default:
       return false;
@@ -29,6 +30,20 @@ static size_t writeHeaderOnlyReply(uint8_t *replyFrame, const serviceRequestHead
 
 static bool hasReplyCapacity(size_t replyCapacity, size_t payloadLength) {
   return replyCapacity >= sizeof(serviceReplyHeader_t) + payloadLength;
+}
+
+static bool isValidUwbChannel(uint8_t channel) {
+  switch (channel) {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 7:
+      return true;
+    default:
+      return false;
+  }
 }
 
 size_t serviceDispatchHandleRequest(const serviceDispatchConfig_t *config, const uint8_t *requestFrame, size_t requestLength, uint8_t *replyFrame, size_t replyCapacity, bool *resetRequired) {
@@ -70,7 +85,7 @@ size_t serviceDispatchHandleRequest(const serviceDispatchConfig_t *config, const
 
   switch (request.commandId) {
     case SERVICE_COMMAND_GET_CONFIG: {
-      serviceConfigPayload_t snapshot;
+      serviceConfigPayload_t snapshot = { 0 };
 
       if (!hasReplyCapacity(replyCapacity, sizeof(snapshot))) {
         return 0;
@@ -123,6 +138,26 @@ size_t serviceDispatchHandleRequest(const serviceDispatchConfig_t *config, const
       memcpy(&payload, requestFrame + sizeof(request), sizeof(payload));
 
       if (config->writeTxPower == NULL || !config->writeTxPower(&payload)) {
+        return writeHeaderOnlyReply(replyFrame, &request, SERVICE_STATUS_WRITE_FAILED);
+      }
+
+      if (resetRequired != NULL) {
+        *resetRequired = true;
+      }
+
+      return writeReplyHeader(replyFrame, &request, SERVICE_STATUS_OK, SERVICE_REPLY_FLAG_WRITTEN | SERVICE_REPLY_FLAG_RESET_PENDING, 0);
+    }
+
+    case SERVICE_COMMAND_SET_UWB_CHANNEL: {
+      serviceSetUwbChannelPayload_t payload;
+
+      memcpy(&payload, requestFrame + sizeof(request), sizeof(payload));
+
+      if (!isValidUwbChannel(payload.channel)) {
+        return writeHeaderOnlyReply(replyFrame, &request, SERVICE_STATUS_BAD_VALUE);
+      }
+
+      if (config->writeUwbChannel == NULL || !config->writeUwbChannel(payload.channel)) {
         return writeHeaderOnlyReply(replyFrame, &request, SERVICE_STATUS_WRITE_FAILED);
       }
 

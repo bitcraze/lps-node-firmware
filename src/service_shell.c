@@ -221,6 +221,10 @@ static void formatPosition(char *output, size_t outputLength, float value) {
   snprintf(output, outputLength, "%s%lu.%03lu", scaled < 0 ? "-" : "", (unsigned long)(absolute / 1000), (unsigned long)(absolute % 1000));
 }
 
+static bool isValidUwbChannel(unsigned int channel) {
+  return channel == 1 || channel == 2 || channel == 3 || channel == 4 || channel == 5 || channel == 7;
+}
+
 static void SERVICE_SHELL_NOINLINE writeConfigSnapshot(uint8_t targetId, uint16_t requestId, const serviceConfigPayload_t *snapshot) {
   char output[96];
   char x[16];
@@ -253,9 +257,10 @@ static void SERVICE_SHELL_NOINLINE writeConfigSnapshot(uint8_t targetId, uint16_
   writeText(output);
 
   snprintf(output, sizeof(output),
-           "low_bitrate=%u long_preamble=%u version=%u\r\n",
+           "low_bitrate=%u long_preamble=%u channel=%u version=%u\r\n",
            snapshot->lowBitrate,
            snapshot->longPreamble,
+           snapshot->channel,
            snapshot->serviceProtocolVersion);
   writeText(output);
 }
@@ -334,6 +339,22 @@ static void SERVICE_SHELL_NOINLINE handleSetRadio(const char *args) {
   runTransaction((uint8_t)target, SERVICE_COMMAND_SET_RADIO_MODE, &payload, sizeof(payload), NULL, NULL);
 }
 
+static void SERVICE_SHELL_NOINLINE handleSetChannel(const char *args) {
+  unsigned int target;
+  unsigned int channel;
+  char tail;
+  serviceSetUwbChannelPayload_t payload;
+
+  if (sscanf(args, "%u %u %c", &target, &channel, &tail) != 2 || target > UINT8_MAX || !isValidUwbChannel(channel)) {
+    writeText("ERR code=bad_value field=channel\r\n");
+    return;
+  }
+
+  payload.channel = (uint8_t)channel;
+
+  runTransaction((uint8_t)target, SERVICE_COMMAND_SET_UWB_CHANNEL, &payload, sizeof(payload), NULL, NULL);
+}
+
 static void SERVICE_SHELL_NOINLINE handleSetPower(const char *args) {
   unsigned int target;
   char value[16];
@@ -371,6 +392,8 @@ static void handleSet(const char *args) {
     handleSetPosition(args + 4);
   } else if (strncmp(args, "radio ", 6) == 0) {
     handleSetRadio(args + 6);
+  } else if (strncmp(args, "channel ", 8) == 0) {
+    handleSetChannel(args + 8);
   } else if (strncmp(args, "power ", 6) == 0) {
     handleSetPower(args + 6);
   } else {

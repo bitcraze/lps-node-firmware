@@ -9,13 +9,16 @@ static bool readConfigResult;
 static bool writePositionResult;
 static bool writeRadioModeResult;
 static bool writeTxPowerResult;
+static bool writeUwbChannelResult;
 static bool readConfigCalled;
 static bool writePositionCalled;
 static bool writeRadioModeCalled;
 static bool writeTxPowerCalled;
+static bool writeUwbChannelCalled;
 static float writtenPosition[3];
 static uint8_t writtenRadioMode;
 static serviceSetTxPowerPayload_t writtenTxPower;
+static uint8_t writtenUwbChannel;
 
 static bool readConfig(serviceConfigPayload_t *snapshot) {
   readConfigCalled = true;
@@ -41,6 +44,12 @@ static bool writeTxPower(const serviceSetTxPowerPayload_t *payload) {
   return writeTxPowerResult;
 }
 
+static bool writeUwbChannel(uint8_t channel) {
+  writeUwbChannelCalled = true;
+  writtenUwbChannel = channel;
+  return writeUwbChannelResult;
+}
+
 static serviceDispatchConfig_t defaultConfig(void) {
   serviceDispatchConfig_t config = {
     .nodeId = 7,
@@ -48,6 +57,7 @@ static serviceDispatchConfig_t defaultConfig(void) {
     .writePosition = writePosition,
     .writeRadioMode = writeRadioMode,
     .writeTxPower = writeTxPower,
+    .writeUwbChannel = writeUwbChannel,
   };
 
   return config;
@@ -86,11 +96,14 @@ void setUp(void) {
   writePositionResult = true;
   writeRadioModeResult = true;
   writeTxPowerResult = true;
+  writeUwbChannelResult = true;
   readConfigCalled = false;
   writePositionCalled = false;
   writeRadioModeCalled = false;
   writeTxPowerCalled = false;
+  writeUwbChannelCalled = false;
   writtenRadioMode = 0;
+  writtenUwbChannel = 0;
 }
 
 void tearDown(void) {}
@@ -151,6 +164,7 @@ void test_serviceDispatchShouldReturnConfigPayloadForGetConfig(void) {
   readConfigSnapshot.txPower = 0x12345678;
   readConfigSnapshot.lowBitrate = 1;
   readConfigSnapshot.longPreamble = 0;
+  readConfigSnapshot.channel = 7;
   readConfigSnapshot.serviceProtocolVersion = SERVICE_PROTOCOL_VERSION;
 
   size_t requestLength = makeRequest(requestFrame, 7, SERVICE_COMMAND_GET_CONFIG, NULL, 0);
@@ -236,6 +250,49 @@ void test_serviceDispatchShouldWriteTxPowerAndRequireReset(void) {
   TEST_ASSERT_EQUAL_UINT8(SERVICE_REPLY_FLAG_WRITTEN | SERVICE_REPLY_FLAG_RESET_PENDING, reply.flags);
   TEST_ASSERT_EQUAL_UINT8(0, reply.payloadLength);
   TEST_ASSERT_TRUE(resetRequired);
+}
+
+void test_serviceDispatchShouldWriteUwbChannelAndRequireReset(void) {
+  serviceDispatchConfig_t config = defaultConfig();
+  serviceSetUwbChannelPayload_t payload = {
+    .channel = 5,
+  };
+  uint8_t requestFrame[SERVICE_REQUEST_HEADER_SIZE + sizeof(payload)];
+  uint8_t replyFrame[SERVICE_REPLY_HEADER_SIZE];
+  bool resetRequired = false;
+
+  size_t requestLength = makeRequest(requestFrame, 7, SERVICE_COMMAND_SET_UWB_CHANNEL, &payload, sizeof(payload));
+  size_t replyLength = serviceDispatchHandleRequest(&config, requestFrame, requestLength, replyFrame, sizeof(replyFrame), &resetRequired);
+  serviceReplyHeader_t reply = replyHeader(replyFrame);
+
+  TEST_ASSERT_EQUAL_UINT(sizeof(serviceReplyHeader_t), replyLength);
+  TEST_ASSERT_TRUE(writeUwbChannelCalled);
+  TEST_ASSERT_EQUAL_UINT8(5, writtenUwbChannel);
+  TEST_ASSERT_EQUAL_UINT8(SERVICE_STATUS_OK, reply.status);
+  TEST_ASSERT_EQUAL_UINT8(SERVICE_REPLY_FLAG_WRITTEN | SERVICE_REPLY_FLAG_RESET_PENDING, reply.flags);
+  TEST_ASSERT_EQUAL_UINT8(0, reply.payloadLength);
+  TEST_ASSERT_TRUE(resetRequired);
+}
+
+void test_serviceDispatchShouldRejectInvalidUwbChannelWithoutCallback(void) {
+  serviceDispatchConfig_t config = defaultConfig();
+  serviceSetUwbChannelPayload_t payload = {
+    .channel = 6,
+  };
+  uint8_t requestFrame[SERVICE_REQUEST_HEADER_SIZE + sizeof(payload)];
+  uint8_t replyFrame[SERVICE_REPLY_HEADER_SIZE];
+  bool resetRequired = true;
+
+  size_t requestLength = makeRequest(requestFrame, 7, SERVICE_COMMAND_SET_UWB_CHANNEL, &payload, sizeof(payload));
+  size_t replyLength = serviceDispatchHandleRequest(&config, requestFrame, requestLength, replyFrame, sizeof(replyFrame), &resetRequired);
+  serviceReplyHeader_t reply = replyHeader(replyFrame);
+
+  TEST_ASSERT_EQUAL_UINT(sizeof(serviceReplyHeader_t), replyLength);
+  TEST_ASSERT_FALSE(writeUwbChannelCalled);
+  TEST_ASSERT_EQUAL_UINT8(SERVICE_STATUS_BAD_VALUE, reply.status);
+  TEST_ASSERT_EQUAL_UINT8(0, reply.flags);
+  TEST_ASSERT_EQUAL_UINT8(0, reply.payloadLength);
+  TEST_ASSERT_FALSE(resetRequired);
 }
 
 void test_serviceDispatchShouldRejectInvalidRadioModeWithoutCallback(void) {

@@ -15,6 +15,8 @@
 
 #include "service_config.h"
 
+#include <string.h>
+
 #include "cfg.h"
 #include "uwb.h"
 
@@ -23,6 +25,8 @@ void serviceConfigInitDispatchConfig(serviceDispatchConfig_t *dispatchConfig) {
     return;
   }
 
+  memset(dispatchConfig, 0, sizeof(*dispatchConfig));
+
   uwbConfig_t *uwbConfig = uwbGetConfig();
 
   dispatchConfig->nodeId = uwbConfig->address[0];
@@ -30,6 +34,7 @@ void serviceConfigInitDispatchConfig(serviceDispatchConfig_t *dispatchConfig) {
   dispatchConfig->writePosition = serviceConfigWritePosition;
   dispatchConfig->writeRadioMode = serviceConfigWriteRadioMode;
   dispatchConfig->writeTxPower = serviceConfigWriteTxPower;
+  dispatchConfig->writeUwbChannel = serviceConfigWriteUwbChannel;
 }
 
 bool serviceConfigReadSnapshot(serviceConfigPayload_t *snapshot) {
@@ -50,6 +55,7 @@ bool serviceConfigReadSnapshot(serviceConfigPayload_t *snapshot) {
   snapshot->txPower = uwbConfig->txPower;
   snapshot->lowBitrate = uwbConfig->lowBitrate;
   snapshot->longPreamble = uwbConfig->longPreamble;
+  snapshot->channel = uwbConfig->channel;
   snapshot->serviceProtocolVersion = SERVICE_PROTOCOL_VERSION;
 
   return true;
@@ -103,4 +109,18 @@ bool serviceConfigWriteTxPower(const serviceSetTxPowerPayload_t *payload) {
   bool txPowerWritten = cfgWriteU32(cfgTxPower, payload->txPower);
 
   return smartPowerWritten && forceTxPowerWritten && txPowerWritten;
+}
+
+bool serviceConfigWriteUwbChannel(uint8_t channel) {
+  switch (channel) {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 7:
+      return cfgWriteU8(cfgUwbChannel, channel);
+    default:
+      return false;
+  }
 }

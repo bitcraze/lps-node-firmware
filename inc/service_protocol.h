@@ -14,6 +14,7 @@
 #define SERVICE_COMMAND_SET_POSITION 0x02
 #define SERVICE_COMMAND_SET_RADIO_MODE 0x03
 #define SERVICE_COMMAND_SET_TX_POWER 0x04
+#define SERVICE_COMMAND_SET_UWB_CHANNEL 0x05
 
 #define SERVICE_STATUS_OK 0x00
 #define SERVICE_STATUS_UNSUPPORTED_VERSION 0x01
@@ -67,6 +68,10 @@ typedef struct {
 } __attribute__((packed)) serviceSetTxPowerPayload_t;
 
 typedef struct {
+  uint8_t channel;
+} __attribute__((packed)) serviceSetUwbChannelPayload_t;
+
+typedef struct {
   uint8_t nodeId;
   uint8_t mode;
   uint8_t positionEnabled;
@@ -76,6 +81,7 @@ typedef struct {
   uint32_t txPower;
   uint8_t lowBitrate;
   uint8_t longPreamble;
+  uint8_t channel;
   uint8_t serviceProtocolVersion;
 } __attribute__((packed)) serviceConfigPayload_t;
 

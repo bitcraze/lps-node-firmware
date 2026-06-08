@@ -14,6 +14,9 @@ static bool expectedPayloadLength(uint8_t commandId, uint8_t *payloadLength) {
     case SERVICE_COMMAND_SET_TX_POWER:
       *payloadLength = sizeof(serviceSetTxPowerPayload_t);
       return true;
+    case SERVICE_COMMAND_SET_UWB_CHANNEL:
+      *payloadLength = sizeof(serviceSetUwbChannelPayload_t);
+      return true;
     default:
       return false;
   }

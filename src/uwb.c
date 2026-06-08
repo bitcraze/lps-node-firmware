@@ -91,6 +91,30 @@ static void rxfailedcallback(dwDevice_t *dev) {
   timeout = algorithm->onEvent(dev, eventReceiveFailed);
 }
 
+static bool isValidUwbChannel(uint8_t channel) {
+  switch (channel) {
+    case CHANNEL_1:
+    case CHANNEL_2:
+    case CHANNEL_3:
+    case CHANNEL_4:
+    case CHANNEL_5:
+    case CHANNEL_7:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static uint8_t preambleCodeForUwbChannel(uint8_t channel) {
+  switch (channel) {
+    case CHANNEL_4:
+    case CHANNEL_7:
+      return PREAMBLE_CODE_64MHZ_17;
+    default:
+      return PREAMBLE_CODE_64MHZ_9;
+  }
+}
+
 
 void uwbInit()
 {
@@ -154,7 +178,13 @@ void uwbInit()
   }
   dwEnableMode(dwm, mode);
 
-  dwSetChannel(dwm, CHANNEL_2);
+  uint8_t channel = CHANNEL_2;
+  cfgReadU8(cfgUwbChannel, &channel);
+  if (!isValidUwbChannel(channel)) {
+    channel = CHANNEL_2;
+  }
+  config.channel = channel;
+  dwSetChannel(dwm, channel);
 
   // Enable smart power by default
   uint8_t enableSmartPower = 1;
@@ -175,7 +205,7 @@ void uwbInit()
     dwSetTxPower(dwm, txPower);
   }
 
-  dwSetPreambleCode(dwm, PREAMBLE_CODE_64MHZ_9);
+  dwSetPreambleCode(dwm, preambleCodeForUwbChannel(channel));
 
   dwCommitConfiguration(dwm);
 

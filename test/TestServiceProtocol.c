@@ -40,6 +40,20 @@ void test_serviceProtocolShouldAcceptPositionPayloadLength(void) {
   TEST_ASSERT_TRUE(serviceProtocolIsRequestLengthValid(&request, sizeof(request) + request.payloadLength));
 }
 
+void test_serviceProtocolShouldAcceptUwbChannelPayloadLength(void) {
+  serviceRequestHeader_t request = {
+    .type = SERVICE_PACKET_REQUEST,
+    .protocolVersion = SERVICE_PROTOCOL_VERSION,
+    .controllerId = 0xfe,
+    .targetId = 3,
+    .requestId = 42,
+    .commandId = SERVICE_COMMAND_SET_UWB_CHANNEL,
+    .payloadLength = sizeof(serviceSetUwbChannelPayload_t),
+  };
+
+  TEST_ASSERT_TRUE(serviceProtocolIsRequestLengthValid(&request, sizeof(request) + request.payloadLength));
+}
+
 void test_serviceProtocolShouldInitializeReplyForRequest(void) {
   serviceRequestHeader_t request = {
     .type = SERVICE_PACKET_REQUEST,
