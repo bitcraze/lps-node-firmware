@@ -53,8 +53,8 @@ OBJS+=vendor/libdw1000/src/libdw1000.o vendor/libdw1000/src/libdw1000Spi.o
 
 OBJS+=src/dwOps.o
 
-CFLAGS+=$(PROCESSOR) $(INCLUDES) -O3 -g3 -Wall -Wno-pointer-sign -std=gnu11
-LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -lm -lc -u _printf_float
+CFLAGS+=$(PROCESSOR) $(INCLUDES) -O2 -g3 -Wall -Wno-pointer-sign -std=gnu11 -mno-unaligned-access
+LDFLAGS+=$(PROCESSOR) --specs=nano.specs --specs=nosys.specs -lm -lc -u _printf_float -mno-unaligned-access
 
 ifeq ($(strip $(BOOTLOAD)),0)
 LDFLAGS+=-Ttools/make/stm32f072.ld
