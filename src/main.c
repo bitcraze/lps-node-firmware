@@ -148,6 +148,11 @@ static void main_task(void *pvParameters) {
     printf("0x%02X ", uwbConfig->anchors[i]);
   }
   printf("\r\n");
+  printf("CONFIG\t: TDoA3 excluded anchors (%i): ", uwbConfig->tdoa3ExcludedAnchorsSize);
+  for (i = 0; i < uwbConfig->tdoa3ExcludedAnchorsSize; i++) {
+    printf("0x%02X ", uwbConfig->tdoa3ExcludedAnchors[i]);
+  }
+  printf("\r\n");
   printf("CONFIG\t: Anchor position enabled: %s\r\n",
          uwbConfig->positionEnabled?"true":"false");
   if (uwbConfig->positionEnabled) {

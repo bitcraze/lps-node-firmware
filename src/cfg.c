@@ -263,16 +263,20 @@ bool cfgWriteU8list(ConfigField field, uint8_t list[], uint8_t length) {
     int pos = tlvFindType(&tlv, field);
 
     if (pos > -1) {
-      printf("Witing the list is not supported!!\r\n");
-      //tlv.data[pos+2] = value;
-      // TODO: The list can vary in length, we need to take care of that :-(
-    } else {
-      // Add new field at the end of the tlv
-      tlv.data[cfgHeader->tlvSize] = field;
-      tlv.data[cfgHeader->tlvSize+1] = length;
-      memcpy(&tlv.data[cfgHeader->tlvSize+2], list, length);
-      cfgHeader->tlvSize += 2 + length;
+      // Remove the existing entry (header + data), the new one may have a
+      // different length, so it is re-appended at the end below.
+      uint8_t oldLength = tlv.data[pos+1];
+      int tailStart = pos + 2 + oldLength;
+      int tailLength = cfgHeader->tlvSize - tailStart;
+      memmove(&tlv.data[pos], &tlv.data[tailStart], tailLength);
+      cfgHeader->tlvSize -= (2 + oldLength);
     }
+
+    // Add field at the end of the tlv
+    tlv.data[cfgHeader->tlvSize] = field;
+    tlv.data[cfgHeader->tlvSize+1] = length;
+    memcpy(&tlv.data[cfgHeader->tlvSize+2], list, length);
+    cfgHeader->tlvSize += 2 + length;
 
     write_crc();
     eepromWrite(0, buffer, NUMBER_OF_BYTES_READ);
