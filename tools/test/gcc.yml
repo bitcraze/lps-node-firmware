@@ -24,6 +24,7 @@ compiler:
       - 'vendor/unity/src/'
       - 'vendor/c_exception/lib/'
       - 'vendor/cmock/src/'
+      - 'vendor/libdw1000/inc/'
       - 'lib/freertos/inc/'
       - 'test/'
       - 'hal/stm32f0xx/Inc/'
