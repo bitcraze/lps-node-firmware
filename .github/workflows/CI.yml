@@ -1,4 +1,6 @@
-# Build the project using the Bitcraze builder docker image
+# Build and unit test in an Ubuntu 22.04 container with the same apt toolchain
+# as the bitcraze/builder:41 image used for releases, without pulling the full
+# image.
 name: CI
 
 on:
@@ -8,31 +10,59 @@ on:
     branches: [ master ]
   schedule:
     - cron:  '30 16 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 env:
-  BUILDER_IMAGE: bitcraze/builder:41
+  DEBIAN_FRONTEND: noninteractive
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    container: ubuntu:22.04
+    timeout-minutes: 15
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends \
+          ca-certificates git gcc libc6-dev rake python-is-python3
+
+    - uses: actions/checkout@v7
       with:
         submodules: true
+
     - name: Unit tests
-      run: docker run --rm -v ${PWD}:/module ${BUILDER_IMAGE} ./tools/build/test
+      run: ./tools/build/test
 
   build:
     runs-on: ubuntu-latest
+    container: ubuntu:22.04
+    timeout-minutes: 15
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Install toolchain
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends \
+          ca-certificates git make python3 \
+          gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
+
+    - uses: actions/checkout@v7
       with:
         submodules: true
+
     - name: Build
-      run: docker run --rm -v ${PWD}:/module ${BUILDER_IMAGE} ./tools/build/make
+      run: ./tools/build/make
+
     - name: Build long range
       run: |
-        docker run --rm -v ${PWD}:/module ${BUILDER_IMAGE} ./tools/build/make clean
-        docker run --rm -v ${PWD}:/module ${BUILDER_IMAGE} ./tools/build/make "EXTRA_CFLAGS=-DLPS_LONGER_RANGE"
+        ./tools/build/make clean
+        ./tools/build/make "EXTRA_CFLAGS=-DLPS_LONGER_RANGE"
