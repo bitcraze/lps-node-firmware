@@ -23,6 +23,11 @@ The key sequence to use in the configuration is:
 1. `r` - the UWB radio settings menu
 2. `1` - low bitrate, normal preamble
 
+Or, build the anchor firmware with the `LPS_LONGER_RANGE` compile flag: `make "EXTRA_CFLAGS=-DLPS_LONGER_RANGE"`.
+This forces low bitrate at every startup, regardless of the stored configuration. The preamble setting is still read
+from the configuration, and the bitrate can not be changed back without flashing a firmware built without the flag.
+Note that the radio settings menu shows the stored configuration, not the forced bitrate.
+
 You might also want to [increase the TX power](../configure-tx-power).
 
 ## Limitations
