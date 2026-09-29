@@ -46,9 +46,21 @@ jobs:
       run: ./tools/build/test
 
   build:
+    name: build (${{ matrix.name }})
     runs-on: ubuntu-latest
     container: ubuntu:22.04
     timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: default
+            artifact: lps-node-firmware
+            extra_cflags: ''
+          - name: long range
+            artifact: lps-node-firmware-long-range
+            extra_cflags: -DLPS_LONGER_RANGE
 
     steps:
     - name: Install toolchain
@@ -66,9 +78,13 @@ jobs:
       run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
     - name: Build
-      run: ./tools/build/make
+      run: ./tools/build/make "EXTRA_CFLAGS=${{ matrix.extra_cflags }}"
 
-    - name: Build long range
-      run: |
-        ./tools/build/make clean
-        ./tools/build/make "EXTRA_CFLAGS=-DLPS_LONGER_RANGE"
+    - name: Upload firmware
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ matrix.artifact }}
+        path: |
+          bin/lps-node-firmware.dfu
+          bin/lps-node-firmware.elf
+        if-no-files-found: error
