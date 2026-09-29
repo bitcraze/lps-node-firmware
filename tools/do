@@ -15,6 +15,6 @@ rootDir=$scriptDir/..
 
 tool=$1
 
-cmd="docker run --rm -it --volume=${rootDir}:/module bitcraze/builder:4 ./tools/build/${tool}"
+cmd="docker run --rm -it --pull always --volume=${rootDir}:/module bitcraze/builder ./tools/build/${tool}"
 echo "$cmd"
 $cmd
