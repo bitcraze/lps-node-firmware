@@ -9,5 +9,5 @@ jobs:
   build:
     uses: bitcraze/workflows/.github/workflows/basic_release.yml@b06a0f369e637f5f5a5f83f5e86d9b1f9e173289
     with:
-      builder_image: 'bitcraze/builder'
+      builder_image: 'bitcraze/builder:41'
       artifacts: 'bin/lps-node-firmware.dfu'
