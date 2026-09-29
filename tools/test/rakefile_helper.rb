@@ -10,7 +10,7 @@ module RakefileHelpers
 
   def load_configuration(config_file)
     $cfg_file = config_file
-    $cfg = YAML.load(File.read($cfg_file))
+    $cfg = YAML.safe_load(File.read($cfg_file), permitted_classes: [Symbol], aliases: true)
     $colour_output = false unless $cfg['colour']
   end
 
@@ -55,7 +55,7 @@ module RakefileHelpers
   def find_file(name, paths)
     paths.each do |dir|
       src_file = dir + name
-      if (File.exists?(src_file))
+      if (File.exist?(src_file))
         return src_file
       end
     end
@@ -196,7 +196,7 @@ module RakefileHelpers
           header_file = find_file(include_name, include_dirs)
 
           require "./vendor/cmock/lib/cmock.rb"
-          @cmock ||= CMock.new($cfg_file)
+          @cmock ||= CMock.new($cfg[:cmock])
           @cmock.setup_mocks([header_file])
         end
 
@@ -216,7 +216,7 @@ module RakefileHelpers
       runner_name = test_base + '_Runner.c'
       if $cfg['compiler']['runner_path'].nil?
         runner_path = $cfg['compiler']['build_path'] + runner_name
-        test_gen = UnityTestRunnerGenerator.new($cfg_file)
+        test_gen = UnityTestRunnerGenerator.new($cfg[:cmock])
         test_gen.run(test, runner_path)
       else
         runner_path = $cfg['compiler']['runner_path'] + runner_name
