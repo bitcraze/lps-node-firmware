@@ -1,6 +1,3 @@
-# Build and unit test in an Ubuntu 22.04 container with the same apt toolchain
-# as the bitcraze/builder:41 image used for releases, without pulling the full
-# image.
 name: CI
 
 on:
