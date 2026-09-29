@@ -36,10 +36,11 @@ TDoA 3 supports 2D positioning as well. In this mode all anchors can be
 placed in the same plane. The tag (LPS deck) is expected to move in the
 XY-plane at a fixed Z.
 
-Recompile the Crazyflie firmware using the LPS\_2D\_POSITION\_HEIGHT
-compile flag set to the desired Z. For instance
-`make "EXTRA_CFLAGS=-DLPS_2D_POSITION_HEIGHT=1.2"` if the tag will be
-located at 1.2 meters height.
+Recompile the Crazyflie firmware with the CONFIG\_DECK\_LOCO\_2D\_POSITION
+compile flag, and CONFIG\_DECK\_LOCO\_2D\_POSITION\_HEIGHT set to the
+desired Z. For instance, set CONFIG\_DECK\_LOCO\_2D\_POSITION\_HEIGHT to 1.2
+if the tag will be located at 1.2 meters height. See Crazyflie documentation
+for how to change the configuration.
 
 Longer range and lower bitrate
 ------------------------------
@@ -50,13 +51,11 @@ might not work as expected.
 In this mode the UWB bitrate is lower and the data of messages can be
 read at a longer distance. The packet rate will be reduced though.
 
-Recompile the Crazyflie firmware with the LPS\_LONGER\_RANGE compile
-flag.
+See [TDoA3 long range](/docs/user-guides/tdoa3_long_range) for how to set up the anchors.
 
-Example: `make "EXTRA_CFLAGS=-DLPS_LONGER_RANGE"`
-
-There is a setting for the bitrate in the Anchor configuration when
-connecting using USB.
+Recompile the Crazyflie firmware with the 
+CONFIG\_DECK\_LOCO\_LONGER\_RANGE compile flag.  See Crazyflie documentation
+for how to change the configuration.
 
 Longer preamble
 ---------------
@@ -76,8 +75,12 @@ preamble has been detected by the radio.
 ### The Crazyflie
 
 -   Find the src/deck/drivers/src/locodeck.c file
--   Locate the call to dwEnableMode()
--   Change the second argument to MODE\_LONGDATA\_MID\_ACCURACY
+-   Locate the calls to dwEnableMode(). There are two, one used with the
+    CONFIG\_DECK\_LOCO\_LONGER\_RANGE compile flag (low bitrate) and one
+    used without it (normal bitrate)
+-   In the call that is used in your build, change the second argument to
+    MODE\_LONGDATA\_FAST\_ACCURACY (normal bitrate) or
+    MODE\_LONGDATA\_MID\_ACCURACY (low bitrate)
 -   Compile and flash
 
 ### The LPS Nodes
