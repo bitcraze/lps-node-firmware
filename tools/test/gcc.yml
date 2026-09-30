@@ -29,6 +29,7 @@ compiler:
       - 'hal/stm32f0xx/Inc/'
       - 'inc/'
       - 'inc/f0/'
+      - 'vendor/libdw1000/inc/'
   defines:
     prefix: '-D'
     items:
