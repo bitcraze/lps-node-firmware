@@ -631,7 +631,7 @@ static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
 {
   dwIdle(dev);
 
-  if (ctx.nextTxTick < now) {
+  if ((int32_t)(now - ctx.nextTxTick) >= 0) { // Wrap safe check
     uint32_t newDelay = randomizeDelayToNextTx();
     ctx.nextTxTick = now + M2T(newDelay);
 
@@ -685,7 +685,7 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev, uwbEvent_t event)
   }
 
   uint32_t now = xTaskGetTickCount();
-  if (now > ctx.nextAnchorListUpdate) {
+  if ((int32_t)(now - ctx.nextAnchorListUpdate) >= 0) { // Wrap safe check
     updateAnchorLists();
     ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL;
   }
