@@ -33,6 +33,7 @@
 #include <libdw1000.h>
 
 #define MAX_ANCHORS 6
+#define TDOA3_EXCLUDED_ANCHORS_MAX_COUNT 16
 
 typedef struct uwbConfig_s {
   uint8_t mode;
@@ -48,6 +49,11 @@ typedef struct uwbConfig_s {
 
   bool lowBitrate;
   bool longPreamble;
+
+  // TDoA3: ids of other anchors that this anchor should ignore, ie. not
+  // range with, not relay data about and not use to form TDoA pairs with.
+  uint8_t tdoa3ExcludedAnchorsSize;
+  uint8_t tdoa3ExcludedAnchors[TDOA3_EXCLUDED_ANCHORS_MAX_COUNT];
 } uwbConfig_t;
 
 #define MODE_ANCHOR 0

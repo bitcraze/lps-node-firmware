@@ -39,6 +39,7 @@ typedef enum {
   cfgTxPower,
   cfgLowBitrate,
   cfgLongPreamble,
+  cfgTdoa3ExcludedAnchors,
 } ConfigField;
 
 void cfgInit();

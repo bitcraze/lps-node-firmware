@@ -23,6 +23,7 @@
  * along with Foobar.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <stdio.h>
+#include <string.h>
 
 #include "stm32f0xx_hal.h"
 
@@ -134,6 +135,25 @@ void lppHandleShortPacket(char *data, size_t length)
       // Then resets!
       NVIC_SystemReset();
 
+      break;
+    }
+    case LPP_SHORT_TDOA3_EXCLUDED_ANCHORS:
+    {
+      uint8_t* excludedAnchors = (uint8_t*)&data[1];
+      size_t count = length - 1;
+
+      if (count > TDOA3_EXCLUDED_ANCHORS_MAX_COUNT) {
+        debug("LPP: Too many excluded anchors (%d)\r\n", (int)count);
+        break;
+      }
+
+      cfgWriteU8list(cfgTdoa3ExcludedAnchors, excludedAnchors, count);
+
+      uwbConfig_t *uwbConfig = uwbGetConfig();
+      uwbConfig->tdoa3ExcludedAnchorsSize = count;
+      memcpy(uwbConfig->tdoa3ExcludedAnchors, excludedAnchors, count);
+
+      debug("Setting %d excluded anchor(s)\r\n", (int)count);
       break;
     }
   }

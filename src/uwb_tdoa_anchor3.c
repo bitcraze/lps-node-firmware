@@ -453,9 +453,24 @@ static bool updateClockCorrection(anchorContext_t* anchorCtx, double clockCorrec
   return sampleIsAccepted;
 }
 
+static bool isExcludedAnchor(const uint8_t anchorId) {
+  const uwbConfig_t* uwbConfig = uwbGetConfig();
+  for (int i = 0; i < uwbConfig->tdoa3ExcludedAnchorsSize; i++) {
+    if (uwbConfig->tdoa3ExcludedAnchors[i] == anchorId) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
 {
   const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
+  if (isExcludedAnchor(remoteAnchorId)) {
+    // Ignore this anchor entirely: no ranging, no context, no relaying of
+    // data about it to other anchors or the Tag.
+    return;
+  }
   ctx.anchorRxCount[remoteAnchorId]++;
   anchorContext_t* anchorCtx = getContext(remoteAnchorId);
   if (anchorCtx) {

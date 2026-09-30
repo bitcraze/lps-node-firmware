@@ -115,6 +115,13 @@ void uwbInit()
     cfgReadU8list(cfgAnchorlist, config.anchors, config.anchorListSize);
   }
 
+  cfgFieldSize(cfgTdoa3ExcludedAnchors, &config.tdoa3ExcludedAnchorsSize);
+  if (config.tdoa3ExcludedAnchorsSize <= TDOA3_EXCLUDED_ANCHORS_MAX_COUNT) {
+    cfgReadU8list(cfgTdoa3ExcludedAnchors, config.tdoa3ExcludedAnchors, config.tdoa3ExcludedAnchorsSize);
+  } else {
+    config.tdoa3ExcludedAnchorsSize = 0;
+  }
+
   if (config.mode < uwbAlgorithmCount()) {
     algorithm = availableAlgorithms[config.mode].algorithm;
   } else {

@@ -38,6 +38,10 @@ void lppHandleShortPacket(char *data, size_t length);
 #define LPP_SHORT_UWB 0x04
 #define LPP_SHORT_UWB_MODE 0x05
 
+// Payload is a list of 0-TDOA3_EXCLUDED_ANCHORS_MAX_COUNT anchor ids (uint8_t
+// each), sized by the LPP short packet length. Replaces any previously set list.
+#define LPP_SHORT_TDOA3_EXCLUDED_ANCHORS 0x06
+
 struct lppShortAnchorPosition_s {
   float position[3];
 } __attribute__((packed));
