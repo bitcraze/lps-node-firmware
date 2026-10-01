@@ -447,6 +447,7 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
                 } else {
                   setupRx(dev, ctx.nextSlot);
                 }
+                advanceSlot();
               } else {
                 // Start the receiver waiting for a packet from anchor 0
                 dwIdle(dev);
