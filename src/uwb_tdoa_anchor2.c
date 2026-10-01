@@ -369,7 +369,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
     } else {
       handleFailedRx(dev);
       if (ctx.state == syncTdmaState) { // Resync required
-        return MAX_TIMEOUT;
+        return 0;
       }
     }
 
