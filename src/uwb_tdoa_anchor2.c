@@ -396,6 +396,17 @@ static void tdoa2Init(uwbConfig_t * config, dwDevice_t *dev)
   memset(ctx.rxTimestamps, 0, sizeof(ctx.rxTimestamps));
 }
 
+// Fill in all parts of the context needed when entering the synchronized
+// state. frameStart is the start of the frame, in local clock, that the next
+// slot 0 belongs to.
+static void setUpSync(dwTime_t frameStart)
+{
+  ctx.state = synchronizedState;
+  ctx.tdmaFrameStart = frameStart;
+  ctx.slot = NSLOTS-1;
+  ctx.nextSlot = 0;
+}
+
 // Called for each DW radio event
 static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 {
@@ -404,9 +415,10 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
       return slotStep(dev, event);
     case syncTdmaState:
       if (ctx.anchorId == 0) {
-        dwGetSystemTimestamp(dev, &ctx.tdmaFrameStart);
-        ctx.tdmaFrameStart.full = TDMA_LAST_FRAME(ctx.tdmaFrameStart.full) + 2*TDMA_FRAME_LEN;
-        ctx.state = synchronizedState;
+        dwTime_t frameStart = { .full = 0 };
+        dwGetSystemTimestamp(dev, &frameStart);
+        frameStart.full = TDMA_LAST_FRAME(frameStart.full) + 2*TDMA_FRAME_LEN;
+        setUpSync(frameStart);
         setupTx(dev);
         updateSlot();
       } else {
@@ -429,7 +441,6 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
                 ctx.tdmaFrameStart.full += TDMA_FRAME_LEN;
 
                 setupTx(dev);
-                ctx.state = synchronizedState;
                 updateSlot();
               } else {
                 // Start the receiver waiting for a packet from anchor 0
