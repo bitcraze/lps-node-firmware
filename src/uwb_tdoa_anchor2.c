@@ -367,13 +367,12 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
       handleRxPacket(dev);
     } else {
       handleFailedRx(dev);
-      if (ctx.state != syncTdmaState) {
+      if (ctx.state == syncTdmaState) { // Resync required
         return MAX_TIMEOUT;
       }
     }
 
     // Quickly setup transfer to next slot
-    // TODO: Should this be run if failedRx leads to resync?
     if (ctx.nextSlot == ctx.anchorId) {
       setupTx(dev);
     } else {
