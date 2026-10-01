@@ -245,13 +245,13 @@ static void handleServicePacket(dwDevice_t *dev)
   }
 }
 
-// Setup the radio to receive a packet in the next timeslot
-static void setupRx(dwDevice_t *dev)
+// Setup the radio to receive a packet in the given timeslot
+static void setupRx(dwDevice_t *dev, int slot)
 {
   dwTime_t receiveTime = { .full = 0 };
 
   // Calculate start of the slot
-  receiveTime.full = ctx.tdmaFrameStart.full + ctx.nextSlot*TDMA_SLOT_LEN;
+  receiveTime.full = ctx.tdmaFrameStart.full + slot*TDMA_SLOT_LEN;
 
   dwSetReceiveWaitTimeout(dev, RECEIVE_TIMEOUT);
   dwWriteSystemConfigurationRegister(dev);
@@ -307,11 +307,11 @@ static void setTxData(dwDevice_t *dev)
   dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + sizeof(rangePacket_t) + lppLength);
 }
 
-// Setup the radio to send a packet in the next timeslot, and prepare for reception of service packet
-static void setupTx(dwDevice_t *dev)
+// Setup the radio to send a packet in the given timeslot, and prepare for reception of service packet
+static void setupTx(dwDevice_t *dev, int slot)
 {
   ctx.packetIds[ctx.anchorId] = ctx.pid++;
-  dwTime_t txTime = transmitTimeForSlot(ctx.nextSlot);
+  dwTime_t txTime = transmitTimeForSlot(slot);
   ctx.txTimestamps[ctx.anchorId] = txTime.low32;
 
   dwSetReceiveWaitTimeout(dev, RECEIVE_SERVICE_TIMEOUT);
@@ -358,7 +358,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
         ctx.state = syncTdmaState;
         return 0;
       }
-      setupRx(dev);
+      setupRx(dev, ctx.nextSlot);
       updateSlot();
     }
   } else {
@@ -374,9 +374,9 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
 
     // Quickly setup transfer to next slot
     if (ctx.nextSlot == ctx.anchorId) {
-      setupTx(dev);
+      setupTx(dev, ctx.nextSlot);
     } else {
-      setupRx(dev);
+      setupRx(dev, ctx.nextSlot);
     }
     updateSlot();
   }
@@ -402,8 +402,8 @@ static void setUpSync(dwTime_t frameStart)
 {
   ctx.state = synchronizedState;
   ctx.tdmaFrameStart = frameStart;
-  ctx.slot = NSLOTS-1;
-  ctx.nextSlot = 0;
+  ctx.slot = 0;
+  ctx.nextSlot = 1;
 }
 
 // Called for each DW radio event
@@ -416,9 +416,9 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
       if (ctx.anchorId == 0) {
         dwTime_t frameStart = { .full = 0 };
         dwGetSystemTimestamp(dev, &frameStart);
-        frameStart.full = TDMA_LAST_FRAME(frameStart.full) + 2*TDMA_FRAME_LEN;
+        frameStart.full = TDMA_LAST_FRAME(frameStart.full) + 2*TDMA_FRAME_LEN; // Delay RX to frame after next frame for margin
         setUpSync(frameStart);
-        setupTx(dev);
+        setupTx(dev, ctx.slot); // slot 0
         updateSlot();
       } else {
         switch (event) {
@@ -439,9 +439,9 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
                 setUpSync(frameStart);
 
                 if (ctx.anchorId == 1) {
-                  setupTx(dev);
+                  setupTx(dev, ctx.nextSlot);
                 } else {
-                  setupRx(dev);
+                  setupRx(dev, ctx.nextSlot);
                 }
                 updateSlot();
               } else {
