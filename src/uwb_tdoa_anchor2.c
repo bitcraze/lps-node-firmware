@@ -328,7 +328,7 @@ static void setupTx(dwDevice_t *dev, int slot)
 
 // Increment the slot variables and, if required, switch tdmaStartFrame to next
 // frame state time. Should be called when the entire current slot is completed.
-static void updateSlot()
+static void advanceSlot()
 {
   ctx.slot = ctx.nextSlot;
   ctx.nextSlot = ctx.nextSlot + 1;
@@ -359,7 +359,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
         return 0;
       case eventReceiveTimeout:
         setupRx(dev, ctx.nextSlot);
-        updateSlot();
+        advanceSlot();
         break;
       case eventPacketSent:
         // Service packet receive is still pending, nothing to do
@@ -383,7 +383,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
     } else {
       setupRx(dev, ctx.nextSlot);
     }
-    updateSlot();
+    advanceSlot();
   }
 
   return MAX_TIMEOUT;
