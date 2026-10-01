@@ -346,6 +346,8 @@ static void updateSlot()
 // the next timeslot action
 static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
 {
+  updateSlot();
+
   if (ctx.slot == ctx.anchorId) {
     // The current slot is our own, the packet has been scheduled for transmission.
     // We try to receive an LPP packet after sending our packet.
@@ -359,7 +361,6 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
         return 0;
       }
       setupRx(dev, ctx.nextSlot);
-      updateSlot();
     }
   } else {
     // The current slot belongs to another anchor
@@ -378,7 +379,6 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
     } else {
       setupRx(dev, ctx.nextSlot);
     }
-    updateSlot();
   }
 
   return MAX_TIMEOUT;
@@ -419,7 +419,6 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
         frameStart.full = TDMA_LAST_FRAME(frameStart.full) + 2*TDMA_FRAME_LEN; // Delay RX to frame after next frame for margin
         setUpSync(frameStart);
         setupTx(dev, ctx.slot); // slot 0
-        updateSlot();
       } else {
         switch (event) {
           case eventPacketReceived: {
@@ -443,7 +442,6 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
                 } else {
                   setupRx(dev, ctx.nextSlot);
                 }
-                updateSlot();
               } else {
                 // Start the receiver waiting for a packet from anchor 0
                 dwIdle(dev);
