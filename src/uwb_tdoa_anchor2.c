@@ -430,17 +430,20 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
               int dataLength = dwGetDataLength(dev);
               dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-              if (rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) {
+              if (dataLength != 0 && rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) {
                 rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
 
                 // Resync local frame start to packet from anchor 0
                 dwTime_t pkTxTime = { .full = 0 };
                 memcpy(&pkTxTime, rangePacket->timestamps[0], TS_TX_SIZE);
-                ctx.tdmaFrameStart.full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full));
+                dwTime_t frameStart = { .full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full)) };
+                setUpSync(frameStart);
 
-                ctx.tdmaFrameStart.full += TDMA_FRAME_LEN;
-
-                setupTx(dev);
+                if (ctx.anchorId == 1) {
+                  setupTx(dev);
+                } else {
+                  setupRx(dev);
+                }
                 updateSlot();
               } else {
                 // Start the receiver waiting for a packet from anchor 0
