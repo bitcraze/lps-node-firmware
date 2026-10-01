@@ -327,7 +327,7 @@ static void setupTx(dwDevice_t *dev, int slot)
 }
 
 // Increment the slot variables and, if required, switch tdmaStartFrame to next
-// frame state time. Should be called when the entire current slot is completed.
+// frame state time. Should be called when the current slot is completed.
 static void advanceSlot()
 {
   ctx.slot = ctx.nextSlot;
@@ -362,12 +362,12 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
         advanceSlot();
         break;
       case eventPacketSent:
-        // Service packet receive is still pending, nothing to do
+        // Service packet receive is still pending, nothing to do.
+        // This slot is not done yet.
       default:
         break;
     }
-  } else {
-    // The current slot belongs to another anchor
+  } else { // The current slot belongs to another anchor    
     if (event == eventPacketReceived) {
       handleRxPacket(dev);
     } else {
@@ -433,15 +433,15 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
               int dataLength = dwGetDataLength(dev);
               dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-              if (dataLength != 0 && rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) {
-                rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
-
+              if (dataLength != 0 && rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) { // Valid anchor 0 packet
                 // Resync local frame start to packet from anchor 0
+                rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
                 dwTime_t pkTxTime = { .full = 0 };
                 memcpy(&pkTxTime, rangePacket->timestamps[0], TS_TX_SIZE);
                 dwTime_t frameStart = { .full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full)) };
                 setUpSync(frameStart);
 
+                // Start RX/TX behaviour so slot behaviour can be picked up
                 if (ctx.anchorId == 1) {
                   setupTx(dev, ctx.nextSlot);
                 } else {
