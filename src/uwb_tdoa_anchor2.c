@@ -94,9 +94,8 @@ static const uint8_t base_address[] = {0,0,0,0,0,0,0xcf,0xbc};
 
 // FSM states
 enum state_e {
-  syncTdmaState = 0, // Anchors 1 to 5 starts here and rise up to synchronizedState
-  syncTimeState,
-  synchronizedState, // Anchor 0 is always here!
+  syncTdmaState = 0,
+  synchronizedState,
 };
 
 // This context struct contains all the requied global values of the algorithm
@@ -368,6 +367,9 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
       handleRxPacket(dev);
     } else {
       handleFailedRx(dev);
+      if (ctx.state != syncTdmaState) {
+        return MAX_TIMEOUT;
+      }
     }
 
     // Quickly setup transfer to next slot
@@ -397,62 +399,63 @@ static void tdoa2Init(uwbConfig_t * config, dwDevice_t *dev)
 // Called for each DW radio event
 static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
 {
-  if (ctx.state == synchronizedState) {
-    return slotStep(dev, event);
-  } else {
-    if (ctx.anchorId == 0) {
-      dwGetSystemTimestamp(dev, &ctx.tdmaFrameStart);
-      ctx.tdmaFrameStart.full = TDMA_LAST_FRAME(ctx.tdmaFrameStart.full) + 2*TDMA_FRAME_LEN;
-      ctx.state = synchronizedState;
-      setupTx(dev);
-      updateSlot();
-    } else {
-      switch (event) {
-        case eventPacketReceived: {
-            static packet_t rxPacket;
-            dwTime_t rxTime = { .full = 0 };
-            dwGetReceiveTimestamp(dev, &rxTime);
-            int dataLength = dwGetDataLength(dev);
-            dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
+  switch (ctx.state) {
+    case synchronizedState:
+      return slotStep(dev, event);
+    case syncTdmaState:
+      if (ctx.anchorId == 0) {
+        dwGetSystemTimestamp(dev, &ctx.tdmaFrameStart);
+        ctx.tdmaFrameStart.full = TDMA_LAST_FRAME(ctx.tdmaFrameStart.full) + 2*TDMA_FRAME_LEN;
+        ctx.state = synchronizedState;
+        setupTx(dev);
+        updateSlot();
+      } else {
+        switch (event) {
+          case eventPacketReceived: {
+              static packet_t rxPacket;
+              dwTime_t rxTime = { .full = 0 };
+              dwGetReceiveTimestamp(dev, &rxTime);
+              int dataLength = dwGetDataLength(dev);
+              dwGetData(dev, (uint8_t*)&rxPacket, dataLength);
 
-            if (rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) {
-              rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
+              if (rxPacket.sourceAddress[0] == 0 && rxPacket.payload[0] == PACKET_TYPE_TDOA2) {
+                rangePacket_t * rangePacket = (rangePacket_t *)rxPacket.payload;
 
-              // Resync local frame start to packet from anchor 0
-              dwTime_t pkTxTime = { .full = 0 };
-              memcpy(&pkTxTime, rangePacket->timestamps[0], TS_TX_SIZE);
-              ctx.tdmaFrameStart.full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full));
+                // Resync local frame start to packet from anchor 0
+                dwTime_t pkTxTime = { .full = 0 };
+                memcpy(&pkTxTime, rangePacket->timestamps[0], TS_TX_SIZE);
+                ctx.tdmaFrameStart.full = rxTime.full - (pkTxTime.full - TDMA_LAST_FRAME(pkTxTime.full));
 
-              ctx.tdmaFrameStart.full += TDMA_FRAME_LEN;
+                ctx.tdmaFrameStart.full += TDMA_FRAME_LEN;
 
-              setupTx(dev);
-              ctx.slotState = slotRxDone;
-              ctx.state = synchronizedState;
-              updateSlot();
-            } else {
-              // Start the receiver waiting for a packet from anchor 0
-              dwIdle(dev);
-              dwSetReceiveWaitTimeout(dev, RECEIVE_TIMEOUT);
-              dwWriteSystemConfigurationRegister(dev);
+                setupTx(dev);
+                ctx.state = synchronizedState;
+                updateSlot();
+              } else {
+                // Start the receiver waiting for a packet from anchor 0
+                dwIdle(dev);
+                dwSetReceiveWaitTimeout(dev, RECEIVE_TIMEOUT);
+                dwWriteSystemConfigurationRegister(dev);
 
-              dwNewReceive(dev);
-              dwSetDefaults(dev);
-              dwStartReceive(dev);
+                dwNewReceive(dev);
+                dwSetDefaults(dev);
+                dwStartReceive(dev);
+              }
             }
-          }
-          break;
-        default:
-          // Start the receiver waiting for a packet from anchor 0
-          dwIdle(dev);
-          dwSetReceiveWaitTimeout(dev, RECEIVE_TIMEOUT);
-          dwWriteSystemConfigurationRegister(dev);
+            break;
+          default:
+            // Start the receiver waiting for a packet from anchor 0
+            dwIdle(dev);
+            dwSetReceiveWaitTimeout(dev, RECEIVE_TIMEOUT);
+            dwWriteSystemConfigurationRegister(dev);
 
-          dwNewReceive(dev);
-          dwSetDefaults(dev);
-          dwStartReceive(dev);
-          break;
+            dwNewReceive(dev);
+            dwSetDefaults(dev);
+            dwStartReceive(dev);
+            break;
+        }
       }
-    }
+      break;
   }
 
   return MAX_TIMEOUT;
