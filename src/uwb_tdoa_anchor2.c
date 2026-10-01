@@ -327,7 +327,7 @@ static void setupTx(dwDevice_t *dev, int slot)
 }
 
 // Increment the slot variables and, if required, switch tdmaStartFrame to next
-// frame state time
+// frame state time. Should be called when the entire current slot is completed.
 static void updateSlot()
 {
   ctx.slot = ctx.nextSlot;
@@ -346,8 +346,6 @@ static void updateSlot()
 // the next timeslot action
 static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
 {
-  updateSlot();
-
   if (ctx.slot == ctx.anchorId) {
     // The current slot is our own, the packet has been scheduled for transmission.
     // We try to receive an LPP packet after sending our packet.
@@ -361,6 +359,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
         return 0;
       }
       setupRx(dev, ctx.nextSlot);
+      updateSlot();
     }
   } else {
     // The current slot belongs to another anchor
@@ -379,6 +378,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
     } else {
       setupRx(dev, ctx.nextSlot);
     }
+    updateSlot();
   }
 
   return MAX_TIMEOUT;
