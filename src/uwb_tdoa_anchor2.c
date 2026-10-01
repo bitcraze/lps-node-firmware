@@ -99,16 +99,10 @@ enum state_e {
   synchronizedState, // Anchor 0 is always here!
 };
 
-enum slotState_e {
-  slotRxDone,
-  slotTxDone,
-};
-
 // This context struct contains all the requied global values of the algorithm
 static struct ctx_s {
   int anchorId;
   enum state_e state;
-  enum slotState_e slotState;
 
   // Current and next TDMA slot
   int slot;
@@ -314,7 +308,7 @@ static void setTxData(dwDevice_t *dev)
   dwSetData(dev, (uint8_t*)&txPacket, MAC802154_HEADER_LENGTH + sizeof(rangePacket_t) + lppLength);
 }
 
-// Setup the radio to send a packet in the next timeslot
+// Setup the radio to send a packet in the next timeslot, and prepare for reception of service packet
 static void setupTx(dwDevice_t *dev)
 {
   ctx.packetIds[ctx.anchorId] = ctx.pid++;
@@ -353,42 +347,37 @@ static void updateSlot()
 // the next timeslot action
 static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
 {
-  switch (ctx.slotState) {
-    case slotRxDone:
-      if (event == eventPacketReceived) {
-        handleRxPacket(dev);
-      } else {
-        handleFailedRx(dev);
-      }
-
-      // Quickly setup transfer to next slot
-      if (ctx.nextSlot == ctx.anchorId) {
-        setupTx(dev);
-        ctx.slotState = slotTxDone;
-        updateSlot();
-      } else {
-        setupRx(dev);
-        ctx.slotState = slotRxDone;
-        updateSlot();
-      }
-
-      break;
-    case slotTxDone:
+  if (ctx.slot == ctx.anchorId) {
+    // The current slot is our own, the packet has been scheduled for transmission.
     // We try to receive an LPP packet after sending our packet.
     // After this is done, we setup the next receive.
-      if (event == eventPacketReceived || event == eventReceiveTimeout) {
-        if (event == eventPacketReceived) {
-          debug("Received service packet!\r\n");
-          handleServicePacket(dev);
-          // The service packet handling time desynchronized us, lets resynch
-          ctx.state = syncTdmaState;
-          return 0;
-        }
-        setupRx(dev);
-        ctx.slotState = slotRxDone;
-        updateSlot();
+    if (event == eventPacketReceived || event == eventReceiveTimeout) {
+      if (event == eventPacketReceived) {
+        debug("Received service packet!\r\n");
+        handleServicePacket(dev);
+        // The service packet handling time desynchronized us, lets resynch
+        ctx.state = syncTdmaState;
+        return 0;
       }
-      break;
+      setupRx(dev);
+      updateSlot();
+    }
+  } else {
+    // The current slot belongs to another anchor
+    if (event == eventPacketReceived) {
+      handleRxPacket(dev);
+    } else {
+      handleFailedRx(dev);
+    }
+
+    // Quickly setup transfer to next slot
+    // TODO: Should this be run if failedRx leads to resync?
+    if (ctx.nextSlot == ctx.anchorId) {
+      setupTx(dev);
+    } else {
+      setupRx(dev);
+    }
+    updateSlot();
   }
 
   return MAX_TIMEOUT;
@@ -416,8 +405,6 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
       ctx.tdmaFrameStart.full = TDMA_LAST_FRAME(ctx.tdmaFrameStart.full) + 2*TDMA_FRAME_LEN;
       ctx.state = synchronizedState;
       setupTx(dev);
-
-      ctx.slotState = slotTxDone;
       updateSlot();
     } else {
       switch (event) {
