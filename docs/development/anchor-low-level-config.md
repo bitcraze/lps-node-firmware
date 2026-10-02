@@ -36,6 +36,11 @@ picocom:
 $ picocom /dev/ttyACM3
 ```
 
+Note: The buffer is 1024 bytes. When it is full, further output is discarded
+(the last line may be cut off), so it holds the oldest output since boot.
+The buffer is never cleared, so its content is printed again each time
+picocom is opened. Output printed while picocom is connected is not buffered.
+
 OSX
 ---
 
