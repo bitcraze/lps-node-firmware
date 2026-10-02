@@ -112,7 +112,7 @@ The implementation must handle
 #define CLOCK_CORRECTION_FILTER 0.1d
 #define CLOCK_CORRECTION_BUCKET_MAX 4
 
-#define DISTANCE_VALIDITY_PERIOD M2T(2 * 1000);
+#define DISTANCE_VALIDITY_PERIOD M2T(2 * 1000)
 
 // Useful constants
 static const uint8_t base_address[] = {0,0,0,0,0,0,0xcf,0xbc};
@@ -257,12 +257,11 @@ static void createAnchorContextsInList(const uint8_t* id, const uint8_t count) {
 
 static void purgeData() {
   uint32_t now = xTaskGetTickCount();
-  uint32_t acceptedCreationTime = now - DISTANCE_VALIDITY_PERIOD;
 
   for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++) {
     anchorContext_t* anchorCtx = &ctx.anchorCtx[i];
     if (anchorCtx->isUsed) {
-      if (anchorCtx->distanceUpdateTime < acceptedCreationTime) {
+      if ((now - anchorCtx->distanceUpdateTime) > DISTANCE_VALIDITY_PERIOD) {
         anchorCtx->distance = 0;
 
         anchorCtx->clockCorrection = 0.0;
@@ -631,7 +630,7 @@ static uint32_t startNextEvent(dwDevice_t *dev, uint32_t now)
 {
   dwIdle(dev);
 
-  if (ctx.nextTxTick < now) {
+  if ((int32_t)(now - ctx.nextTxTick) >= 0) { // Wrap-safe check
     uint32_t newDelay = randomizeDelayToNextTx();
     ctx.nextTxTick = now + M2T(newDelay);
 
@@ -655,11 +654,11 @@ static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
   ctx.anchorId = config->address[0];
   ctx.seqNr = 0;
   ctx.txTime = 0;
-  ctx.nextTxTick = 0;
+  ctx.nextTxTick = xTaskGetTickCount();
   ctx.systemTxFreq = systemTxFreq;
   ctx.averageTxDelay = 1000.0 / ANCHOR_MIN_TX_FREQ;
   ctx.remoteTxIdCount = 0;
-  ctx.nextAnchorListUpdate = 0;
+  ctx.nextAnchorListUpdate = xTaskGetTickCount();
 
   memset(&ctx.anchorCtxLookup, ID_WITHOUT_CONTEXT, ID_COUNT);
   for (int i = 0; i < ANCHOR_STORAGE_COUNT; i++) {
@@ -685,7 +684,7 @@ static uint32_t tdoa3UwbEvent(dwDevice_t *dev, uwbEvent_t event)
   }
 
   uint32_t now = xTaskGetTickCount();
-  if (now > ctx.nextAnchorListUpdate) {
+  if ((int32_t)(now - ctx.nextAnchorListUpdate) >= 0) { // Wrap-safe check
     updateAnchorLists();
     ctx.nextAnchorListUpdate = now + ANCHOR_LIST_UPDATE_INTERVAL;
   }
