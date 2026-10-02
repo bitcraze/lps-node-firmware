@@ -75,9 +75,9 @@ or
 # Make targets:
 ```
 all        : Shortcut for build
-flash      : Flash throgh jtag
+flash      : Flash through jtag
 openocd    : Launch OpenOCD
-dfu        : Flash throgh DFU 
+dfu        : Flash through DFU 
 ```
 
 ## Unit testing
