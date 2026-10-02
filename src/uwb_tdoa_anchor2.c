@@ -172,7 +172,7 @@ static void handleFailedRx(dwDevice_t *dev)
   // watchdog can take decision as of TDMA resynchronisation
   if (ctx.slot == 0) {
     ctx.state = syncTdmaState;
-    debug("TDOA2   : Entering sync state...\r\n");
+    debug("TDOA2   : Missed 0-slot. Entering sync state...\r\n");
   }
 }
 
@@ -357,7 +357,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
         handleServicePacket(dev);
         // The service packet handling time desynchronized us, lets resynch
         ctx.state = syncTdmaState;
-        debug("TDOA2   : Entering sync state...\r\n");
+        debug("TDOA2   : Service packet. Entering sync state...\r\n");
         return 0;
       case eventReceiveTimeout:
         setupRx(dev, ctx.nextSlot);
@@ -396,7 +396,7 @@ static void tdoa2Init(uwbConfig_t * config, dwDevice_t *dev)
 {
   ctx.anchorId = config->address[0];
   ctx.state = syncTdmaState;
-  debug("TDOA2   : Entering sync state...\r\n");
+  debug("TDOA2   : Init. Entering sync state...\r\n");
   ctx.slot = NSLOTS-1;
   ctx.nextSlot = 0;
   memset(ctx.txTimestamps, 0, sizeof(ctx.txTimestamps));
