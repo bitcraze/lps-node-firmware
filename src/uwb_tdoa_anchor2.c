@@ -425,7 +425,7 @@ static uint32_t tdoa2UwbEvent(dwDevice_t *dev, uwbEvent_t event)
       if (ctx.anchorId == 0) {
         dwTime_t frameStart = { .full = 0 };
         dwGetSystemTimestamp(dev, &frameStart);
-        frameStart.full = TDMA_LAST_FRAME(frameStart.full) + 2*TDMA_FRAME_LEN; // Delay RX to frame after next frame for margin
+        frameStart.full = TDMA_LAST_FRAME(frameStart.full) + 2*TDMA_FRAME_LEN; // Delay TX to frame after next frame for margin
         setUpSync(frameStart);
         setupTx(dev, ctx.slot); // slot 0
       } else {
