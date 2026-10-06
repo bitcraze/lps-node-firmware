@@ -359,6 +359,7 @@ static uint32_t slotStep(dwDevice_t *dev, uwbEvent_t event)
         ctx.state = syncTdmaState;
         debug("TDOA2   : Service packet. Entering sync state...\r\n");
         return 0;
+      case eventReceiveFailed:
       case eventReceiveTimeout:
         setupRx(dev, ctx.nextSlot);
         advanceSlot();
