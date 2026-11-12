@@ -12,6 +12,8 @@
 #define RADIO_TICKS_PER_MS ((uint64_t)63897600)
 // The 32 bit timestamps in the TDoA3 protocol wrap after 2^32 radio ticks (~67.2 ms)
 #define TIMESTAMP_32_BIT_WRAP_MS (((uint64_t)1 << 32) / RADIO_TICKS_PER_MS)
+// The 40 bit radio clock wraps after 2^40 radio ticks (~17.2 s)
+#define RADIO_CLOCK_WRAP ((uint64_t)1 << 40)
 
 #define ANCHOR_ID 1
 #define REMOTE_ANCHOR_ID 2
@@ -21,10 +23,17 @@
 
 #define REMOTE_TX_INTERVAL_MS 20
 
+// Packets received from the remote anchor until the data is good for transmission
+#define FIRST_RX_MS 1
+#define RX_COUNT_UNTIL_DATA_IS_GOOD 4
+#define LAST_RX_MS (FIRST_RX_MS + (RX_COUNT_UNTIL_DATA_IS_GOOD - 1) * REMOTE_TX_INTERVAL_MS)
+
 // Fakes ---------------------------------------------------------------------
 
 static TickType_t fakeTick;
 static uint64_t fakeRadioTime;
+// Radio time at system tick 0, used to place the radio clock wrap
+static uint64_t fakeRadioTimeOffset;
 
 static packet_t fakeRxPacket;
 static unsigned int fakeRxPacketLength;
@@ -89,9 +98,18 @@ struct uwbConfig_s * uwbGetConfig() {
 
 // Helpers -------------------------------------------------------------------
 
+static uint64_t radioTimeAt(uint32_t ms) {
+  return (ms * RADIO_TICKS_PER_MS + fakeRadioTimeOffset) % RADIO_CLOCK_WRAP;
+}
+
 static void setTime(uint32_t ms) {
   fakeTick = ms;
-  fakeRadioTime = ms * RADIO_TICKS_PER_MS;
+  fakeRadioTime = radioTimeAt(ms);
+}
+
+// Make the 40 bit radio clock wrap at time ms
+static void setRadioClockWrapAt(uint32_t ms) {
+  fakeRadioTimeOffset = RADIO_CLOCK_WRAP - ms * RADIO_TICKS_PER_MS;
 }
 
 // Deliver a TDoA3 packet from the remote anchor, transmitted and received at time ms
@@ -113,21 +131,17 @@ static void receivePacketFromRemoteAnchor(uint32_t ms, uint8_t seqNr) {
 }
 
 // Receive packets from the remote anchor until the anchor under test considers
-// the remote data good for transmission. Returns the time of the last reception.
-static uint32_t receiveUntilRemoteDataIsGood() {
-  uint32_t ms = 1;
-  for (uint8_t seqNr = 0; seqNr < 4; seqNr++) {
-    receivePacketFromRemoteAnchor(ms, seqNr);
-    ms += REMOTE_TX_INTERVAL_MS;
+// the remote data good for transmission. The last reception is at LAST_RX_MS.
+static void receiveUntilRemoteDataIsGood() {
+  for (uint8_t seqNr = 0; seqNr < RX_COUNT_UNTIL_DATA_IS_GOOD; seqNr++) {
+    receivePacketFromRemoteAnchor(FIRST_RX_MS + seqNr * REMOTE_TX_INTERVAL_MS, seqNr);
   }
-  ms -= REMOTE_TX_INTERVAL_MS;
 
   // Verify the fixture
+  TEST_ASSERT_EQUAL_UINT32(LAST_RX_MS, fakeTick);
   anchorContext_t* anchorCtx = getContext(REMOTE_ANCHOR_ID);
   TEST_ASSERT_NOT_NULL(anchorCtx);
   TEST_ASSERT_TRUE(anchorCtx->isDataGoodForTransmission);
-
-  return ms;
 }
 
 // Make the anchor under test transmit a packet at time ms
@@ -171,6 +185,7 @@ void setUp(void) {
   memset(&fakeConfig, 0, sizeof(fakeConfig));
   fakeConfig.address[0] = ANCHOR_ID;
   fakeTxPacketLength = 0;
+  fakeRadioTimeOffset = 0;
   setTime(0);
 
   uwbTdoa3Algorithm.init(&fakeConfig, &fakeDev);
@@ -181,11 +196,11 @@ void tearDown(void) {
 
 void testThatRecentRemoteDataIsTransmitted() {
   // Fixture
-  uint32_t lastRxMs = receiveUntilRemoteDataIsGood();
-  uint32_t expectedRxTimeStamp = (uint32_t)(lastRxMs * RADIO_TICKS_PER_MS);
+  receiveUntilRemoteDataIsGood();
+  uint32_t expectedRxTimeStamp = (uint32_t)radioTimeAt(LAST_RX_MS);
 
   // Test
-  transmitAt(lastRxMs + 10);
+  transmitAt(LAST_RX_MS + 10);
 
   // Assert
   uint32_t actualRxTimeStamp = 0;
@@ -195,17 +210,33 @@ void testThatRecentRemoteDataIsTransmitted() {
 
 void testThatRemoteDataOlderThan32BitTimestampWrapIsNotTransmitted() {
   // Fixture
-  uint32_t lastRxMs = receiveUntilRemoteDataIsGood();
+  receiveUntilRemoteDataIsGood();
 
   // Test
   // The remote anchor goes silent (packet loss), our next transmission is more
   // than one 32 bit timestamp wrap later. The receiver can not tell that the
   // rx timestamp is from an earlier wrap.
-  transmitAt(lastRxMs + 100);
+  transmitAt(LAST_RX_MS + 100);
   TEST_ASSERT_TRUE(100 > TIMESTAMP_32_BIT_WRAP_MS);
 
   // Assert
   uint32_t actualRxTimeStamp = 0;
   TEST_ASSERT_FALSE_MESSAGE(findRemoteDataInTxPacket(REMOTE_ANCHOR_ID, &actualRxTimeStamp),
     "Remote rx timestamp that is 100 ms old (> 67 ms) was transmitted");
+}
+
+void testThatRecentRemoteDataIsTransmittedWhenRadioClockWrapsBetweenRxAndTx() {
+  // Fixture
+  setRadioClockWrapAt(LAST_RX_MS + 5);
+  receiveUntilRemoteDataIsGood();
+  uint32_t expectedRxTimeStamp = (uint32_t)radioTimeAt(LAST_RX_MS);
+
+  // Test
+  transmitAt(LAST_RX_MS + 10);
+  TEST_ASSERT_TRUE(fakeRadioTime < radioTimeAt(LAST_RX_MS));
+
+  // Assert
+  uint32_t actualRxTimeStamp = 0;
+  TEST_ASSERT_TRUE(findRemoteDataInTxPacket(REMOTE_ANCHOR_ID, &actualRxTimeStamp));
+  TEST_ASSERT_EQUAL_UINT32(expectedRxTimeStamp, actualRxTimeStamp);
 }
