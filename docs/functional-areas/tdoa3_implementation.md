@@ -54,6 +54,14 @@ are assumed to have a static position and should only see the same
 anchors over time, while a Tag is moving around in space and will be
 exposed to new anchors.
 
+### Age of remote anchor data
+
+Timestamps are sent as 32 bits and wrap after 2^32 radio ticks (~67
+ms). An anchor only sends the rx timestamp of a remote anchor if it is
+less than 2^32 ticks older than the tx time of the packet, otherwise the
+receiver can not tell which wrap it belongs to. The age is computed with
+the full 40 bit radio time.
+
 ### Error management
 
 The first line of defence is the outlier detection in the clock
