@@ -20,11 +20,10 @@ int usbcommRead(char* buffer, size_t len)
 
 void usbcommWrite(char *data, int len)
 {
-  if (isInit) {
-    if (USBD_IsSerialConnected()) {
-      CDC_Write(data, len);
-    }
+  if (isInit && USBD_IsSerialConnected()) {
+    CDC_Write(data, len);
   } else {
+    // Not started or no terminal connected: keep the output for the welcome message
     for(int i=0; initPtr<INITBUFFER_LEN && i<len; i++,initPtr++) {
       initBuffer[initPtr] = data[i];
     }

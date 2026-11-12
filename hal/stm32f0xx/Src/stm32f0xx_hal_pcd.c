@@ -1079,19 +1079,20 @@ PCD_StateTypeDef HAL_PCD_GetState(PCD_HandleTypeDef *hpcd)
   */
 void PCD_WritePMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
 {
-  uint32_t n = (wNBytes + 1) >> 1;
   uint32_t i;
-  uint16_t temp1, temp2;
-  uint16_t *pdwVal;
-  pdwVal = (uint16_t *)(wPMABufAddr + (uint32_t)USBx + 0x400);
+  __IO uint16_t *pdwVal;
+  pdwVal = (__IO uint16_t *)(wPMABufAddr + (uint32_t)USBx + 0x400);
 
-  for (i = n; i != 0; i--)
+  for (i = 0; i < wNBytes; i += 2)
   {
-    temp1 = (uint16_t) * pbUsrBuf;
-    pbUsrBuf++;
-    temp2 = temp1 | (uint16_t) * pbUsrBuf << 8;
-    *pdwVal++ = temp2;
-    pbUsrBuf++;
+    uint16_t value = pbUsrBuf[i];
+
+    if ((i + 1) < wNBytes)
+    {
+      value |= (uint16_t)pbUsrBuf[i + 1] << 8;
+    }
+
+    *pdwVal++ = value;
   }
 }
 
@@ -1105,14 +1106,20 @@ void PCD_WritePMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, u
   */
 void PCD_ReadPMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
 {
-  uint32_t n = (wNBytes + 1) >> 1;
   uint32_t i;
-  uint16_t *pdwVal;
-  pdwVal = (uint16_t *)(wPMABufAddr + (uint32_t)USBx + 0x400);
-  for (i = n; i != 0; i--)
+  __IO uint16_t *pdwVal;
+  pdwVal = (__IO uint16_t *)(wPMABufAddr + (uint32_t)USBx + 0x400);
+
+  for (i = 0; i < wNBytes; i += 2)
   {
-    *(uint16_t*)pbUsrBuf++ = *pdwVal++;
-    pbUsrBuf++;
+    uint16_t value = *pdwVal++;
+
+    pbUsrBuf[i] = (uint8_t)value;
+
+    if ((i + 1) < wNBytes)
+    {
+      pbUsrBuf[i + 1] = (uint8_t)(value >> 8);
+    }
   }
 }
 

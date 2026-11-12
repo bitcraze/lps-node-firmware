@@ -29,30 +29,23 @@ brew install gcc-arm-none-eabi
 
 ### Debian/Ubuntu linux
 
-Download, extract and put in your path the compiler from https://launchpad.net/gcc-arm-embedded. For example:
+Install the compiler from the package manager:
 ```
-mkdir -p ~/opt/
-cd ~/opt
-wget https://launchpad.net/gcc-arm-embedded/5.0/5-2016-q3-update/+download/gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
-tar xvf gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
-mv gcc-arm-none-eabi-5_4-2016q3 gcc-arm-none-eabi
-rm gcc-arm-none-eabi-5_4-2016q3-20160926-linux.tar.bz2
-echo "export PATH=\$PATH:\$HOME/opt/gcc-arm-none-eabi/bin" >> ~/.bashrc
-```
-
-On 64Bit Linux you also need to install some 32Bit libs:
-```
-sudo apt-get install libncurses5:i386
+sudo apt-get install gcc-arm-none-eabi binutils-arm-none-eabi libnewlib-arm-none-eabi
 ```
 
 If all works you will be able to execute ```arm-none-eabi-gcc```:
 ```
 $ arm-none-eabi-gcc --version
-arm-none-eabi-gcc (GNU Tools for ARM Embedded Processors) 5.4.1 20160919 (release) [ARM/embedded-5-branch revision 240496]
-Copyright (C) 2015 Free Software Foundation, Inc.
+arm-none-eabi-gcc (15:13.2.rel1-2) 13.2.1 20231009
+Copyright (C) 2023 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 ```
+
+Report if a newer compiler than the version in the example above does not work
+out of the box on the latest master commit.
+
 ### Arch Linux
 
 ```bash
@@ -82,9 +75,9 @@ or
 # Make targets:
 ```
 all        : Shortcut for build
-flash      : Flash throgh jtag
+flash      : Flash through jtag
 openocd    : Launch OpenOCD
-dfu        : Flash throgh DFU 
+dfu        : Flash through DFU 
 ```
 
 ## Unit testing
@@ -96,7 +89,9 @@ To run all tests
 `./tools/do test`
 
 ## Contribute
-Go to the [contribute page](https://www.bitcraze.io/contribute/) on our website to learn more.
+Before you open a pull request, please read our [General guidelines for code contributions](https://www.bitcraze.io/development/contribute/general-guidelines/).
+
+For other ways to contribute, see the [contribute page](https://www.bitcraze.io/development/contribute/).
 
 ### Test code for contribution
 Run the automated build locally to test your code
