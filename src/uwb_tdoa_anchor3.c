@@ -114,6 +114,17 @@ The implementation must handle
 
 #define DISTANCE_VALIDITY_PERIOD M2T(2 * 1000)
 
+// The DW1000 radio clock is 40 bits
+#define RADIO_TIME_MASK 0x000000FFFFFFFFFFull
+
+// Max age of remote rx timestamps to transmit, see docs/functional-areas/tdoa3_implementation.md
+#define REMOTE_RX_MAX_AGE (1ull << 32)
+
+// The TDoA3 protocol uses the low 32 bits of the 40 bit radio time
+static inline uint32_t low32(const uint64_t radioTime) {
+  return (uint32_t)radioTime;
+}
+
 // Useful constants
 static const uint8_t base_address[] = {0,0,0,0,0,0,0xcf,0xbc};
 
@@ -122,7 +133,7 @@ typedef struct {
   uint8_t id;
   bool isUsed;
   uint8_t seqNr;
-  uint32_t rxTimeStamp;
+  uint64_t rxTimeStampFull; // 40 bit radio time, the protocol uses the low 32 bits
   uint32_t txTimeStamp;
   uint16_t distance;
   uint32_t distanceUpdateTime;
@@ -138,7 +149,7 @@ static struct ctx_s {
 
   // Information about latest transmitted packet
   uint8_t seqNr;
-  uint32_t txTime; // In UWB clock ticks
+  uint64_t txTimeFull; // 40 bit radio time, the protocol uses the low 32 bits
 
   // Next transmit time in system clock ticks
   uint32_t nextTxTick;
@@ -370,7 +381,7 @@ static double calculateClockCorrection(anchorContext_t* anchorCtx, int remoteTxS
 
   // Assigning to uint32_t truncates the diffs and takes care of wrapping clocks
   uint32_t tickCountRemote = remoteTx - anchorCtx->txTimeStamp;
-  uint32_t tickCountLocal = rx - anchorCtx->rxTimeStamp;
+  uint32_t tickCountLocal = rx - low32(anchorCtx->rxTimeStampFull);
 
   if (tickCountRemote != 0) {
     result = (double)tickCountLocal / (double)tickCountRemote;
@@ -383,7 +394,7 @@ static uint16_t calculateDistance(anchorContext_t* anchorCtx, int remoteRxSeqNr,
 {
   // Check that the remote received seq nr is our latest tx seq nr
   if (remoteRxSeqNr == ctx.seqNr && anchorCtx->clockCorrection > 0.0d) {
-    uint32_t localTime = rx - ctx.txTime;
+    uint32_t localTime = rx - low32(ctx.txTimeFull);
     uint32_t remoteTime = (uint32_t)((double)(remoteTx - remoteRx) * anchorCtx->clockCorrection);
     uint32_t distance = (localTime - remoteTime) / 2;
 
@@ -452,8 +463,10 @@ static bool updateClockCorrection(anchorContext_t* anchorCtx, double clockCorrec
   return sampleIsAccepted;
 }
 
-static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
+static void handleRangePacket(const uint64_t rxTimeFull, const packet_t* rxPacket)
 {
+  const uint32_t rxTime = low32(rxTimeFull);
+
   const uint8_t remoteAnchorId = rxPacket->sourceAddress[0];
   ctx.anchorRxCount[remoteAnchorId]++;
   anchorContext_t* anchorCtx = getContext(remoteAnchorId);
@@ -483,7 +496,7 @@ static void handleRangePacket(const uint32_t rxTime, const packet_t* rxPacket)
       anchorCtx->isDataGoodForTransmission = false;
     }
 
-    anchorCtx->rxTimeStamp = rxTime;
+    anchorCtx->rxTimeStampFull = rxTimeFull;
     anchorCtx->seqNr = remoteTxSeqNr;
     anchorCtx->txTimeStamp = remoteTx;
   }
@@ -507,7 +520,7 @@ static void handleRxPacket(dwDevice_t *dev)
 
   switch(rxPacket.payload[0]) {
   case PACKET_TYPE_TDOA3:
-    handleRangePacket(rxTime.low32, &rxPacket);
+    handleRangePacket(rxTime.full, &rxPacket);
     break;
   case SHORT_LPP:
     if (rxPacket.destAddress[0] == ctx.anchorId) {
@@ -527,11 +540,20 @@ static void setupRx(dwDevice_t *dev)
   dwStartReceive(dev);
 }
 
+// The age is calculated modulo the 40 bit radio clock wrap (~17.2 s), data older than
+// that would look young again. This is not a problem since updateAnchorLists() removes
+// contexts for anchors we have not received packets from since the previous list update,
+// which limits the age of stored data to about two ANCHOR_LIST_UPDATE_INTERVAL.
+static bool isRemoteRxTimeYoungEnough(const anchorContext_t* anchorCtx) {
+  const uint64_t age = (ctx.txTimeFull - anchorCtx->rxTimeStampFull) & RADIO_TIME_MASK;
+  return age < REMOTE_RX_MAX_AGE;
+}
+
 static int populateTxData(rangePacket3_t *rangePacket)
 {
   // rangePacket->header.type already populated
   rangePacket->header.seq = ctx.seqNr;
-  rangePacket->header.txTimeStamp = ctx.txTime;
+  rangePacket->header.txTimeStamp = low32(ctx.txTimeFull);
 
   uint8_t remoteAnchorCount = 0;
   uint8_t* anchorDataPtr = &rangePacket->remoteAnchorData;
@@ -541,10 +563,10 @@ static int populateTxData(rangePacket3_t *rangePacket)
     uint8_t id = ctx.remoteTxId[i];
     anchorContext_t* anchorCtx = getContext(id);
 
-    if (anchorCtx->isDataGoodForTransmission) {
+    if (anchorCtx->isDataGoodForTransmission && isRemoteRxTimeYoungEnough(anchorCtx)) {
       anchorData->id = id;
       anchorData->seq = anchorCtx->seqNr;
-      anchorData->rxTimeStamp = anchorCtx->rxTimeStamp;
+      anchorData->rxTimeStamp = low32(anchorCtx->rxTimeStampFull);
 
       if (anchorCtx->distance > 0) {
         anchorData->distance = anchorCtx->distance;
@@ -604,7 +626,7 @@ static void setTxData(dwDevice_t *dev)
 static void setupTx(dwDevice_t *dev)
 {
   dwTime_t txTime = findTransmitTimeAsSoonAsPossible(dev);
-  ctx.txTime = txTime.low32;
+  ctx.txTimeFull = txTime.full;
   ctx.seqNr = (ctx.seqNr + 1) & 0x7f;
 
   setTxData(dev);
@@ -653,7 +675,7 @@ static void tdoa3Init(uwbConfig_t * config, dwDevice_t *dev)
 
   ctx.anchorId = config->address[0];
   ctx.seqNr = 0;
-  ctx.txTime = 0;
+  ctx.txTimeFull = 0;
   ctx.nextTxTick = xTaskGetTickCount();
   ctx.systemTxFreq = systemTxFreq;
   ctx.averageTxDelay = 1000.0 / ANCHOR_MIN_TX_FREQ;
